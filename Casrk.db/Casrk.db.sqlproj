@@ -120,4 +120,7 @@
   <ItemGroup>
     <Folder Include="Properties" />
   </ItemGroup>
+  <ItemGroup>
+    <Build Include="Order.sql" />
+  </ItemGroup>
 </Project>
