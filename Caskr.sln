@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Caskr.Server", "Caskr.Serve
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "caskr.client", "caskr.client\caskr.client.esproj", "{10A8E031-369E-4C7F-A78E-2EF828E56BA0}"
 EndProject
-Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Caskr.db", "Caskr.db\Caskr.db.sqlproj", "{4EEF00F8-F7B1-4DAD-9EBD-D8309F164045}"
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Casrk.db", "Casrk.db\Casrk.db.sqlproj", "{18C0F52B-D400-4045-86AB-1AB1DFD2BD12}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,12 +25,12 @@ Global
 		{10A8E031-369E-4C7F-A78E-2EF828E56BA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{10A8E031-369E-4C7F-A78E-2EF828E56BA0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{10A8E031-369E-4C7F-A78E-2EF828E56BA0}.Release|Any CPU.Deploy.0 = Release|Any CPU
-		{4EEF00F8-F7B1-4DAD-9EBD-D8309F164045}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4EEF00F8-F7B1-4DAD-9EBD-D8309F164045}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4EEF00F8-F7B1-4DAD-9EBD-D8309F164045}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{4EEF00F8-F7B1-4DAD-9EBD-D8309F164045}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4EEF00F8-F7B1-4DAD-9EBD-D8309F164045}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4EEF00F8-F7B1-4DAD-9EBD-D8309F164045}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{18C0F52B-D400-4045-86AB-1AB1DFD2BD12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18C0F52B-D400-4045-86AB-1AB1DFD2BD12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18C0F52B-D400-4045-86AB-1AB1DFD2BD12}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{18C0F52B-D400-4045-86AB-1AB1DFD2BD12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18C0F52B-D400-4045-86AB-1AB1DFD2BD12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18C0F52B-D400-4045-86AB-1AB1DFD2BD12}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
