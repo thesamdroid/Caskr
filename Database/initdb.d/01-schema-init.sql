@@ -1,0 +1,283 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.2 (Debian 17.2-1.pgdg120+1)
+-- Dumped by pg_dump version 17.1
+
+-- Started on 2025-02-10 17:25:42
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 221 (class 1259 OID 16401)
+-- Name: orders; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.orders (
+    id integer NOT NULL,
+    name text NOT NULL,
+    owner_id integer NOT NULL,
+    created_date date DEFAULT CURRENT_DATE NOT NULL,
+    status_id integer NOT NULL
+);
+
+
+ALTER TABLE public.orders OWNER TO postgres;
+
+--
+-- TOC entry 219 (class 1259 OID 16399)
+-- Name: Orders_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Orders_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public."Orders_id_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3386 (class 0 OID 0)
+-- Dependencies: 219
+-- Name: Orders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Orders_id_seq" OWNED BY public.orders.id;
+
+
+--
+-- TOC entry 220 (class 1259 OID 16400)
+-- Name: Orders_owner_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Orders_owner_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public."Orders_owner_id_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3387 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: Orders_owner_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Orders_owner_id_seq" OWNED BY public.orders.owner_id;
+
+
+--
+-- TOC entry 224 (class 1259 OID 16425)
+-- Name: Orders_status_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Orders_status_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public."Orders_status_id_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3388 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: Orders_status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Orders_status_id_seq" OWNED BY public.orders.status_id;
+
+
+--
+-- TOC entry 223 (class 1259 OID 16417)
+-- Name: status; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.status (
+    id integer NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE public.status OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 16416)
+-- Name: Status_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Status_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public."Status_id_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3389 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: Status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Status_id_seq" OWNED BY public.status.id;
+
+
+--
+-- TOC entry 218 (class 1259 OID 16391)
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.users (
+    id integer NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- TOC entry 217 (class 1259 OID 16390)
+-- Name: Users_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Users_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public."Users_id_seq" OWNER TO postgres;
+
+--
+-- TOC entry 3390 (class 0 OID 0)
+-- Dependencies: 217
+-- Name: Users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Users_id_seq" OWNED BY public.users.id;
+
+
+--
+-- TOC entry 3223 (class 2604 OID 16404)
+-- Name: orders id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.orders ALTER COLUMN id SET DEFAULT nextval('public."Orders_id_seq"'::regclass);
+
+
+--
+-- TOC entry 3224 (class 2604 OID 16405)
+-- Name: orders owner_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.orders ALTER COLUMN owner_id SET DEFAULT nextval('public."Orders_owner_id_seq"'::regclass);
+
+
+--
+-- TOC entry 3226 (class 2604 OID 16426)
+-- Name: orders status_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.orders ALTER COLUMN status_id SET DEFAULT nextval('public."Orders_status_id_seq"'::regclass);
+
+
+--
+-- TOC entry 3227 (class 2604 OID 16420)
+-- Name: status id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.status ALTER COLUMN id SET DEFAULT nextval('public."Status_id_seq"'::regclass);
+
+
+--
+-- TOC entry 3222 (class 2604 OID 16394)
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public."Users_id_seq"'::regclass);
+
+
+--
+-- TOC entry 3231 (class 2606 OID 16410)
+-- Name: orders Orders_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT "Orders_pkey" PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3233 (class 2606 OID 16424)
+-- Name: status Status_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.status
+    ADD CONSTRAINT "Status_pkey" PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3229 (class 2606 OID 16398)
+-- Name: users Users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT "Users_pkey" PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3234 (class 2606 OID 16411)
+-- Name: orders fk_ownerid_userid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT fk_ownerid_userid FOREIGN KEY (owner_id) REFERENCES public.users(id);
+
+
+--
+-- TOC entry 3235 (class 2606 OID 16433)
+-- Name: orders fk_statusid_stautusid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT fk_statusid_stautusid FOREIGN KEY (status_id) REFERENCES public.status(id) NOT VALID;
+
+
+-- Completed on 2025-02-10 17:25:43
+
+--
+-- PostgreSQL database dump complete
+--
+

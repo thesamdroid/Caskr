@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  caskr-db:
+    image: postgres
+    container_name: caskr-db
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=caskr-db
