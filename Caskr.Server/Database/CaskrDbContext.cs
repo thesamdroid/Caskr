@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using Caskr.Server.Entities;
+﻿using Caskr.Server.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Caskr.Server.Database;
 
-public partial class CaskrContext : DbContext
+public partial class CaskrDbContext : DbContext
 {
-    public CaskrContext()
+    private const string ConnectionStringKey = "CaskrDatabaseConnectionString";
+
+    public CaskrDbContext()
     {
     }
 
-    public CaskrContext(DbContextOptions<CaskrContext> options)
+    public CaskrDbContext(DbContextOptions<CaskrDbContext> options)
         : base(options)
     {
     }
@@ -23,9 +23,9 @@ public partial class CaskrContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Persist Security Info=True;Database=caskr;Username=postgres");
-    //postgresql://postgres:docker@localhost:5432/caskr
+    {
+        optionsBuilder.UseNpgsql("Host=172.30.128.1; Database=caskr-db; Username=postgres; Password=docker");
+    }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>

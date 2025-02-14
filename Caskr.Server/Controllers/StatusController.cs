@@ -14,25 +14,25 @@ namespace Caskr.Server.Controllers
     [ApiController]
     public class StatusController : ControllerBase
     {
-        private readonly CaskrContext _context;
+        private readonly CaskrDbContext _dbContext;
 
-        public StatusController(CaskrContext context)
+        public StatusController(CaskrDbContext dbContext)
         {
-            _context = context;
+            _dbContext = dbContext;
         }
 
         // GET: api/Status
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Status>>> GetStatuses()
         {
-            return await _context.Statuses.ToListAsync();
+            return await _dbContext.Statuses.ToListAsync();
         }
 
         // GET: api/Status/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Status>> GetStatus(int id)
         {
-            var status = await _context.Statuses.FindAsync(id);
+            var status = await _dbContext.Statuses.FindAsync(id);
 
             if (status == null)
             {
@@ -52,11 +52,11 @@ namespace Caskr.Server.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(status).State = EntityState.Modified;
+            _dbContext.Entry(status).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -78,8 +78,8 @@ namespace Caskr.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<Status>> PostStatus(Status status)
         {
-            _context.Statuses.Add(status);
-            await _context.SaveChangesAsync();
+            _dbContext.Statuses.Add(status);
+            await _dbContext.SaveChangesAsync();
 
             return CreatedAtAction("GetStatus", new { id = status.Id }, status);
         }
@@ -88,21 +88,21 @@ namespace Caskr.Server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteStatus(int id)
         {
-            var status = await _context.Statuses.FindAsync(id);
+            var status = await _dbContext.Statuses.FindAsync(id);
             if (status == null)
             {
                 return NotFound();
             }
 
-            _context.Statuses.Remove(status);
-            await _context.SaveChangesAsync();
+            _dbContext.Statuses.Remove(status);
+            await _dbContext.SaveChangesAsync();
 
             return NoContent();
         }
 
         private bool StatusExists(int id)
         {
-            return _context.Statuses.Any(e => e.Id == id);
+            return _dbContext.Statuses.Any(e => e.Id == id);
         }
     }
 }

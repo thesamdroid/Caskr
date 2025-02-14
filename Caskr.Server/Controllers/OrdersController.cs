@@ -14,25 +14,25 @@ namespace Caskr.Server.Controllers
     [ApiController]
     public class OrdersController : ControllerBase
     {
-        private readonly CaskrContext _context;
+        private readonly CaskrDbContext _dbContext;
 
-        public OrdersController(CaskrContext context)
+        public OrdersController(CaskrDbContext dbContext)
         {
-            _context = context;
+            _dbContext = dbContext;
         }
 
         // GET: api/Orders
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
         {
-            return await _context.Orders.ToListAsync();
+            return await _dbContext.Orders.ToListAsync();
         }
 
         // GET: api/Orders/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Order>> GetOrder(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
+            var order = await _dbContext.Orders.FindAsync(id);
 
             if (order == null)
             {
@@ -52,11 +52,11 @@ namespace Caskr.Server.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(order).State = EntityState.Modified;
+            _dbContext.Entry(order).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -78,8 +78,8 @@ namespace Caskr.Server.Controllers
         [HttpPost]
         public async Task<ActionResult<Order>> PostOrder(Order order)
         {
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+            _dbContext.Orders.Add(order);
+            await _dbContext.SaveChangesAsync();
 
             return CreatedAtAction("GetOrder", new { id = order.Id }, order);
         }
@@ -88,21 +88,21 @@ namespace Caskr.Server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
+            var order = await _dbContext.Orders.FindAsync(id);
             if (order == null)
             {
                 return NotFound();
             }
 
-            _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
+            _dbContext.Orders.Remove(order);
+            await _dbContext.SaveChangesAsync();
 
             return NoContent();
         }
 
         private bool OrderExists(int id)
         {
-            return _context.Orders.Any(e => e.Id == id);
+            return _dbContext.Orders.Any(e => e.Id == id);
         }
     }
 }

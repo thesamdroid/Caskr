@@ -1,5 +1,4 @@
 using Caskr.Server.Database;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +9,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<CaskrContext>();
+builder.Services.AddDbContext<CaskrDbContext>();
 
 var app = builder.Build();
 
