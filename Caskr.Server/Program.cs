@@ -1,4 +1,4 @@
-using Caskr.Server.Database;
+using Caskr.Server.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 

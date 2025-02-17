@@ -1,12 +1,11 @@
-﻿using Caskr.Server.Entities;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace Caskr.Server.Database;
+namespace Caskr.Server.Models;
 
 public partial class CaskrDbContext : DbContext
 {
-    private const string ConnectionStringKey = "CaskrDatabaseConnectionString";
-
     public CaskrDbContext()
     {
     }
@@ -18,14 +17,18 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<Order> Orders { get; set; }
 
+    public virtual DbSet<Product> Products { get; set; }
+
     public virtual DbSet<Status> Statuses { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserType> UserTypes { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseNpgsql("Host=172.30.128.1; Database=caskr-db; Username=postgres; Password=docker");
-    }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=172.30.128.1; Database=caskr-db; Username=postgres; Password=docker");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -59,6 +62,24 @@ public partial class CaskrDbContext : DbContext
                 .HasConstraintName("fk_statusid_stautusid");
         });
 
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("products_pkey");
+
+            entity.ToTable("products");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.OwnerId).HasColumnName("owner_id");
+
+            entity.HasOne(d => d.Owner).WithMany(p => p.Products)
+                .HasForeignKey(d => d.OwnerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_owner_users");
+        });
+
         modelBuilder.Entity<Status>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Status_pkey");
@@ -79,6 +100,25 @@ public partial class CaskrDbContext : DbContext
 
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("nextval('\"Users_id_seq\"'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.Email).HasColumnName("email");
+            entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.UserTypeId).HasColumnName("user_type_id");
+
+            entity.HasOne(d => d.UserType).WithMany(p => p.Users)
+                .HasForeignKey(d => d.UserTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_user_userstatus");
+        });
+
+        modelBuilder.Entity<UserType>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("user_type_pkey");
+
+            entity.ToTable("user_type");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
                 .HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name");
         });

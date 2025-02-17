@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Caskr.Server.Entities;
+namespace Caskr.Server.Models;
 
 public partial class Status
 {
