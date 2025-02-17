@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Caskr.Server.Models;
+﻿namespace Caskr.server.Models;
 
 public partial class Status
 {

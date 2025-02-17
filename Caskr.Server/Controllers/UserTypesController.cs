@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Caskr.server.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Caskr.Server.Models;
 
-namespace Caskr.Server.Controllers
+namespace Caskr.server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -70,7 +70,7 @@ namespace Caskr.Server.Controllers
         // POST: api/UserTypes
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<UserType>> PostUserType(UserType userType)
+        public async Task<ActionResult<UserType>> PostUserType(UserType? userType)
         {
             _context.UserTypes.Add(userType);
             try

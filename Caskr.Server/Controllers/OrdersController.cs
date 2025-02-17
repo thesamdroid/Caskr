@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Caskr.server.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Caskr.Server.Models;
 
-namespace Caskr.Server.Controllers
+namespace Caskr.server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
