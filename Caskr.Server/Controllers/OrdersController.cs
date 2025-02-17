@@ -70,7 +70,7 @@ namespace Caskr.server.Controllers
         // POST: api/Orders
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Order>> PostOrder(Order order)
+        public async Task<ActionResult<Order>> PostOrder(Order? order)
         {
             _dbContext.Orders.Add(order);
             await _dbContext.SaveChangesAsync();

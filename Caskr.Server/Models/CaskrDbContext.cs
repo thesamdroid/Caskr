@@ -13,11 +13,11 @@ public partial class CaskrDbContext : DbContext
     {
     }
 
-    public virtual DbSet<Order> Orders { get; set; }
+    public virtual DbSet<Order?> Orders { get; set; }
 
-    public virtual DbSet<Product> Products { get; set; }
+    public virtual DbSet<Product?> Products { get; set; }
 
-    public virtual DbSet<Status> Statuses { get; set; }
+    public virtual DbSet<Status?> Statuses { get; set; }
 
     public virtual DbSet<User?> Users { get; set; }
 

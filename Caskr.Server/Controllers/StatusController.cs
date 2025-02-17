@@ -65,7 +65,7 @@ namespace Caskr.server.Controllers
         // POST: api/Status
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Status>> PostStatus(Status status)
+        public async Task<ActionResult<Status>> PostStatus(Status? status)
         {
             _dbContext.Statuses.Add(status);
             await _dbContext.SaveChangesAsync();

@@ -14,32 +14,31 @@ namespace Caskr.server.Repos
 
     public class UserTypesRepository(CaskrDbContext dbContext) : IUserTypesRepository
     {
-        private readonly CaskrDbContext _dbContext = dbContext;
         public async Task<IEnumerable<UserType?>> GetUserTypesAsync()
         {
-            return await _dbContext.UserTypes.ToListAsync();
+            return await dbContext.UserTypes.ToListAsync();
         }
         public async Task<UserType?> GetUserTypeAsync(int id)
         {
-            return await _dbContext.UserTypes.FindAsync(id);
+            return await dbContext.UserTypes.FindAsync(id);
         }
         public async Task AddUserTypeAsync(UserType? userType)
         {
-            await _dbContext.UserTypes.AddAsync(userType);
-            await _dbContext.SaveChangesAsync();
+            await dbContext.UserTypes.AddAsync(userType);
+            await dbContext.SaveChangesAsync();
         }
         public async Task UpdateUserTypeAsync(UserType userType)
         {
-            _dbContext.Entry(userType).State = EntityState.Modified;
-            await _dbContext.SaveChangesAsync();
+            dbContext.Entry(userType).State = EntityState.Modified;
+            await dbContext.SaveChangesAsync();
         }
         public async Task DeleteUserTypeAsync(int id)
         {
-            var userType = await _dbContext.UserTypes.FindAsync(id);
+            var userType = await dbContext.UserTypes.FindAsync(id);
             if (userType != null)
             {
-                _dbContext.UserTypes.Remove(userType);
-                await _dbContext.SaveChangesAsync();
+                dbContext.UserTypes.Remove(userType);
+                await dbContext.SaveChangesAsync();
             }
         }
     }
