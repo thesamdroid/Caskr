@@ -12,7 +12,8 @@ namespace Caskr.server.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Status>>> GetStatuses()
         {
-            return (await statusService.GetStatusesAsync()).ToList();
+            var statuses = (await statusService.GetStatusesAsync()).ToList();
+            return Ok(statuses);
         }
 
         // GET: api/Status/5
@@ -26,7 +27,7 @@ namespace Caskr.server.Controllers
                 return NotFound();
             }
 
-            return status;
+            return Ok(status);
         }
 
         // PUT: api/Status/5
@@ -39,7 +40,8 @@ namespace Caskr.server.Controllers
                 return BadRequest();
             }
 
-            return await statusService.UpdateStatusAsync(status);
+            var updatedStatus = await statusService.UpdateStatusAsync(status);
+            return Ok(updatedStatus);
         }
 
         // POST: api/Status

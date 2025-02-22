@@ -12,7 +12,8 @@ namespace Caskr.server.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserType>>> GetUserTypes()
         {
-            return (await userTypesService.GetUserTypesAsync()).ToList();
+            var userTypes = (await userTypesService.GetUserTypesAsync()).ToList();
+            return Ok(userTypes);
         }
 
         // GET: api/UserTypes/5
@@ -26,7 +27,7 @@ namespace Caskr.server.Controllers
                 return NotFound();
             }
 
-            return userType;
+            return Ok(userType);
         }
 
         // PUT: api/UserTypes/5
@@ -38,7 +39,8 @@ namespace Caskr.server.Controllers
             {
                 return BadRequest();
             }
-            return await userTypesService.UpdateUserTypeAsync(userType);
+            var updatedUserType = await userTypesService.UpdateUserTypeAsync(userType);
+            return Ok(updatedUserType);
         }
 
         // POST: api/UserTypes
