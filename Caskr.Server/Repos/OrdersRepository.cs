@@ -1,36 +1,39 @@
 ﻿using Caskr.server.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Caskr.server.Repos
 {
     public interface IOrdersRepository
     {
-        Task<IEnumerable<Order?>> GetOrdersAsync();
+        Task<IEnumerable<Order>> GetOrdersAsync();
         Task<Order?> GetOrderAsync(int id);
-        Task AddOrderAsync(Order? order);
-        Task UpdateOrderAsync(Order order);
+        Task<Order> AddOrderAsync(Order? order);
+        Task<Order> UpdateOrderAsync(Order order);
         Task DeleteOrderAsync(int id);
     }
 
     public class OrdersRepository(CaskrDbContext dbContext) : IOrdersRepository
     {
-        public async Task<IEnumerable<Order?>> GetOrdersAsync()
+        public async Task<IEnumerable<Order>> GetOrdersAsync()
         {
-            return await dbContext.Orders.ToListAsync();
+            return (await dbContext.Orders.ToListAsync())!;
         }
         public async Task<Order?> GetOrderAsync(int id)
         {
             return await dbContext.Orders.FindAsync(id);
         }
-        public async Task AddOrderAsync(Order? order)
+        public async Task<Order> AddOrderAsync(Order? order)
         {
-            await dbContext.Orders.AddAsync(order);
+            var addedOrder = await dbContext.Orders.AddAsync(order);
             await dbContext.SaveChangesAsync();
+            return addedOrder.Entity!;
         }
-        public async Task UpdateOrderAsync(Order order)
+        public async Task<Order> UpdateOrderAsync(Order order)
         {
             dbContext.Entry(order).State = EntityState.Modified;
             await dbContext.SaveChangesAsync();
+            return (await GetOrderAsync(order.Id))!;
         }
         public async Task DeleteOrderAsync(int id)
         {

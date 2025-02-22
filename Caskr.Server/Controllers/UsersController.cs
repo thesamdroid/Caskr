@@ -1,32 +1,25 @@
 ﻿using Caskr.server.Models;
+using Caskr.server.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Caskr.server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    public class UsersController(IUsersService usersService) : ControllerBase
     {
-        private readonly CaskrDbContext _dbContext;
-
-        public UsersController(CaskrDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
-
         // GET: api/Users
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            return await _dbContext.Users.ToListAsync();
+            return (await usersService.GetUsersAsync()).ToList();
         }
 
         // GET: api/Users/5
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
-            var user = await _dbContext.Users.FindAsync(id);
+            var user = await usersService.GetUserAsync(id);
 
             if (user == null)
             {
@@ -39,32 +32,14 @@ namespace Caskr.server.Controllers
         // PUT: api/Users/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, User user)
+        public async Task<ActionResult<User>> PutUser(int id, User user)
         {
             if (id != user.Id)
             {
                 return BadRequest();
             }
 
-            _dbContext.Entry(user).State = EntityState.Modified;
-
-            try
-            {
-                await _dbContext.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UserExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            return await usersService.UpdateUserAsync(user);
         }
 
         // POST: api/Users
@@ -72,31 +47,24 @@ namespace Caskr.server.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> PostUser(User? user)
         {
-            _dbContext.Users.Add(user);
-            await _dbContext.SaveChangesAsync();
+            var createdUser = await usersService.AddUserAsync(user);
 
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            return CreatedAtAction("GetUser", new { id = createdUser.Id }, createdUser);
         }
 
         // DELETE: api/Users/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = await _dbContext.Users.FindAsync(id);
+            var user = await usersService.GetUserAsync(id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            _dbContext.Users.Remove(user);
-            await _dbContext.SaveChangesAsync();
+            usersService.DeleteUserAsync(id);
 
             return NoContent();
-        }
-
-        private bool UserExists(int id)
-        {
-            return _dbContext.Users.Any(e => e.Id == id);
         }
     }
 }

@@ -5,18 +5,18 @@ namespace Caskr.server.Repos
 {
     public interface IStatusRepository
     {
-        Task<IEnumerable<Status?>> GetStatusesAsync();
+        Task<IEnumerable<Status>> GetStatusesAsync();
         Task<Status?> GetStatusAsync(int id);
-        Task AddStatusAsync(Status? status);
-        Task UpdateStatusAsync(Status status);
+        Task<Status> AddStatusAsync(Status? status);
+        Task<Status> UpdateStatusAsync(Status status);
         Task DeleteStatusAsync(int id);
     }
 
     public class StatusRepository(CaskrDbContext dbContext) : IStatusRepository
     {
-        public async Task<IEnumerable<Status?>> GetStatusesAsync()
+        public async Task<IEnumerable<Status>> GetStatusesAsync()
         {
-            return await dbContext.Statuses.ToListAsync();
+            return (await dbContext.Statuses.ToListAsync())!;
         }
 
         public async Task<Status?> GetStatusAsync(int id)
@@ -24,16 +24,18 @@ namespace Caskr.server.Repos
             return await dbContext.Statuses.FindAsync(id);
         }
 
-        public async Task AddStatusAsync(Status? status)
+        public async Task<Status> AddStatusAsync(Status? status)
         {
-            await dbContext.Statuses.AddAsync(status);
+            var createdStatus = await dbContext.Statuses.AddAsync(status);
             await dbContext.SaveChangesAsync();
+            return createdStatus.Entity!;
         }
 
-        public async Task UpdateStatusAsync(Status status)
+        public async Task<Status> UpdateStatusAsync(Status status)
         {
             dbContext.Entry(status).State = EntityState.Modified;
             await dbContext.SaveChangesAsync();
+            return (await GetStatusAsync(status.Id))!;
         }
 
         public async Task DeleteStatusAsync(int id)

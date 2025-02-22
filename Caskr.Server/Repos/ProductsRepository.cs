@@ -5,32 +5,34 @@ namespace Caskr.server.Repos
 {
     public interface IProductsRepository
     {
-        Task<IEnumerable<Product?>> GetProductsAsync();
+        Task<IEnumerable<Product>> GetProductsAsync();
         Task<Product?> GetProductAsync(int id);
-        Task AddProductAsync(Product? product);
-        Task UpdateProductAsync(Product product);
+        Task<Product> AddProductAsync(Product? product);
+        Task<Product> UpdateProductAsync(Product product);
         Task DeleteProductAsync(int id);
     }
 
     public class ProductsRepository(CaskrDbContext dbContext) : IProductsRepository
     {
-        public async Task<IEnumerable<Product?>> GetProductsAsync()
+        public async Task<IEnumerable<Product>> GetProductsAsync()
         {
-            return await dbContext.Products.ToListAsync();
+            return (await dbContext.Products.ToListAsync())!;
         }
         public async Task<Product?> GetProductAsync(int id)
         {
             return await dbContext.Products.FindAsync(id);
         }
-        public async Task AddProductAsync(Product? product)
+        public async Task<Product> AddProductAsync(Product? product)
         {
-            await dbContext.Products.AddAsync(product);
+            var createdProduct = await dbContext.Products.AddAsync(product);
             await dbContext.SaveChangesAsync();
+            return createdProduct.Entity!;
         }
-        public async Task UpdateProductAsync(Product product)
+        public async Task<Product> UpdateProductAsync(Product product)
         {
             dbContext.Entry(product).State = EntityState.Modified;
             await dbContext.SaveChangesAsync();
+            return (await GetProductAsync(product.Id))!;
         }
         public async Task DeleteProductAsync(int id)
         {

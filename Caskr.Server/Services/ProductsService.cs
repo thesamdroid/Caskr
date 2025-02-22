@@ -3,9 +3,18 @@ using Caskr.server.Repos;
 
 namespace Caskr.server.Services
 {
-    public class ProductsService(IProductsRepository productsRepository)
+    public interface IProductsService
     {
-        public async Task<IEnumerable<Product?>> GetProductsAsync()
+        Task<IEnumerable<Product>> GetProductsAsync();
+        Task<Product?> GetProductAsync(int id);
+        Task<Product> AddProductAsync(Product? product);
+        Task<Product> UpdateProductAsync(Product product);
+        Task DeleteProductAsync(int id);
+    }
+
+    public class ProductsService(IProductsRepository productsRepository) : IProductsService
+    {
+        public async Task<IEnumerable<Product>> GetProductsAsync()
         {
             return await productsRepository.GetProductsAsync();
         }
@@ -13,13 +22,13 @@ namespace Caskr.server.Services
         {
             return await productsRepository.GetProductAsync(id);
         }
-        public async Task AddProductAsync(Product? product)
+        public async Task<Product> AddProductAsync(Product? product)
         {
-            await productsRepository.AddProductAsync(product);
+            return await productsRepository.AddProductAsync(product);
         }
-        public async Task UpdateProductAsync(Product product)
+        public async Task<Product> UpdateProductAsync(Product product)
         {
-            await productsRepository.UpdateProductAsync(product);
+            return await productsRepository.UpdateProductAsync(product);
         }
         public async Task DeleteProductAsync(int id)
         {

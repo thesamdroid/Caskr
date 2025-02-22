@@ -5,16 +5,16 @@ namespace Caskr.server.Services
 {
     public interface IStatusService
     {
-        Task<IEnumerable<Status?>> GetStatusesAsync();
+        Task<IEnumerable<Status>> GetStatusesAsync();
         Task<Status?> GetStatusAsync(int id);
-        Task AddStatusAsync(Status? status);
-        Task UpdateStatusAsync(Status status);
+        Task<Status> AddStatusAsync(Status? status);
+        Task<Status> UpdateStatusAsync(Status status);
         Task DeleteStatusAsync(int id);
     }
 
     public class StatusService(IStatusRepository statusRepository) : IStatusService
     {
-        public async Task<IEnumerable<Status?>> GetStatusesAsync()
+        public async Task<IEnumerable<Status>> GetStatusesAsync()
         {
             return await statusRepository.GetStatusesAsync();
         }
@@ -22,13 +22,13 @@ namespace Caskr.server.Services
         {
             return await statusRepository.GetStatusAsync(id);
         }
-        public async Task AddStatusAsync(Status? status)
+        public async Task<Status> AddStatusAsync(Status? status)
         {
-            await statusRepository.AddStatusAsync(status);
+            return await statusRepository.AddStatusAsync(status);
         }
-        public async Task UpdateStatusAsync(Status status)
+        public async Task<Status> UpdateStatusAsync(Status status)
         {
-            await statusRepository.UpdateStatusAsync(status);
+            return await statusRepository.UpdateStatusAsync(status);
         }
         public async Task DeleteStatusAsync(int id)
         {

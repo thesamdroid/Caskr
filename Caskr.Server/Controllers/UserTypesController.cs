@@ -1,32 +1,25 @@
 ﻿using Caskr.server.Models;
+using Caskr.server.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Caskr.server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserTypesController : ControllerBase
+    public class UserTypesController(IUserTypesService userTypesService) : ControllerBase
     {
-        private readonly CaskrDbContext _context;
-
-        public UserTypesController(CaskrDbContext context)
-        {
-            _context = context;
-        }
-
         // GET: api/UserTypes
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserType>>> GetUserTypes()
         {
-            return await _context.UserTypes.ToListAsync();
+            return (await userTypesService.GetUserTypesAsync()).ToList();
         }
 
         // GET: api/UserTypes/5
         [HttpGet("{id}")]
         public async Task<ActionResult<UserType>> GetUserType(int id)
         {
-            var userType = await _context.UserTypes.FindAsync(id);
+            var userType = await userTypesService.GetUserTypeAsync(id);
 
             if (userType == null)
             {
@@ -39,32 +32,13 @@ namespace Caskr.server.Controllers
         // PUT: api/UserTypes/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUserType(int id, UserType userType)
+        public async Task<ActionResult<UserType>> PutUserType(int id, UserType userType)
         {
             if (id != userType.Id)
             {
                 return BadRequest();
             }
-
-            _context.Entry(userType).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UserTypeExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            return await userTypesService.UpdateUserTypeAsync(userType);
         }
 
         // POST: api/UserTypes
@@ -72,45 +46,24 @@ namespace Caskr.server.Controllers
         [HttpPost]
         public async Task<ActionResult<UserType>> PostUserType(UserType? userType)
         {
-            _context.UserTypes.Add(userType);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (UserTypeExists(userType.Id))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            var createdUserType = await userTypesService.AddUserTypeAsync(userType);
 
-            return CreatedAtAction("GetUserType", new { id = userType.Id }, userType);
+            return CreatedAtAction("GetUserType", new { id = createdUserType.Id }, createdUserType);
         }
 
         // DELETE: api/UserTypes/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUserType(int id)
         {
-            var userType = await _context.UserTypes.FindAsync(id);
+            var userType = await userTypesService.GetUserTypeAsync(id);
             if (userType == null)
             {
                 return NotFound();
             }
 
-            _context.UserTypes.Remove(userType);
-            await _context.SaveChangesAsync();
+            await userTypesService.DeleteUserTypeAsync(id);
 
             return NoContent();
-        }
-
-        private bool UserTypeExists(int id)
-        {
-            return _context.UserTypes.Any(e => e.Id == id);
         }
     }
 }

@@ -5,32 +5,34 @@ namespace Caskr.server.Repos
 {
     public interface IUsersRepository
     {
-        Task<IEnumerable<User?>> GetUsersAsync();
+        Task<IEnumerable<User>> GetUsersAsync();
         Task<User?> GetUserAsync(int id);
-        Task AddUserAsync(User? user);
-        Task UpdateUserAsync(User user);
+        Task<User> AddUserAsync(User? user);
+        Task<User> UpdateUserAsync(User user);
         Task DeleteUserAsync(int id);
     }
 
     public class UsersRepository(CaskrDbContext dbContext) : IUsersRepository
     {
-        public async Task<IEnumerable<User?>> GetUsersAsync()
+        public async Task<IEnumerable<User>> GetUsersAsync()
         {
-            return await dbContext.Users.ToListAsync();
+            return (await dbContext.Users.ToListAsync())!;
         }
         public async Task<User?> GetUserAsync(int id)
         {
             return await dbContext.Users.FindAsync(id);
         }
-        public async Task AddUserAsync(User? user)
+        public async Task<User> AddUserAsync(User? user)
         {
-            await dbContext.Users.AddAsync(user);
+            var createdUser = await dbContext.Users.AddAsync(user);
             await dbContext.SaveChangesAsync();
+            return createdUser.Entity!;
         }
-        public async Task UpdateUserAsync(User user)
+        public async Task<User> UpdateUserAsync(User user)
         {
             dbContext.Entry(user).State = EntityState.Modified;
             await dbContext.SaveChangesAsync();
+            return (await GetUserAsync(user.Id))!;
         }
         public async Task DeleteUserAsync(int id)
         {

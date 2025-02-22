@@ -5,16 +5,16 @@ namespace Caskr.server.Services
 {
     public interface IUserTypesService
     {
-        Task<IEnumerable<UserType?>> GetUserTypesAsync();
+        Task<IEnumerable<UserType>> GetUserTypesAsync();
         Task<UserType?> GetUserTypeAsync(int id);
-        Task AddUserTypeAsync(UserType? userType);
-        Task UpdateUserTypeAsync(UserType userType);
+        Task<UserType> AddUserTypeAsync(UserType? userType);
+        Task<UserType> UpdateUserTypeAsync(UserType userType);
         Task DeleteUserTypeAsync(int id);
     }
 
     public class UserTypesService(IUserTypesRepository userTypesRepository) : IUserTypesService
     {
-        public async Task<IEnumerable<UserType?>> GetUserTypesAsync()
+        public async Task<IEnumerable<UserType>> GetUserTypesAsync()
         {
             return await userTypesRepository.GetUserTypesAsync();
         }
@@ -24,14 +24,14 @@ namespace Caskr.server.Services
             return await userTypesRepository.GetUserTypeAsync(id);
         }
 
-        public async Task AddUserTypeAsync(UserType? userType)
+        public async Task<UserType> AddUserTypeAsync(UserType? userType)
         {
-            await userTypesRepository.AddUserTypeAsync(userType);
+            return await userTypesRepository.AddUserTypeAsync(userType);
         }
 
-        public async Task UpdateUserTypeAsync(UserType userType)
+        public async Task<UserType> UpdateUserTypeAsync(UserType userType)
         {
-            await userTypesRepository.UpdateUserTypeAsync(userType);
+            return await userTypesRepository.UpdateUserTypeAsync(userType);
         }
 
         public async Task DeleteUserTypeAsync(int id)
