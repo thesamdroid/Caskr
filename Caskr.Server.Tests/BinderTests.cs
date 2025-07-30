@@ -12,7 +12,7 @@ public class BinderTests
     public void BindServicesRegistersTypicalDependencies()
     {
         var services = new ServiceCollection();
-        services.BindServices();
+        services.BindServices(null);
         var provider = services.BuildServiceProvider();
 
         var usersService = provider.GetService<IUsersService>();
