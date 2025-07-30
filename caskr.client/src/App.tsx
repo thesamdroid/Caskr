@@ -1,56 +1,64 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 
-interface Forecast {
-    date: string;
-    temperatureC: number;
-    temperatureF: number;
-    summary: string;
+interface Order {
+    id: number;
+    name: string;
+    statusId: number;
+}
+
+interface Status {
+    id: number;
+    name: string;
 }
 
 function App() {
-    const [forecasts, setForecasts] = useState<Forecast[]>();
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [statuses, setStatuses] = useState<Status[]>([]);
 
     useEffect(() => {
-        populateWeatherData();
+        void fetchOrders();
+        void fetchStatuses();
     }, []);
 
-    const contents = forecasts === undefined
-        ? <p><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationreact">https://aka.ms/jspsintegrationreact</a> for more details.</em></p>
-        : <table className="table table-striped" aria-labelledby="tableLabel">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Temp. (C)</th>
-                    <th>Temp. (F)</th>
-                    <th>Summary</th>
-                </tr>
-            </thead>
-            <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
-                    </tr>
-                )}
-            </tbody>
-        </table>;
+    const getStatusName = (id: number): string => {
+        const status = statuses.find((s) => s.id === id);
+        return status ? status.name : id.toString();
+    };
 
     return (
         <div>
-            <h1 id="tableLabel">Weather forecast</h1>
-            <p>This component demonstrates fetching data from the server.</p>
-            {contents}
+            <h1>Orders</h1>
+            <table className="table table-striped" aria-label="Orders table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {orders.map((order) => (
+                        <tr key={order.id}>
+                            <td>{order.name}</td>
+                            <td>{getStatusName(order.statusId)}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 
-    async function populateWeatherData() {
-        const response = await fetch('weatherforecast');
+    async function fetchOrders() {
+        const response = await fetch('api/orders');
         if (response.ok) {
-            const data = await response.json();
-            setForecasts(data);
+            setOrders(await response.json());
+        }
+    }
+
+    async function fetchStatuses() {
+        const response = await fetch('api/status');
+        if (response.ok) {
+            setStatuses(await response.json());
         }
     }
 }
