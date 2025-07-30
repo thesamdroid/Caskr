@@ -64,7 +64,7 @@ namespace Caskr.server.Controllers
                 return NotFound();
             }
 
-            usersService.DeleteUserAsync(id);
+            await usersService.DeleteUserAsync(id);
 
             return NoContent();
         }
