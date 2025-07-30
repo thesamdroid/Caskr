@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Caskr.server.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Caskr.server
 {
@@ -8,13 +9,9 @@ namespace Caskr.server
     {
         private static readonly string[] KnownSuffixes = new []{"Repository", "Service", "Helper"};
 
-        public static void BindServices(this IServiceCollection services)
+public static void BindServices(this IServiceCollection services, IConfiguration configuration)
         {
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .Build();
-            var connectionString = configuration["ConnectionStrings:CaskrDatabaseConnectionString"];
+            var connectionString = configuration.GetConnectionString("CaskrDatabaseConnectionString");
             
             services.AddDbContext<CaskrDbContext>(options =>
                 options.UseNpgsql(connectionString));

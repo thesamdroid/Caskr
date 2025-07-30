@@ -10,9 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<CaskrDbContext>();
-
-builder.Services.BindServices();
+builder.Services.BindServices(builder.Configuration);
 
 var app = builder.Build();
 
