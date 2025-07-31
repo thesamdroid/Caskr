@@ -1,25 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import './App.css';
-
-interface Order {
-    id: number;
-    name: string;
-    statusId: number;
-}
-
-interface Status {
-    id: number;
-    name: string;
-}
+import { fetchOrders } from './features/ordersSlice';
+import { fetchStatuses } from './features/statusSlice';
+import { useAppDispatch, useAppSelector } from './hooks';
 
 function App() {
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [statuses, setStatuses] = useState<Status[]>([]);
+    const dispatch = useAppDispatch();
+    const orders = useAppSelector((state) => state.orders.items);
+    const statuses = useAppSelector((state) => state.statuses.items);
 
     useEffect(() => {
-        void fetchOrders();
-        void fetchStatuses();
-    }, []);
+        dispatch(fetchOrders());
+        dispatch(fetchStatuses());
+    }, [dispatch]);
 
     const getStatusName = (id: number): string => {
         const status = statuses.find((s) => s.id === id);
@@ -47,20 +40,6 @@ function App() {
             </table>
         </div>
     );
-
-    async function fetchOrders() {
-        const response = await fetch('api/orders');
-        if (response.ok) {
-            setOrders(await response.json());
-        }
-    }
-
-    async function fetchStatuses() {
-        const response = await fetch('api/status');
-        if (response.ok) {
-            setStatuses(await response.json());
-        }
-    }
 }
 
 export default App;
