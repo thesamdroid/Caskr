@@ -11,6 +11,32 @@ export const fetchStatuses = createAsyncThunk('statuses/fetchStatuses', async ()
   return (await response.json()) as Status[]
 })
 
+export const addStatus = createAsyncThunk('statuses/addStatus', async (status: Omit<Status, 'id'>) => {
+  const response = await fetch('api/status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(status)
+  })
+  if (!response.ok) throw new Error('Failed to add status')
+  return (await response.json()) as Status
+})
+
+export const updateStatus = createAsyncThunk('statuses/updateStatus', async (status: Status) => {
+  const response = await fetch(`api/status/${status.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(status)
+  })
+  if (!response.ok) throw new Error('Failed to update status')
+  return (await response.json()) as Status
+})
+
+export const deleteStatus = createAsyncThunk('statuses/deleteStatus', async (id: number) => {
+  const response = await fetch(`api/status/${id}`, { method: 'DELETE' })
+  if (!response.ok) throw new Error('Failed to delete status')
+  return id
+})
+
 interface StatusState {
   items: Status[]
 }
@@ -24,6 +50,16 @@ const statusSlice = createSlice({
   extraReducers: builder => {
     builder.addCase(fetchStatuses.fulfilled, (state, action) => {
       state.items = action.payload
+    })
+    builder.addCase(addStatus.fulfilled, (state, action) => {
+      state.items.push(action.payload)
+    })
+    builder.addCase(updateStatus.fulfilled, (state, action) => {
+      const index = state.items.findIndex(s => s.id === action.payload.id)
+      if (index !== -1) state.items[index] = action.payload
+    })
+    builder.addCase(deleteStatus.fulfilled, (state, action) => {
+      state.items = state.items.filter(s => s.id !== action.payload)
     })
   }
 })
