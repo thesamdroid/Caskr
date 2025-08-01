@@ -1,45 +1,30 @@
-import { useEffect } from 'react';
-import './App.css';
-import { fetchOrders } from './features/ordersSlice';
-import { fetchStatuses } from './features/statusSlice';
-import { useAppDispatch, useAppSelector } from './hooks';
+import './App.css'
+import { Link, Route, Routes } from 'react-router-dom'
+import OrdersPage from './pages/OrdersPage'
+import ProductsPage from './pages/ProductsPage'
+import StatusesPage from './pages/StatusesPage'
+import UsersPage from './pages/UsersPage'
+import UserTypesPage from './pages/UserTypesPage'
 
 function App() {
-    const dispatch = useAppDispatch();
-    const orders = useAppSelector((state) => state.orders.items);
-    const statuses = useAppSelector((state) => state.statuses.items);
-
-    useEffect(() => {
-        dispatch(fetchOrders());
-        dispatch(fetchStatuses());
-    }, [dispatch]);
-
-    const getStatusName = (id: number): string => {
-        const status = statuses.find((s) => s.id === id);
-        return status ? status.name : id.toString();
-    };
-
-    return (
-        <div>
-            <h1>Orders</h1>
-            <table className="table table-striped" aria-label="Orders table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {orders.map((order) => (
-                        <tr key={order.id}>
-                            <td>{order.name}</td>
-                            <td>{getStatusName(order.statusId)}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
+  return (
+    <div>
+      <nav>
+        <Link to="/">Orders</Link> |{' '}
+        <Link to="/products">Products</Link> |{' '}
+        <Link to="/statuses">Statuses</Link> |{' '}
+        <Link to="/users">Users</Link> |{' '}
+        <Link to="/usertypes">User Types</Link>
+      </nav>
+      <Routes>
+        <Route path="/" element={<OrdersPage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/statuses" element={<StatusesPage />} />
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="/usertypes" element={<UserTypesPage />} />
+      </Routes>
+    </div>
+  )
 }
 
-export default App;
+export default App
