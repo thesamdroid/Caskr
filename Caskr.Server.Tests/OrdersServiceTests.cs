@@ -18,7 +18,7 @@ public class OrdersServiceTests
     [Fact]
     public async Task GetOrdersAsync_ReturnsRepositoryResults()
     {
-        var expected = new[] { new Order { Id = 1 } };
+        var expected = new[] { new Order { Id = 1, StatusId = StatusType.ResearchAndDevelopment } };
         _repo.Setup(r => r.GetOrdersAsync()).ReturnsAsync(expected);
 
         var result = await _service.GetOrdersAsync();
@@ -29,7 +29,7 @@ public class OrdersServiceTests
     [Fact]
     public async Task GetOrderAsync_DelegatesToRepository()
     {
-        var expected = new Order { Id = 2 };
+        var expected = new Order { Id = 2, StatusId = StatusType.AssetCreation };
         _repo.Setup(r => r.GetOrderAsync(2)).ReturnsAsync(expected);
 
         var result = await _service.GetOrderAsync(2);
@@ -40,7 +40,7 @@ public class OrdersServiceTests
     [Fact]
     public async Task AddOrderAsync_DelegatesToRepository()
     {
-        var order = new Order { Id = 3 };
+        var order = new Order { Id = 3, StatusId = StatusType.TtbApproval };
         _repo.Setup(r => r.AddOrderAsync(order)).ReturnsAsync(order);
 
         var result = await _service.AddOrderAsync(order);
@@ -51,7 +51,7 @@ public class OrdersServiceTests
     [Fact]
     public async Task UpdateOrderAsync_DelegatesToRepository()
     {
-        var order = new Order { Id = 4 };
+        var order = new Order { Id = 4, StatusId = StatusType.Ordering };
         _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
 
         var result = await _service.UpdateOrderAsync(order);
