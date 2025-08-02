@@ -18,7 +18,7 @@ public class StatusServiceTests
     [Fact]
     public async Task GetStatusesAsync_ReturnsRepositoryResults()
     {
-        var expected = new[] { new Status { Id = 1 } };
+        var expected = new[] { new Status { Id = (int)StatusType.ResearchAndDevelopment } };
         _repo.Setup(r => r.GetStatusesAsync()).ReturnsAsync(expected);
 
         var result = await _service.GetStatusesAsync();
@@ -29,10 +29,10 @@ public class StatusServiceTests
     [Fact]
     public async Task GetStatusAsync_DelegatesToRepository()
     {
-        var expected = new Status { Id = 2 };
-        _repo.Setup(r => r.GetStatusAsync(2)).ReturnsAsync(expected);
+        var expected = new Status { Id = (int)StatusType.AssetCreation };
+        _repo.Setup(r => r.GetStatusAsync((int)StatusType.AssetCreation)).ReturnsAsync(expected);
 
-        var result = await _service.GetStatusAsync(2);
+        var result = await _service.GetStatusAsync((int)StatusType.AssetCreation);
 
         Assert.Equal(expected, result);
     }
@@ -40,7 +40,7 @@ public class StatusServiceTests
     [Fact]
     public async Task AddStatusAsync_DelegatesToRepository()
     {
-        var status = new Status { Id = 3 };
+        var status = new Status { Id = (int)StatusType.TtbApproval };
         _repo.Setup(r => r.AddStatusAsync(status)).ReturnsAsync(status);
 
         var result = await _service.AddStatusAsync(status);
@@ -51,7 +51,7 @@ public class StatusServiceTests
     [Fact]
     public async Task UpdateStatusAsync_DelegatesToRepository()
     {
-        var status = new Status { Id = 4 };
+        var status = new Status { Id = (int)StatusType.Ordering };
         _repo.Setup(r => r.UpdateStatusAsync(status)).ReturnsAsync(status);
 
         var result = await _service.UpdateStatusAsync(status);
@@ -62,10 +62,10 @@ public class StatusServiceTests
     [Fact]
     public async Task DeleteStatusAsync_DelegatesToRepository()
     {
-        _repo.Setup(r => r.DeleteStatusAsync(5)).Returns(Task.CompletedTask);
+        _repo.Setup(r => r.DeleteStatusAsync((int)StatusType.OhlqListing)).Returns(Task.CompletedTask);
 
-        await _service.DeleteStatusAsync(5);
+        await _service.DeleteStatusAsync((int)StatusType.OhlqListing);
 
-        _repo.Verify(r => r.DeleteStatusAsync(5), Times.Once);
+        _repo.Verify(r => r.DeleteStatusAsync((int)StatusType.OhlqListing), Times.Once);
     }
 }

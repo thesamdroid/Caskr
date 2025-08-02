@@ -7,10 +7,13 @@ INSERT INTO public.user_type (id, name) VALUES
     (3, 'Retailer');
 
 -- Order status values
-INSERT INTO public.status (name) VALUES
-    ('Placed'),
-    ('In Transit'),
-    ('Delivered');
+INSERT INTO public.status (id, name) VALUES
+    (1, 'Research & Development'),
+    (2, 'Asset Creation'),
+    (3, 'TTB Approval'),
+    (4, 'Ordering'),
+    (5, 'OHLQ Listing'),
+    (6, 'National Listing');
 
 -- Users
 INSERT INTO public.users (id, name, email, user_type_id) VALUES
