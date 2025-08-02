@@ -8,11 +8,13 @@ namespace Caskr.Server.Tests;
 public class OrdersServiceTests
 {
     private readonly Mock<IOrdersRepository> _repo = new();
+    private readonly Mock<IUsersRepository> _usersRepo = new();
+    private readonly Mock<IEmailService> _email = new();
     private readonly IOrdersService _service;
 
     public OrdersServiceTests()
     {
-        _service = new OrdersService(_repo.Object);
+        _service = new OrdersService(_repo.Object, _usersRepo.Object, _email.Object);
     }
 
     [Fact]
@@ -51,12 +53,28 @@ public class OrdersServiceTests
     [Fact]
     public async Task UpdateOrderAsync_DelegatesToRepository()
     {
-        var order = new Order { Id = 4, StatusId = StatusType.Ordering };
+        var order = new Order { Id = 4, OwnerId = 1, StatusId = StatusType.Ordering };
+        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 4, OwnerId = 1, StatusId = StatusType.AssetCreation });
         _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
 
         var result = await _service.UpdateOrderAsync(order);
 
         Assert.Equal(order, result);
+        _email.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateOrderAsync_StatusChangedToTtbApproval_SendsEmail()
+    {
+        var order = new Order { Id = 6, OwnerId = 2, StatusId = StatusType.TtbApproval, Name = "Order" };
+        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 6, OwnerId = 2, StatusId = StatusType.AssetCreation });
+        _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
+        var user = new User { Id = 2, Email = "owner@example.com", Name = "Owner" };
+        _usersRepo.Setup(r => r.GetUserAsync(order.OwnerId)).ReturnsAsync(user);
+
+        await _service.UpdateOrderAsync(order);
+
+        _email.Verify(e => e.SendEmailAsync(user.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
