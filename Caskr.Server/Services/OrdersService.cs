@@ -12,7 +12,7 @@ namespace Caskr.server.Services
         Task DeleteOrderAsync(int id);
     }
 
-    public class OrdersService(IOrdersRepository ordersRepository) : IOrdersService
+    public class OrdersService(IOrdersRepository ordersRepository, IUsersRepository usersRepository, IEmailService emailService) : IOrdersService
     {
         public async Task<IEnumerable<Order>> GetOrdersAsync()
         {
@@ -31,7 +31,17 @@ namespace Caskr.server.Services
 
         public async Task<Order> UpdateOrderAsync(Order order)
         {
-            return await ordersRepository.UpdateOrderAsync(order);
+            var existing = await ordersRepository.GetOrderAsync(order.Id);
+            var updated = await ordersRepository.UpdateOrderAsync(order);
+            if (existing?.StatusId != StatusType.TtbApproval && updated.StatusId == StatusType.TtbApproval)
+            {
+                var user = await usersRepository.GetUserAsync(updated.OwnerId);
+                if (user != null)
+                {
+                    await emailService.SendEmailAsync(user.Email, "Order requires TTB approval", $"Order '{updated.Name}' has moved to TTB Approval.");
+                }
+            }
+            return updated;
         }
 
         public async Task DeleteOrderAsync(int id)

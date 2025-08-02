@@ -17,10 +17,10 @@ INSERT INTO public.status (id, name) VALUES
 
 -- Users
 INSERT INTO public.users (id, name, email, user_type_id) VALUES
-    (1, 'Jack Daniels', 'jack@daniels.com', 1),
-    (2, 'Jim Beam', 'jim@beam.com', 1),
-    (3, 'Jameson', 'jameson@irishwhiskey.com', 2),
-    (4, 'Makers Mark', 'mark@makers.com', 3);
+    (1, 'Jack Daniels', 'shaw.samuelj+caskrtest@gmail.com', 1),
+    (2, 'Jim Beam', 'shaw.samuelj+caskrtest@gmail.com', 1),
+    (3, 'Jameson', 'shaw.samuelj+caskrtest@gmail.com', 2),
+    (4, 'Makers Mark', 'shaw.samuelj+caskrtest@gmail.com', 3);
 
 -- Products
 INSERT INTO public.products (id, owner_id, notes) VALUES

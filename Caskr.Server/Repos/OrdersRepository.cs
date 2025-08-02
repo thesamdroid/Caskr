@@ -21,7 +21,7 @@ namespace Caskr.server.Repos
         }
         public async Task<Order?> GetOrderAsync(int id)
         {
-            return await dbContext.Orders.FindAsync(id);
+            return await dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
         }
         public async Task<Order> AddOrderAsync(Order? order)
         {
