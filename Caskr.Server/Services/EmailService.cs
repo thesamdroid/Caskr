@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
@@ -13,17 +13,24 @@ namespace Caskr.server.Services
     public class EmailService : IEmailService
     {
         private readonly ILogger<EmailService> _logger;
-        private readonly SendGridClient? _client;
+        private readonly ISendGridClient? _client;
         private readonly string? _fromEmail;
         private readonly string? _fromName;
 
-        public EmailService(IConfiguration config, ILogger<EmailService> logger)
+        public EmailService(IConfiguration config, ILogger<EmailService> logger, ISendGridClient? client = null)
         {
             _logger = logger;
-            var apiKey = config["SendGrid:ApiKey"];
-            if (!string.IsNullOrEmpty(apiKey))
+            if (client != null)
             {
-                _client = new SendGridClient(apiKey);
+                _client = client;
+            }
+            else
+            {
+                var apiKey = config["SendGrid:ApiKey"];
+                if (!string.IsNullOrEmpty(apiKey))
+                {
+                    _client = new SendGridClient(apiKey);
+                }
             }
 
             _fromEmail = config["SendGrid:FromEmail"];
