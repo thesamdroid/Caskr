@@ -33,7 +33,7 @@ namespace Caskr.server.Services
         {
             var existing = await ordersRepository.GetOrderAsync(order.Id);
             var updated = await ordersRepository.UpdateOrderAsync(order);
-            if (existing?.StatusId != StatusType.TtbApproval && updated.StatusId == StatusType.TtbApproval)
+            if (existing?.StatusId != (int)StatusType.TtbApproval && updated.StatusId == (int)StatusType.TtbApproval)
             {
                 var user = await usersRepository.GetUserAsync(updated.OwnerId);
                 if (user != null)
