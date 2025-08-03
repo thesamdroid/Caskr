@@ -10,7 +10,7 @@ public partial class Order
 
     public DateOnly CreatedDate { get; set; }
 
-    public StatusType StatusId { get; set; }
+    public int StatusId { get; set; }
 
     public virtual User Owner { get; set; } = null!;
 
