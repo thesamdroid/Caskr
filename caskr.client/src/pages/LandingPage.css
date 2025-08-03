@@ -1,0 +1,39 @@
+.landing {
+  padding: 20px;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.orders-table th,
+.orders-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+.create-button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.create-button:hover {
+  background-color: #0056b3;
+}
+
+.order-form input,
+.order-form select {
+  margin-right: 10px;
+  padding: 6px;
+}
+
+.order-form button {
+  padding: 6px 12px;
+}
