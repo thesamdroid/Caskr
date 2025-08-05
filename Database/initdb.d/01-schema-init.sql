@@ -153,6 +153,41 @@ ALTER SEQUENCE public."Status_id_seq" OWNED BY public.status.id;
 
 
 --
+-- Name: status_task; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.status_task (
+    id integer NOT NULL,
+    status_id integer NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE public.status_task OWNER TO postgres;
+
+--
+-- Name: StatusTask_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."StatusTask_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public."StatusTask_id_seq" OWNER TO postgres;
+
+--
+-- Name: StatusTask_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."StatusTask_id_seq" OWNED BY public.status_task.id;
+
+
+--
 -- TOC entry 223 (class 1259 OID 16404)
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
@@ -250,6 +285,12 @@ ALTER TABLE ONLY public.orders ALTER COLUMN status_id SET DEFAULT nextval('publi
 
 ALTER TABLE ONLY public.status ALTER COLUMN id SET DEFAULT nextval('public."Status_id_seq"'::regclass);
 
+--
+-- Name: status_task id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.status_task ALTER COLUMN id SET DEFAULT nextval('public."StatusTask_id_seq"'::regclass);
+
 
 --
 -- TOC entry 3278 (class 2604 OID 16414)
@@ -275,6 +316,13 @@ ALTER TABLE ONLY public.orders
 
 ALTER TABLE ONLY public.status
     ADD CONSTRAINT "Status_pkey" PRIMARY KEY (id);
+
+--
+-- Name: status_task StatusTask_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.status_task
+    ADD CONSTRAINT "StatusTask_pkey" PRIMARY KEY (id);
 
 
 --
@@ -311,6 +359,13 @@ ALTER TABLE ONLY public.user_type
 
 ALTER TABLE ONLY public.products
     ADD CONSTRAINT fk_owner_users FOREIGN KEY (owner_id) REFERENCES public.users(id);
+
+--
+-- Name: status_task fk_statustask_statusid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.status_task
+    ADD CONSTRAINT fk_statustask_statusid FOREIGN KEY (status_id) REFERENCES public.status(id);
 
 
 --
