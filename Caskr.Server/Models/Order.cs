@@ -1,5 +1,7 @@
 ﻿namespace Caskr.server.Models;
 
+using System;
+
 public partial class Order
 {
     public int Id { get; set; }
@@ -8,7 +10,9 @@ public partial class Order
 
     public int OwnerId { get; set; }
 
-    public DateOnly CreatedDate { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
 
     public int StatusId { get; set; }
 

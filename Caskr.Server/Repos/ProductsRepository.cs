@@ -1,5 +1,6 @@
 ﻿using Caskr.server.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Caskr.server.Repos
 {
@@ -24,12 +25,19 @@ namespace Caskr.server.Repos
         }
         public async Task<Product> AddProductAsync(Product? product)
         {
+            if (product is null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+            product.CreatedAt = DateTime.UtcNow;
+            product.UpdatedAt = DateTime.UtcNow;
             var createdProduct = await dbContext.Products.AddAsync(product);
             await dbContext.SaveChangesAsync();
             return createdProduct.Entity!;
         }
         public async Task<Product> UpdateProductAsync(Product product)
         {
+            product.UpdatedAt = DateTime.UtcNow;
             dbContext.Entry(product).State = EntityState.Modified;
             await dbContext.SaveChangesAsync();
             return (await GetProductAsync(product.Id))!;

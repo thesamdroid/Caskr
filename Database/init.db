@@ -32,7 +32,8 @@ CREATE TABLE public.orders (
     id integer NOT NULL,
     name text NOT NULL,
     owner_id integer NOT NULL,
-    created_date date DEFAULT CURRENT_DATE NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     status_id integer NOT NULL
 );
 
