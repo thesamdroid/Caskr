@@ -16,12 +16,16 @@ namespace Caskr.server.Repos
     {
         public async Task<IEnumerable<Status>> GetStatusesAsync()
         {
-            return (await dbContext.Statuses.ToListAsync())!;
+            return (await dbContext.Statuses
+                .Include(s => s.StatusTasks)
+                .ToListAsync())!;
         }
 
         public async Task<Status?> GetStatusAsync(int id)
         {
-            return await dbContext.Statuses.FindAsync(id);
+            return await dbContext.Statuses
+                .Include(s => s.StatusTasks)
+                .SingleOrDefaultAsync(s => s.Id == id);
         }
 
         public async Task<Status> AddStatusAsync(Status? status)
