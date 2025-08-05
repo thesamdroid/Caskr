@@ -19,6 +19,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<Status?> Statuses { get; set; }
 
+    public virtual DbSet<StatusTask?> StatusTasks { get; set; }
+
     public virtual DbSet<User?> Users { get; set; }
 
     public virtual DbSet<UserType?> UserTypes { get; set; }
@@ -84,6 +86,24 @@ public partial class CaskrDbContext : DbContext
                 .HasDefaultValueSql("nextval('\"Status_id_seq\"'::regclass)")
                 .HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name");
+        });
+
+        modelBuilder.Entity<StatusTask>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("StatusTask_pkey");
+
+            entity.ToTable("status_task");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql(@"nextval('""StatusTask_id_seq""'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.StatusId).HasColumnName("status_id");
+            entity.Property(e => e.Name).HasColumnName("name");
+
+            entity.HasOne(d => d.Status).WithMany(p => p.StatusTasks)
+                .HasForeignKey(d => d.StatusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_statustask_statusid");
         });
 
         modelBuilder.Entity<User>(entity =>
