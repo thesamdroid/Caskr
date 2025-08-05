@@ -1,8 +1,15 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
+export interface StatusTask {
+  id: number
+  statusId: number
+  name: string
+}
+
 export interface Status {
   id: number
   name: string
+  statusTasks: StatusTask[]
 }
 
 export const fetchStatuses = createAsyncThunk('statuses/fetchStatuses', async () => {
@@ -11,7 +18,7 @@ export const fetchStatuses = createAsyncThunk('statuses/fetchStatuses', async ()
   return (await response.json()) as Status[]
 })
 
-export const addStatus = createAsyncThunk('statuses/addStatus', async (status: Omit<Status, 'id'>) => {
+export const addStatus = createAsyncThunk('statuses/addStatus', async (status: Omit<Status, 'id' | 'statusTasks'>) => {
   const response = await fetch('api/status', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -21,7 +28,7 @@ export const addStatus = createAsyncThunk('statuses/addStatus', async (status: O
   return (await response.json()) as Status
 })
 
-export const updateStatus = createAsyncThunk('statuses/updateStatus', async (status: Status) => {
+export const updateStatus = createAsyncThunk('statuses/updateStatus', async (status: Omit<Status, 'statusTasks'>) => {
   const response = await fetch(`api/status/${status.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

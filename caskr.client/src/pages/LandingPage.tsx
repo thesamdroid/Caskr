@@ -35,6 +35,11 @@ function LandingPage() {
     return statuses.find(s => s.id === id)?.name || id
   }
 
+  const getStatusTasks = (id: number) => {
+    const tasks = statuses.find(s => s.id === id)?.statusTasks
+    return tasks ? tasks.map(t => t.name).join(', ') : ''
+  }
+
   return (
     <div className='landing'>
       <h1>Current Orders</h1>
@@ -43,6 +48,7 @@ function LandingPage() {
           <tr>
             <th>Name</th>
             <th>Status</th>
+            <th>Tasks</th>
           </tr>
         </thead>
         <tbody>
@@ -50,6 +56,7 @@ function LandingPage() {
             <tr key={o.id}>
               <td>{o.name}</td>
               <td>{getStatusName(o.statusId)}</td>
+              <td>{getStatusTasks(o.statusId)}</td>
             </tr>
           ))}
         </tbody>
