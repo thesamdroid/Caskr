@@ -32,8 +32,8 @@ CREATE TABLE public.orders (
     id integer NOT NULL,
     name text NOT NULL,
     owner_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     status_id integer NOT NULL
 );
 
@@ -237,8 +237,8 @@ CREATE TABLE public.products (
     id integer NOT NULL,
     owner_id integer NOT NULL,
     notes text,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 

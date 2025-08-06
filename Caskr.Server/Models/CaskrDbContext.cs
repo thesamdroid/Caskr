@@ -38,10 +38,10 @@ public partial class CaskrDbContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnName("created_at");
+                .HasColumnName("created_date");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnName("updated_at");
+                .HasColumnName("updated_date");
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.OwnerId)
                 .HasDefaultValueSql("nextval('\"Orders_owner_id_seq\"'::regclass)")
@@ -74,10 +74,10 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.OwnerId).HasColumnName("owner_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnName("created_at");
+                .HasColumnName("created_date");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnName("updated_at");
+                .HasColumnName("updated_date");
 
             entity.HasOne(d => d.Owner).WithMany(p => p.Products)
                 .HasForeignKey(d => d.OwnerId)
