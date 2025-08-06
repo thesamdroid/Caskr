@@ -397,6 +397,60 @@ ALTER TABLE ONLY public.orders
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT fk_user_userstatus FOREIGN KEY (user_type_id) REFERENCES public.user_type(id) NOT VALID;
 
+--
+-- Name: completed_task; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.completed_task (
+    id integer NOT NULL,
+    order_id integer NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE public.completed_task OWNER TO postgres;
+
+--
+-- Name: CompletedTask_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."CompletedTask_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public."CompletedTask_id_seq" OWNER TO postgres;
+
+--
+-- Name: CompletedTask_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."CompletedTask_id_seq" OWNED BY public.completed_task.id;
+
+--
+-- Name: completed_task id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.completed_task ALTER COLUMN id SET DEFAULT nextval('public."CompletedTask_id_seq"'::regclass);
+
+--
+-- Name: completed_task CompletedTask_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.completed_task
+    ADD CONSTRAINT "CompletedTask_pkey" PRIMARY KEY (id);
+
+--
+-- Name: completed_task fk_completedtask_orderid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.completed_task
+    ADD CONSTRAINT fk_completedtask_orderid FOREIGN KEY (order_id) REFERENCES public.orders(id);
+
 
 -- Completed on 2025-02-16 19:36:39
 

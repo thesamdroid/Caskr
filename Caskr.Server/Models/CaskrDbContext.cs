@@ -25,6 +25,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<UserType?> UserTypes { get; set; }
 
+    public virtual DbSet<CompletedTask?> CompletedTasks { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -59,6 +61,24 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.StatusId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_statusid_stautusid");
+        });
+
+        modelBuilder.Entity<CompletedTask>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("CompletedTask_pkey");
+
+            entity.ToTable("completed_task");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('\"CompletedTask_id_seq\"'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.Name).HasColumnName("name");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.CompletedTasks)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_completedtask_orderid");
         });
 
         modelBuilder.Entity<Product>(entity =>

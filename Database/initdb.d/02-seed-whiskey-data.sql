@@ -65,3 +65,4 @@ SELECT pg_catalog.setval('"Orders_owner_id_seq"', (SELECT MAX(owner_id) FROM pub
 SELECT pg_catalog.setval('"Orders_status_id_seq"', (SELECT MAX(status_id) FROM public.orders));
 SELECT pg_catalog.setval('"Status_id_seq"', (SELECT MAX(id) FROM public.status));
 SELECT pg_catalog.setval('"StatusTask_id_seq"', (SELECT MAX(id) FROM public.status_task));
+SELECT pg_catalog.setval('"CompletedTask_id_seq"', (SELECT MAX(id) FROM public.completed_task));

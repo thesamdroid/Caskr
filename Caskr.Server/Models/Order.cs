@@ -19,4 +19,6 @@ public partial class Order
     public virtual User Owner { get; set; } = null!;
 
     public virtual Status Status { get; set; } = null!;
+
+    public virtual ICollection<CompletedTask> CompletedTasks { get; set; } = new List<CompletedTask>();
 }
