@@ -1,9 +1,16 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
+export interface CompletedTask {
+  id: number
+  orderId: number
+  name: string
+}
+
 export interface Order {
   id: number
   name: string
   statusId: number
+  completedTasks: CompletedTask[]
 }
 
 export const fetchOrders = createAsyncThunk('orders/fetchOrders', async () => {
@@ -12,7 +19,7 @@ export const fetchOrders = createAsyncThunk('orders/fetchOrders', async () => {
   return (await response.json()) as Order[]
 })
 
-export const addOrder = createAsyncThunk('orders/addOrder', async (order: Omit<Order, 'id'>) => {
+export const addOrder = createAsyncThunk('orders/addOrder', async (order: Omit<Order, 'id' | 'completedTasks'>) => {
   const response = await fetch('api/orders', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -22,7 +29,7 @@ export const addOrder = createAsyncThunk('orders/addOrder', async (order: Omit<O
   return (await response.json()) as Order
 })
 
-export const updateOrder = createAsyncThunk('orders/updateOrder', async (order: Order) => {
+export const updateOrder = createAsyncThunk('orders/updateOrder', async (order: Omit<Order, 'completedTasks'>) => {
   const response = await fetch(`api/orders/${order.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

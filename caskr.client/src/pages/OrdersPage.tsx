@@ -52,6 +52,15 @@ function OrdersPage() {
     return statuses.find(s => s.id === id)?.name || id
   }
 
+  const getOutstandingTasks = (order: Order) => {
+    const status = statuses.find(s => s.id === order.statusId)
+    if (!status) return []
+    const completed = order.completedTasks?.map(t => t.name) || []
+    return status.statusTasks
+      .filter(t => !completed.includes(t.name))
+      .map(t => t.name)
+  }
+
   return (
     <div>
       <h1>Orders</h1>
@@ -69,6 +78,7 @@ function OrdersPage() {
           <tr>
             <th>Name</th>
             <th>Status</th>
+            <th>Outstanding Tasks</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -93,6 +103,7 @@ function OrdersPage() {
                   getStatusName(o.statusId)
                 )}
               </td>
+              <td>{getOutstandingTasks(o).join(', ')}</td>
               <td>
                 {editing === o.id ? (
                   <>

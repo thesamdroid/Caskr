@@ -18,11 +18,18 @@ namespace Caskr.server.Repos
     {
         public async Task<IEnumerable<Order>> GetOrdersAsync()
         {
-            return (await dbContext.Orders.ToListAsync())!;
+            return await dbContext.Orders
+                .Include(o => o.CompletedTasks)
+                .AsNoTracking()
+                .ToListAsync();
         }
+
         public async Task<Order?> GetOrderAsync(int id)
         {
-            return await dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
+            return await dbContext.Orders
+                .Include(o => o.CompletedTasks)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Id == id);
         }
         public async Task<Order> AddOrderAsync(Order? order)
         {
@@ -34,7 +41,7 @@ namespace Caskr.server.Repos
             order.UpdatedAt = DateTime.UtcNow;
             var addedOrder = await dbContext.Orders.AddAsync(order);
             await dbContext.SaveChangesAsync();
-            return addedOrder.Entity!;
+            return (await GetOrderAsync(addedOrder.Entity.Id))!;
         }
         public async Task<Order> UpdateOrderAsync(Order order)
         {
