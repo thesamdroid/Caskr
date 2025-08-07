@@ -32,8 +32,15 @@ namespace Caskr.server.Services
             {
                 return null;
             }
-            var completed = order.CompletedTasks.Select(ct => ct.Name);
-            return order.Status.StatusTasks.Where(st => !completed.Contains(st.Name));
+            var completed = order.CompletedTasks.Select(ct => ct.Name).ToHashSet();
+            return order.Status.StatusTasks
+                .Where(st => !completed.Contains(st.Name))
+                .Select(st => new StatusTask
+                {
+                    Id = st.Id,
+                    StatusId = st.StatusId,
+                    Name = st.Name
+                });
         }
 
 

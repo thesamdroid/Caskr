@@ -104,8 +104,11 @@ public class OrdersServiceTests
         _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
 
         var result = await _service.GetOutstandingTasksAsync(orderId);
-
-        Assert.Equal(new[] { status.StatusTasks.ElementAt(1) }, result);
+        Assert.NotNull(result);
+        var task = Assert.Single(result);
+        Assert.Equal(2, task.Id);
+        Assert.Equal(1, task.StatusId);
+        Assert.Equal("Task2", task.Name);
     }
 
     [Fact]
