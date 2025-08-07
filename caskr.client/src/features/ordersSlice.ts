@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import type { StatusTask } from './statusSlice'
 
 export interface Order {
   id: number
@@ -38,11 +39,21 @@ export const deleteOrder = createAsyncThunk('orders/deleteOrder', async (id: num
   return id
 })
 
+export const fetchOutstandingTasks = createAsyncThunk(
+  'orders/fetchOutstandingTasks',
+  async (orderId: number) => {
+    const response = await fetch(`api/orders/${orderId}/outstanding-tasks`)
+    if (!response.ok) throw new Error('Failed to fetch outstanding tasks')
+    return { orderId, tasks: (await response.json()) as StatusTask[] }
+  }
+)
+
 interface OrdersState {
   items: Order[]
+  outstandingTasks: Record<number, StatusTask[]>
 }
 
-const initialState: OrdersState = { items: [] }
+const initialState: OrdersState = { items: [], outstandingTasks: {} }
 
 const ordersSlice = createSlice({
   name: 'orders',
@@ -61,6 +72,9 @@ const ordersSlice = createSlice({
     })
     builder.addCase(deleteOrder.fulfilled, (state, action) => {
       state.items = state.items.filter(o => o.id !== action.payload)
+    })
+    builder.addCase(fetchOutstandingTasks.fulfilled, (state, action) => {
+      state.outstandingTasks[action.payload.orderId] = action.payload.tasks
     })
   }
 })

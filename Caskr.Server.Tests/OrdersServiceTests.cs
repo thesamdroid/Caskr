@@ -2,6 +2,7 @@ using Caskr.server.Models;
 using Caskr.server.Repos;
 using Caskr.server.Services;
 using Moq;
+using System.Linq;
 
 namespace Caskr.Server.Tests;
 
@@ -75,6 +76,36 @@ public class OrdersServiceTests
         await _service.UpdateOrderAsync(order);
 
         _email.Verify(e => e.SendEmailAsync(user.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetOutstandingTasksAsync_ReturnsOutstandingTasks()
+    {
+        var orderId = 7;
+        var status = new Status
+        {
+            Id = 1,
+            StatusTasks = new List<StatusTask>
+            {
+                new StatusTask { Id = 1, StatusId = 1, Name = "Task1" },
+                new StatusTask { Id = 2, StatusId = 1, Name = "Task2" }
+            }
+        };
+        var order = new Order
+        {
+            Id = orderId,
+            StatusId = 1,
+            Status = status,
+            CompletedTasks = new List<CompletedTask>
+            {
+                new CompletedTask { Id = 1, OrderId = orderId, Name = "Task1" }
+            }
+        };
+        _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
+
+        var result = await _service.GetOutstandingTasksAsync(orderId);
+
+        Assert.Equal(new[] { status.StatusTasks.ElementAt(1) }, result);
     }
 
     [Fact]
