@@ -1,3 +1,4 @@
+using System.Linq;
 ﻿using Caskr.server.Models;
 using Caskr.server.Repos;
 
@@ -10,6 +11,7 @@ namespace Caskr.server.Services
         Task<Order> AddOrderAsync(Order? order);
         Task<Order> UpdateOrderAsync(Order order);
         Task DeleteOrderAsync(int id);
+        Task<IEnumerable<StatusTask>?> GetOutstandingTasksAsync(int orderId);
     }
 
     public class OrdersService(IOrdersRepository ordersRepository, IUsersRepository usersRepository, IEmailService emailService) : IOrdersService
@@ -23,6 +25,24 @@ namespace Caskr.server.Services
         {
             return await ordersRepository.GetOrderAsync(id);
         }   
+        public async Task<IEnumerable<StatusTask>?> GetOutstandingTasksAsync(int orderId)
+        {
+            var order = await ordersRepository.GetOrderWithTasksAsync(orderId);
+            if (order == null)
+            {
+                return null;
+            }
+            var completed = order.CompletedTasks.Select(ct => ct.Name).ToHashSet();
+            return order.Status.StatusTasks
+                .Where(st => !completed.Contains(st.Name))
+                .Select(st => new StatusTask
+                {
+                    Id = st.Id,
+                    StatusId = st.StatusId,
+                    Name = st.Name
+                });
+        }
+
 
         public async Task<Order> AddOrderAsync(Order? order)
         {

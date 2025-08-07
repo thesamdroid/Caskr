@@ -9,6 +9,7 @@ namespace Caskr.server.Repos
     {
         Task<IEnumerable<Order>> GetOrdersAsync();
         Task<Order?> GetOrderAsync(int id);
+        Task<Order?> GetOrderWithTasksAsync(int id);
         Task<Order> AddOrderAsync(Order? order);
         Task<Order> UpdateOrderAsync(Order order);
         Task DeleteOrderAsync(int id);
@@ -23,6 +24,15 @@ namespace Caskr.server.Repos
         public async Task<Order?> GetOrderAsync(int id)
         {
             return await dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
+        }
+        public async Task<Order?> GetOrderWithTasksAsync(int id)
+        {
+            return await dbContext.Orders
+                .Include(o => o.Status)
+                    .ThenInclude(s => s.StatusTasks)
+                .Include(o => o.CompletedTasks)
+                .AsNoTracking()
+                .SingleOrDefaultAsync(o => o.Id == id);
         }
         public async Task<Order> AddOrderAsync(Order? order)
         {

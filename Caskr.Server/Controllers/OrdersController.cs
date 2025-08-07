@@ -1,5 +1,6 @@
 ﻿using Caskr.server.Models;
 using Caskr.server.Services;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Caskr.server.Controllers
@@ -28,6 +29,17 @@ namespace Caskr.server.Controllers
             }
 
             return Ok(order);
+        }
+
+        [HttpGet("{id}/outstanding-tasks")]
+        public async Task<ActionResult<IEnumerable<StatusTask>>> GetOutstandingTasks(int id)
+        {
+            var tasks = await ordersService.GetOutstandingTasksAsync(id);
+            if (tasks == null)
+            {
+                return NotFound();
+            }
+            return Ok(tasks.ToList());
         }
 
         // PUT: api/Orders/5

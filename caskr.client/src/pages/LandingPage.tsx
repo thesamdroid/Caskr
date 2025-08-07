@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../hooks'
-import { fetchOrders, addOrder, Order } from '../features/ordersSlice'
+import { fetchOrders, addOrder, Order, fetchOutstandingTasks } from '../features/ordersSlice'
 import { fetchStatuses } from '../features/statusSlice'
 import './LandingPage.css'
 
@@ -8,6 +8,7 @@ function LandingPage() {
   const dispatch = useAppDispatch()
   const orders = useAppSelector(state => state.orders.items)
   const statuses = useAppSelector(state => state.statuses.items)
+  const outstandingTasks = useAppSelector(state => state.orders.outstandingTasks)
 
   const [showForm, setShowForm] = useState(false)
   const [newName, setNewName] = useState('')
@@ -17,6 +18,14 @@ function LandingPage() {
     dispatch(fetchOrders())
     dispatch(fetchStatuses())
   }, [dispatch])
+
+  useEffect(() => {
+    orders.forEach(o => {
+      if (!outstandingTasks[o.id]) {
+        dispatch(fetchOutstandingTasks(o.id))
+      }
+    })
+  }, [orders, outstandingTasks, dispatch])
 
   useEffect(() => {
     if (statuses.length > 0 && newStatus === 0) {
@@ -35,11 +44,6 @@ function LandingPage() {
     return statuses.find(s => s.id === id)?.name || id
   }
 
-  const getStatusTasks = (id: number) => {
-    const tasks = statuses.find(s => s.id === id)?.statusTasks
-    return tasks ? tasks.map(t => t.name).join(', ') : ''
-  }
-
   return (
     <div className='landing'>
       <h1>Current Orders</h1>
@@ -48,7 +52,7 @@ function LandingPage() {
           <tr>
             <th>Name</th>
             <th>Status</th>
-            <th>Tasks</th>
+            <th>Outstanding Tasks</th>
           </tr>
         </thead>
         <tbody>
@@ -56,7 +60,7 @@ function LandingPage() {
             <tr key={o.id}>
               <td>{o.name}</td>
               <td>{getStatusName(o.statusId)}</td>
-              <td>{getStatusTasks(o.statusId)}</td>
+              <td>{(outstandingTasks[o.id] ?? []).map(t => t.name).join(', ')}</td>
             </tr>
           ))}
         </tbody>
