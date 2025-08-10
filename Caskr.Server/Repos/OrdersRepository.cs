@@ -1,7 +1,8 @@
-﻿using Caskr.server.Models;
+using Caskr.server.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
+using System.Linq;
 
 namespace Caskr.server.Repos
 {
@@ -12,6 +13,7 @@ namespace Caskr.server.Repos
         Task<Order?> GetOrderWithTasksAsync(int id);
         Task<Order> AddOrderAsync(Order? order);
         Task<Order> UpdateOrderAsync(Order order);
+        Task AddTasksForStatusAsync(int orderId, int statusId);
         Task DeleteOrderAsync(int id);
     }
 
@@ -52,6 +54,32 @@ namespace Caskr.server.Repos
             dbContext.Entry(order).State = EntityState.Modified;
             await dbContext.SaveChangesAsync();
             return (await GetOrderAsync(order.Id))!;
+        }
+        public async Task AddTasksForStatusAsync(int orderId, int statusId)
+        {
+            var existingTaskNames = await dbContext.Tasks
+                .Where(t => t.OrderId == orderId)
+                .Select(t => t.Name)
+                .ToListAsync();
+
+            var statusTasks = await dbContext.StatusTasks
+                .Where(st => st.StatusId == statusId && !existingTaskNames.Contains(st.Name))
+                .ToListAsync();
+
+            if (statusTasks.Count == 0)
+            {
+                return;
+            }
+
+            var tasks = statusTasks.Select(st => new TaskItem
+            {
+                OrderId = orderId,
+                Name = st.Name,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            await dbContext.Tasks.AddRangeAsync(tasks);
+            await dbContext.SaveChangesAsync();
         }
         public async Task DeleteOrderAsync(int id)
         {

@@ -76,12 +76,12 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .ValueGeneratedOnAdd()
                 .HasColumnName("created_date");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_date");
             entity.Property(e => e.CompletedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("completed_date");
 
             entity.HasOne(d => d.Order).WithMany(p => p.Tasks)
