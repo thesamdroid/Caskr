@@ -16,6 +16,7 @@ public class OrdersServiceTests
 
     public OrdersServiceTests()
     {
+        _repo.Setup(r => r.AddTasksForStatusAsync(It.IsAny<int>(), It.IsAny<int>())).Returns(Task.CompletedTask);
         _service = new OrdersService(_repo.Object, _usersRepo.Object, _email.Object);
     }
 
@@ -53,7 +54,7 @@ public class OrdersServiceTests
     }
 
     [Fact]
-    public async Task UpdateOrderAsync_DelegatesToRepository()
+    public async Task UpdateOrderAsync_StatusChanged_CreatesTasks()
     {
         var order = new Order { Id = 4, OwnerId = 1, StatusId = (int)StatusType.Ordering };
         _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 4, OwnerId = 1, StatusId = (int)StatusType.AssetCreation });
@@ -62,6 +63,7 @@ public class OrdersServiceTests
         var result = await _service.UpdateOrderAsync(order);
 
         Assert.Equal(order, result);
+        _repo.Verify(r => r.AddTasksForStatusAsync(order.Id, order.StatusId), Times.Once);
         _email.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
@@ -76,7 +78,21 @@ public class OrdersServiceTests
 
         await _service.UpdateOrderAsync(order);
 
+        _repo.Verify(r => r.AddTasksForStatusAsync(order.Id, order.StatusId), Times.Once);
         _email.Verify(e => e.SendEmailAsync(user.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateOrderAsync_StatusUnchanged_DoesNotCreateTasks()
+    {
+        var order = new Order { Id = 8, OwnerId = 1, StatusId = (int)StatusType.AssetCreation };
+        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 8, OwnerId = 1, StatusId = (int)StatusType.AssetCreation });
+        _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
+
+        var result = await _service.UpdateOrderAsync(order);
+
+        Assert.Equal(order, result);
+        _repo.Verify(r => r.AddTasksForStatusAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
     [Fact]

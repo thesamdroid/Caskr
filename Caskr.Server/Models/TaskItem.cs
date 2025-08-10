@@ -14,7 +14,7 @@ public partial class TaskItem
 
     public DateTime UpdatedAt { get; set; }
 
-    public DateTime CompletedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
 
     public virtual Order Order { get; set; } = null!;
 }

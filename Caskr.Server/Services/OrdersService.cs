@@ -1,5 +1,5 @@
 using System.Linq;
-﻿using Caskr.server.Models;
+using Caskr.server.Models;
 using Caskr.server.Repos;
 
 namespace Caskr.server.Services
@@ -53,6 +53,10 @@ namespace Caskr.server.Services
         {
             var existing = await ordersRepository.GetOrderAsync(order.Id);
             var updated = await ordersRepository.UpdateOrderAsync(order);
+            if (existing?.StatusId != updated.StatusId)
+            {
+                await ordersRepository.AddTasksForStatusAsync(updated.Id, updated.StatusId);
+            }
             if (existing?.StatusId != (int)StatusType.TtbApproval && updated.StatusId == (int)StatusType.TtbApproval)
             {
                 var user = await usersRepository.GetUserAsync(updated.OwnerId);
