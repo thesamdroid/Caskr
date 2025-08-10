@@ -3,6 +3,7 @@ using Caskr.server.Repos;
 using Caskr.server.Services;
 using Moq;
 using System.Linq;
+using System;
 
 namespace Caskr.Server.Tests;
 
@@ -96,9 +97,9 @@ public class OrdersServiceTests
             Id = orderId,
             StatusId = 1,
             Status = status,
-            CompletedTasks = new List<CompletedTask>
+            Tasks = new List<TaskItem>
             {
-                new CompletedTask { Id = 1, OrderId = orderId, Name = "Task1" }
+                new TaskItem { Id = 1, OrderId = orderId, Name = "Task1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, CompletedAt = DateTime.UtcNow }
             }
         };
         _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);

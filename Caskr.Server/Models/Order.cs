@@ -20,5 +20,5 @@ public partial class Order
 
     public virtual Status Status { get; set; } = null!;
 
-    public virtual ICollection<CompletedTask> CompletedTasks { get; set; } = new List<CompletedTask>();
+    public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
 }

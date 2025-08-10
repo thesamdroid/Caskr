@@ -25,7 +25,7 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<UserType?> UserTypes { get; set; }
 
-    public virtual DbSet<CompletedTask?> CompletedTasks { get; set; }
+    public virtual DbSet<TaskItem?> Tasks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -63,22 +63,31 @@ public partial class CaskrDbContext : DbContext
                 .HasConstraintName("fk_statusid_stautusid");
         });
 
-        modelBuilder.Entity<CompletedTask>(entity =>
+        modelBuilder.Entity<TaskItem>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("CompletedTask_pkey");
+            entity.HasKey(e => e.Id).HasName("Task_pkey");
 
-            entity.ToTable("completed_task");
+            entity.ToTable("task");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("nextval('\"CompletedTask_id_seq\"'::regclass)")
+                .HasDefaultValueSql("nextval('\"Task_id_seq\"'::regclass)")
                 .HasColumnName("id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_date");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_date");
+            entity.Property(e => e.CompletedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("completed_date");
 
-            entity.HasOne(d => d.Order).WithMany(p => p.CompletedTasks)
+            entity.HasOne(d => d.Order).WithMany(p => p.Tasks)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_completedtask_orderid");
+                .HasConstraintName("fk_task_orderid");
         });
 
         modelBuilder.Entity<Product>(entity =>

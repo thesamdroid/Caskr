@@ -30,7 +30,7 @@ namespace Caskr.server.Repos
             return await dbContext.Orders
                 .Include(o => o.Status)
                     .ThenInclude(s => s.StatusTasks)
-                .Include(o => o.CompletedTasks)
+                .Include(o => o.Tasks)
                 .AsNoTracking()
                 .SingleOrDefaultAsync(o => o.Id == id);
         }
