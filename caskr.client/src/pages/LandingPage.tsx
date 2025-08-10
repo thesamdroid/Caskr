@@ -60,7 +60,13 @@ function LandingPage() {
             <tr key={o.id}>
               <td>{o.name}</td>
               <td>{getStatusName(o.statusId)}</td>
-              <td>{(outstandingTasks[o.id] ?? []).map(t => t.name).join(', ')}</td>
+              <td>
+                <ul className='tasks-list'>
+                  {(outstandingTasks[o.id] ?? []).map(t => (
+                    <li key={t.id}>{t.name}</li>
+                  ))}
+                </ul>
+              </td>
             </tr>
           ))}
         </tbody>
