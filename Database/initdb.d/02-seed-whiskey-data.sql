@@ -58,6 +58,21 @@ INSERT INTO public.orders (name, owner_id, status_id) VALUES
     ('Cameron Mitchel', 3, 3),
     ('92', 4, 4);
 
+-- Tasks for orders
+INSERT INTO public.task (order_id, name, completed_date) VALUES
+    -- Sinatra 2 (Research & Development)
+    (1, 'Determination of Spirit', CURRENT_TIMESTAMP),
+    (1, 'Proof', NULL),
+    -- Knob 25 (Asset Creation)
+    (2, 'UPC', CURRENT_TIMESTAMP),
+    (2, 'Bottle Labels', NULL),
+    -- Cameron Mitchel (TTB Approval)
+    (3, 'Formula', CURRENT_TIMESTAMP),
+    (3, 'COLA', NULL),
+    -- 92 (Ordering)
+    (4, 'Glass', CURRENT_TIMESTAMP),
+    (4, 'Labels', NULL);
+
 -- Sync sequences with inserted ids
 SELECT pg_catalog.setval('"Users_id_seq"', (SELECT MAX(id) FROM public.users));
 SELECT pg_catalog.setval('"Orders_id_seq"', (SELECT MAX(id) FROM public.orders));
