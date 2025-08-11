@@ -321,11 +321,11 @@ ALTER TABLE ONLY public.status
     ADD CONSTRAINT "Status_pkey" PRIMARY KEY (id);
 
 --
--- Name: status_task StatusTask_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: status_task StatusTasks_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.status_task
-    ADD CONSTRAINT "StatusTask_pkey" PRIMARY KEY (id);
+    ADD CONSTRAINT "StatusTasks_pkey" PRIMARY KEY (id);
 
 
 --
@@ -401,7 +401,7 @@ ALTER TABLE ONLY public.users
 -- Name: task; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.task (
+CREATE TABLE public.tasks (
     id integer NOT NULL,
     order_id integer NOT NULL,
     name text NOT NULL,
@@ -411,13 +411,13 @@ CREATE TABLE public.task (
 );
 
 
-ALTER TABLE public.task OWNER TO postgres;
+ALTER TABLE public.tasks OWNER TO postgres;
 
 --
 -- Name: Task_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public."Task_id_seq"
+CREATE SEQUENCE public."Tasks_id_seq"
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -426,33 +426,33 @@ CREATE SEQUENCE public."Task_id_seq"
     CACHE 1;
 
 
-ALTER SEQUENCE public."Task_id_seq" OWNER TO postgres;
+ALTER SEQUENCE public."Tasks_id_seq" OWNER TO postgres;
 
 --
 -- Name: Task_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public."Task_id_seq" OWNED BY public.task.id;
+ALTER SEQUENCE public."Tasks_id_seq" OWNED BY public.tasks.id;
 
 --
 -- Name: task id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.task ALTER COLUMN id SET DEFAULT nextval('public."Task_id_seq"'::regclass);
+ALTER TABLE ONLY public.tasks ALTER COLUMN id SET DEFAULT nextval('public."Tasks_id_seq"'::regclass);
 
 --
--- Name: task Task_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: task Tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.task
-    ADD CONSTRAINT "Task_pkey" PRIMARY KEY (id);
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT "Tasks_pkey" PRIMARY KEY (id);
 
 --
--- Name: task fk_task_orderid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: task fk_tasks_orderid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.task
-    ADD CONSTRAINT fk_task_orderid FOREIGN KEY (order_id) REFERENCES public.orders(id);
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT fk_tasks_orderid FOREIGN KEY (order_id) REFERENCES public.orders(id);
 
 
 -- Completed on 2025-02-16 19:36:39
