@@ -59,7 +59,7 @@ INSERT INTO public.orders (name, owner_id, status_id) VALUES
     ('92', 4, 4);
 
 -- Tasks for orders
-INSERT INTO public.task (order_id, name, completed_date) VALUES
+INSERT INTO public.tasks (order_id, name, completed_date) VALUES
     -- Sinatra 2 (Research & Development)
     (1, 'Determination of Spirit', CURRENT_TIMESTAMP),
     (1, 'Proof', NULL),
@@ -80,4 +80,4 @@ SELECT pg_catalog.setval('"Orders_owner_id_seq"', (SELECT MAX(owner_id) FROM pub
 SELECT pg_catalog.setval('"Orders_status_id_seq"', (SELECT MAX(status_id) FROM public.orders));
 SELECT pg_catalog.setval('"Status_id_seq"', (SELECT MAX(id) FROM public.status));
 SELECT pg_catalog.setval('"StatusTask_id_seq"', (SELECT MAX(id) FROM public.status_task));
-SELECT pg_catalog.setval('"Task_id_seq"', (SELECT MAX(id) FROM public.task));
+SELECT pg_catalog.setval('"Tasks_id_seq"', (SELECT MAX(id) FROM public.tasks));

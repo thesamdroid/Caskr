@@ -65,12 +65,12 @@ public partial class CaskrDbContext : DbContext
 
         modelBuilder.Entity<TaskItem>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("Task_pkey");
+            entity.HasKey(e => e.Id).HasName("Tasks_pkey");
 
-            entity.ToTable("task");
+            entity.ToTable("tasks");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("nextval('\"Task_id_seq\"'::regclass)")
+                .HasDefaultValueSql("nextval('\"Tasks_id_seq\"'::regclass)")
                 .HasColumnName("id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.Name).HasColumnName("name");
@@ -87,7 +87,7 @@ public partial class CaskrDbContext : DbContext
             entity.HasOne(d => d.Order).WithMany(p => p.Tasks)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_task_orderid");
+                .HasConstraintName("fk_tasks_orderid");
         });
 
         modelBuilder.Entity<Product>(entity =>
