@@ -197,7 +197,8 @@ CREATE TABLE public.users (
     id integer NOT NULL,
     name text NOT NULL,
     email text NOT NULL,
-    user_type_id integer NOT NULL
+    user_type_id integer NOT NULL,
+    company_id integer NOT NULL
 );
 
 
@@ -454,7 +455,70 @@ ALTER TABLE ONLY public.tasks
 ALTER TABLE ONLY public.tasks
     ADD CONSTRAINT fk_tasks_orderid FOREIGN KEY (order_id) REFERENCES public.orders(id);
 
+--
+-- Name: company; Type: TABLE; Schema: public; Owner: postgres
+--
 
+CREATE TABLE public.company (
+    id integer NOT NULL,
+    company_name text NOT NULL,
+    primary_contact_id integer NOT NULL,
+    created_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    renewal_date timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.company OWNER TO postgres;
+
+--
+-- Name: Company_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."Company_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public."Company_id_seq" OWNER TO postgres;
+
+--
+-- Name: Company_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."Company_id_seq" OWNED BY public.company.id;
+
+--
+-- Name: company id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.company ALTER COLUMN id SET DEFAULT nextval('public."Company_id_seq"'::regclass);
+
+--
+-- Name: company Company_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.company
+    ADD CONSTRAINT "Company_pkey" PRIMARY KEY (id);
+
+--
+-- Name: company fk_company_primary_contact; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.company
+    ADD CONSTRAINT fk_company_primary_contact FOREIGN KEY (primary_contact_id) REFERENCES public.users(id);
+
+--
+-- Name: users fk_user_company; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_user_company FOREIGN KEY (company_id) REFERENCES public.company(id);
+
+--
 -- Completed on 2025-02-16 19:36:39
 
 --

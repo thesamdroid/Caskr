@@ -39,11 +39,18 @@ INSERT INTO public.status_task (id, status_id, name) VALUES
     (20, 6, 'Product Listing');
 
 -- Users
-INSERT INTO public.users (id, name, email, user_type_id) VALUES
-    (1, 'Jack Daniels', 'shaw.samuelj+dackdaniels@gmail.com', 1),
-    (2, 'Jim Beam', 'shaw.samuelj+Beam@gmail.com', 1),
-    (3, 'Middle West Spirits', 'shaw.samuelj+mws@gmail.com', 2),
-    (4, 'Makers Mark', 'shaw.samuelj+makersmark@gmail.com', 3);
+INSERT INTO public.users (id, name, email, user_type_id, company_id) VALUES
+    (1, 'Jack Daniels', 'shaw.samuelj+dackdaniels@gmail.com', 1, 4),
+    (2, 'Jim Beam', 'shaw.samuelj+Beam@gmail.com', 1, 3),
+    (3, 'Middle West Spirits', 'shaw.samuelj+mws@gmail.com', 2, 1),
+    (4, 'Makers Mark', 'shaw.samuelj+makersmark@gmail.com', 3, 2);
+
+-- Companies
+INSERT INTO public.company (company_name, primary_contact_id, renewal_date) VALUES
+    ('Middle West', 3, CURRENT_TIMESTAMP + INTERVAL '1 year'),
+    ('Makers Mark', 4, CURRENT_TIMESTAMP + INTERVAL '1 year'),
+    ('Jim Beam', 2, CURRENT_TIMESTAMP + INTERVAL '1 year'),
+    ('Jack Daniels', 1, CURRENT_TIMESTAMP + INTERVAL '1 year');
 
 -- Products
 INSERT INTO public.products (id, owner_id, notes) VALUES
@@ -81,3 +88,4 @@ SELECT pg_catalog.setval('"Orders_status_id_seq"', (SELECT MAX(status_id) FROM p
 SELECT pg_catalog.setval('"Status_id_seq"', (SELECT MAX(id) FROM public.status));
 SELECT pg_catalog.setval('"StatusTask_id_seq"', (SELECT MAX(id) FROM public.status_task));
 SELECT pg_catalog.setval('"Tasks_id_seq"', (SELECT MAX(id) FROM public.tasks));
+SELECT pg_catalog.setval('"Company_id_seq"', (SELECT MAX(id) FROM public.company));
