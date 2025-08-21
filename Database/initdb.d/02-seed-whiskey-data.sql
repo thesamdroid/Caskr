@@ -40,10 +40,30 @@ INSERT INTO public.status_task (id, status_id, name) VALUES
 
 -- Users
 INSERT INTO public.users (id, name, email, user_type_id, company_id) VALUES
-    (1, 'Jack Daniels', 'shaw.samuelj+dackdaniels@gmail.com', 1, 4),
-    (2, 'Jim Beam', 'shaw.samuelj+Beam@gmail.com', 1, 3),
-    (3, 'Middle West Spirits', 'shaw.samuelj+mws@gmail.com', 2, 1),
-    (4, 'Makers Mark', 'shaw.samuelj+makersmark@gmail.com', 3, 2);
+    (1, 'Alice Johnson', 'alice.johnson.147@example.invalid', 1, 4),
+    (2, 'Bob Smith', 'bob.smith.938@example.invalid', 1, 3),
+    (3, 'Carol Williams', 'carol.williams.259@example.invalid', 2, 1),
+    (4, 'David Brown', 'david.brown.740@example.invalid', 3, 2),
+    (5, 'Eve Davis', 'eve.davis.572@example.invalid', 1, 1),
+    (6, 'Frank Miller', 'frank.miller.863@example.invalid', 2, 2),
+    (7, 'Grace Wilson', 'grace.wilson.314@example.invalid', 3, 3),
+    (8, 'Hank Moore', 'hank.moore.485@example.invalid', 1, 4),
+    (9, 'Ivy Taylor', 'ivy.taylor.697@example.invalid', 2, 1),
+    (10, 'Jake Anderson', 'jake.anderson.208@example.invalid', 3, 2),
+    (11, 'Laura Thomas', 'laura.thomas.559@example.invalid', 1, 3),
+    (12, 'Mike Jackson', 'mike.jackson.631@example.invalid', 2, 4),
+    (13, 'Nina White', 'nina.white.942@example.invalid', 3, 1),
+    (14, 'Oscar Harris', 'oscar.harris.173@example.invalid', 1, 2),
+    (15, 'Paula Martin', 'paula.martin.384@example.invalid', 2, 3),
+    (16, 'Quincy Lee', 'quincy.lee.795@example.invalid', 3, 4),
+    (17, 'Rachel Perez', 'rachel.perez.516@example.invalid', 1, 1),
+    (18, 'Steve Clark', 'steve.clark.627@example.invalid', 2, 2),
+    (19, 'Tina Lewis', 'tina.lewis.838@example.invalid', 3, 3),
+    (20, 'Umar Walker', 'umar.walker.249@example.invalid', 1, 4),
+    (21, 'Victor Hall', 'victor.hall.460@example.invalid', 2, 1),
+    (22, 'Wendy Young', 'wendy.young.571@example.invalid', 3, 2),
+    (23, 'Xavier King', 'xavier.king.682@example.invalid', 1, 3),
+    (24, 'Yvonne Scott', 'yvonne.scott.793@example.invalid', 2, 4);
 
 -- Companies
 INSERT INTO public.company (company_name, primary_contact_id, renewal_date) VALUES
