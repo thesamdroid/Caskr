@@ -27,6 +27,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<TaskItem?> Tasks { get; set; }
 
+    public virtual DbSet<Company?> Companies { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -114,6 +116,28 @@ public partial class CaskrDbContext : DbContext
                 .HasConstraintName("fk_owner_users");
         });
 
+        modelBuilder.Entity<Company>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("Company_pkey");
+
+            entity.ToTable("company");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('\"Company_id_seq\"'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.CompanyName).HasColumnName("company_name");
+            entity.Property(e => e.PrimaryContactId).HasColumnName("primary_contact_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_date");
+            entity.Property(e => e.RenewalDate).HasColumnName("renewal_date");
+
+            entity.HasOne(d => d.PrimaryContact).WithMany()
+                .HasForeignKey(d => d.PrimaryContactId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_company_primary_contact");
+        });
+
         modelBuilder.Entity<Status>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Status_pkey");
@@ -156,11 +180,16 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.Email).HasColumnName("email");
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.UserTypeId).HasColumnName("user_type_id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
 
             entity.HasOne(d => d.UserType).WithMany(p => p.Users)
                 .HasForeignKey(d => d.UserTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_user_userstatus");
+            entity.HasOne(d => d.Company).WithMany(p => p.Users)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_user_company");
         });
 
         modelBuilder.Entity<UserType>(entity =>
