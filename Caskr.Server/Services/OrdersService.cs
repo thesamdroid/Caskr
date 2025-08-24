@@ -7,6 +7,7 @@ namespace Caskr.server.Services
     public interface IOrdersService
     {
         Task<IEnumerable<Order>> GetOrdersAsync();
+        Task<IEnumerable<Order>> GetOrdersForOwnerAsync(int ownerId);
         Task<Order?> GetOrderAsync(int id);
         Task<Order> AddOrderAsync(Order? order);
         Task<Order> UpdateOrderAsync(Order order);
@@ -21,10 +22,15 @@ namespace Caskr.server.Services
             return await ordersRepository.GetOrdersAsync();
         }
 
+        public async Task<IEnumerable<Order>> GetOrdersForOwnerAsync(int ownerId)
+        {
+            return await ordersRepository.GetOrdersForOwnerAsync(ownerId);
+        }
+
         public async Task<Order?> GetOrderAsync(int id)
         {
             return await ordersRepository.GetOrderAsync(id);
-        }   
+        }
         public async Task<IEnumerable<StatusTask>?> GetOutstandingTasksAsync(int orderId)
         {
             var order = await ordersRepository.GetOrderWithTasksAsync(orderId);

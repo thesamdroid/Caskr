@@ -50,5 +50,56 @@ public class OrdersRepositoryTests
         var added2 = await repo.AddOrderAsync(orderDifferentCompany);
         Assert.Equal(1, added2.BatchId);
     }
+
+    [Fact]
+    public async Task GetOrdersForOwnerAsync_ReturnsOrdersWithDetails()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase("GetOrdersForOwnerAsync_ReturnsOrdersWithDetails")
+            .Options;
+
+        using var context = new CaskrDbContext(options);
+
+        context.Statuses.Add(new Status { Id = 1, Name = "Open" });
+        context.SpiritTypes.Add(new SpiritType { Id = 1, Name = "Whiskey" });
+
+        context.Orders.AddRange(
+            new Order
+            {
+                Id = 1,
+                Name = "Owner1Order",
+                OwnerId = 1,
+                CompanyId = 1,
+                StatusId = 1,
+                SpiritTypeId = 1,
+                BatchId = 1,
+                Quantity = 5,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Order
+            {
+                Id = 2,
+                Name = "OtherOwnerOrder",
+                OwnerId = 2,
+                CompanyId = 1,
+                StatusId = 1,
+                SpiritTypeId = 1,
+                BatchId = 1,
+                Quantity = 5,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+        await context.SaveChangesAsync();
+
+        var repo = new OrdersRepository(context);
+
+        var orders = await repo.GetOrdersForOwnerAsync(1);
+        var order = Assert.Single(orders);
+        Assert.Equal(1, order.Id);
+        Assert.NotNull(order.Status);
+        Assert.NotNull(order.SpiritType);
+    }
 }
 
