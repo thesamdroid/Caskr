@@ -17,6 +17,14 @@ namespace Caskr.server.Controllers
             return Ok(orders);
         }
 
+        // GET: api/Orders/owner/5
+        [HttpGet("owner/{ownerId}")]
+        public async Task<ActionResult<IEnumerable<Order>>> GetOrdersForOwner(int ownerId)
+        {
+            var orders = (await ordersService.GetOrdersForOwnerAsync(ownerId)).ToList();
+            return Ok(orders);
+        }
+
         // GET: api/Orders/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Order>> GetOrder(int id)

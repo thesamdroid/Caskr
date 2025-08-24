@@ -32,6 +32,17 @@ public class OrdersServiceTests
     }
 
     [Fact]
+    public async Task GetOrdersForOwnerAsync_DelegatesToRepository()
+    {
+        var expected = new[] { new Order { Id = 9, OwnerId = 5, StatusId = (int)StatusType.ResearchAndDevelopment, SpiritTypeId = 1 } };
+        _repo.Setup(r => r.GetOrdersForOwnerAsync(5)).ReturnsAsync(expected);
+
+        var result = await _service.GetOrdersForOwnerAsync(5);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
     public async Task GetOrderAsync_DelegatesToRepository()
     {
         var expected = new Order { Id = 2, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 };
