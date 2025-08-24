@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../hooks'
-import { fetchOrders, addOrder, Order, fetchOutstandingTasks } from '../features/ordersSlice'
+import { fetchOrders, Order, fetchOutstandingTasks } from '../features/ordersSlice'
 import { fetchStatuses } from '../features/statusSlice'
+import { fetchUsers } from '../features/usersSlice'
+import CreateOrderModal from '../components/CreateOrderModal'
 import './LandingPage.css'
 
 function LandingPage() {
@@ -10,13 +12,12 @@ function LandingPage() {
   const statuses = useAppSelector(state => state.statuses.items)
   const outstandingTasks = useAppSelector(state => state.orders.outstandingTasks)
 
-  const [showForm, setShowForm] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newStatus, setNewStatus] = useState<number>(0)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     dispatch(fetchOrders())
     dispatch(fetchStatuses())
+    dispatch(fetchUsers())
   }, [dispatch])
 
   useEffect(() => {
@@ -26,19 +27,6 @@ function LandingPage() {
       }
     })
   }, [orders, outstandingTasks, dispatch])
-
-  useEffect(() => {
-    if (statuses.length > 0 && newStatus === 0) {
-      setNewStatus(statuses[0].id)
-    }
-  }, [statuses, newStatus])
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault()
-    dispatch(addOrder({ name: newName, statusId: newStatus }))
-    setNewName('')
-    setShowForm(false)
-  }
 
   const getStatusName = (id: number) => {
     return statuses.find(s => s.id === id)?.name || id
@@ -71,27 +59,10 @@ function LandingPage() {
           ))}
         </tbody>
       </table>
-      {showForm ? (
-        <form className='order-form' onSubmit={handleAdd}>
-          <input
-            value={newName}
-            onChange={e => setNewName(e.target.value)}
-            placeholder='Order name'
-          />
-          <select value={newStatus} onChange={e => setNewStatus(Number(e.target.value))}>
-            {statuses.map(s => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          <button type='submit'>Save</button>
-        </form>
-      ) : (
-        <button className='create-button' onClick={() => setShowForm(true)}>
-          Create New Order
-        </button>
-      )}
+      <button className='create-button' onClick={() => setIsModalOpen(true)}>
+        Create New Order
+      </button>
+      <CreateOrderModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }

@@ -77,7 +77,7 @@ namespace Caskr.server.Repos
             {
                 Id = maxBatch + 1,
                 CompanyId = owner.CompanyId,
-                MashBillId = 1
+                MashBillId = order.MashBillId
             };
 
             await dbContext.Batches.AddAsync(batch);

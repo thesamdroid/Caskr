@@ -12,6 +12,9 @@ public partial class User
 
     public int CompanyId { get; set; }
 
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string CompanyName { get; set; } = string.Empty;
+
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();

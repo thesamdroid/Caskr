@@ -42,11 +42,11 @@ public class OrdersRepositoryTests
 
         var repo = new OrdersRepository(context);
 
-        var orderSameCompany = new Order { Name = "New1", OwnerId = 2, StatusId = 1, SpiritTypeId = 1, Quantity = 20 };
+        var orderSameCompany = new Order { Name = "New1", OwnerId = 2, StatusId = 1, SpiritTypeId = 1, Quantity = 20, MashBillId = 1 };
         var added1 = await repo.AddOrderAsync(orderSameCompany);
         Assert.Equal(2, added1.BatchId);
 
-        var orderDifferentCompany = new Order { Name = "New2", OwnerId = 3, StatusId = 1, SpiritTypeId = 1, Quantity = 30 };
+        var orderDifferentCompany = new Order { Name = "New2", OwnerId = 3, StatusId = 1, SpiritTypeId = 1, Quantity = 30, MashBillId = 1 };
         var added2 = await repo.AddOrderAsync(orderDifferentCompany);
         Assert.Equal(1, added2.BatchId);
     }

@@ -16,11 +16,33 @@ namespace Caskr.server.Repos
     {
         public async Task<IEnumerable<User>> GetUsersAsync()
         {
-            return (await dbContext.Users.ToListAsync())!;
+            return await dbContext.Users
+                .Include(u => u.Company)
+                .Select(u => new User
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    UserTypeId = u.UserTypeId,
+                    CompanyId = u.CompanyId,
+                    CompanyName = u.Company.CompanyName
+                })
+                .ToListAsync();
         }
         public async Task<User?> GetUserAsync(int id)
         {
-            return await dbContext.Users.FindAsync(id);
+            return await dbContext.Users
+                .Include(u => u.Company)
+                .Select(u => new User
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    UserTypeId = u.UserTypeId,
+                    CompanyId = u.CompanyId,
+                    CompanyName = u.Company.CompanyName
+                })
+                .FirstOrDefaultAsync(u => u.Id == id);
         }
         public async Task<User> AddUserAsync(User? user)
         {

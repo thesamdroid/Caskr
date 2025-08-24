@@ -24,6 +24,9 @@ public partial class Order
 
     public int Quantity { get; set; }
 
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public int MashBillId { get; set; }
+
     public virtual User Owner { get; set; } = null!;
 
     public virtual Batch? Batch { get; set; }
