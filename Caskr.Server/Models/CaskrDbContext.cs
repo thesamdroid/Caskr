@@ -37,6 +37,10 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<Component?> Components { get; set; }
 
+    public virtual DbSet<Rickhouse?> Rickhouses { get; set; }
+
+    public virtual DbSet<Barrel?> Barrels { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -278,6 +282,60 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.BatchId).HasColumnName("batch_id");
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.Percentage).HasColumnName("percentage");
+        });
+
+        modelBuilder.Entity<Rickhouse>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("Rickhouse_pkey");
+
+            entity.ToTable("rickhouse");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('\"Rickhouse_id_seq\"'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.Address).HasColumnName("address");
+
+            entity.HasOne(d => d.Company).WithMany(p => p.Rickhouses)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_rickhouse_company");
+        });
+
+        modelBuilder.Entity<Barrel>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("Barrel_pkey");
+
+            entity.ToTable("barrel");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('\"Barrel_id_seq\"'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Sku).HasColumnName("sku");
+            entity.Property(e => e.BatchId).HasColumnName("batch_id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.RickhouseId).HasColumnName("rickhouse_id");
+
+            entity.HasOne(d => d.Company).WithMany(p => p.Barrels)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_barrel_company");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.Barrels)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_barrel_order");
+
+            entity.HasOne(d => d.Rickhouse).WithMany(p => p.Barrels)
+                .HasForeignKey(d => d.RickhouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_barrel_rickhouse");
+
+            entity.HasOne(d => d.Batch).WithMany()
+                .HasForeignKey(d => new { d.BatchId, d.CompanyId })
+                .HasConstraintName("fk_barrel_batch");
         });
 
         OnModelCreatingPartial(modelBuilder);

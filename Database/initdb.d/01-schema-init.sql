@@ -635,6 +635,83 @@ ALTER TABLE ONLY public.orders
 ALTER TABLE public.component OWNER TO postgres;
 
 --
+-- Name: rickhouse; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.rickhouse (
+    id integer NOT NULL,
+    company_id integer NOT NULL,
+    name text NOT NULL,
+    address text NOT NULL
+);
+
+ALTER TABLE public.rickhouse OWNER TO postgres;
+
+CREATE SEQUENCE public."Rickhouse_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public."Rickhouse_id_seq" OWNER TO postgres;
+
+ALTER SEQUENCE public."Rickhouse_id_seq" OWNED BY public.rickhouse.id;
+
+ALTER TABLE ONLY public.rickhouse ALTER COLUMN id SET DEFAULT nextval('public."Rickhouse_id_seq"'::regclass);
+
+ALTER TABLE ONLY public.rickhouse
+    ADD CONSTRAINT "Rickhouse_pkey" PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.rickhouse
+    ADD CONSTRAINT fk_rickhouse_company FOREIGN KEY (company_id) REFERENCES public.company(id);
+
+--
+-- Name: barrel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.barrel (
+    id integer NOT NULL,
+    company_id integer NOT NULL,
+    sku text NOT NULL,
+    batch_id integer NOT NULL,
+    order_id integer NOT NULL,
+    rickhouse_id integer NOT NULL
+);
+
+ALTER TABLE public.barrel OWNER TO postgres;
+
+CREATE SEQUENCE public."Barrel_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public."Barrel_id_seq" OWNER TO postgres;
+
+ALTER SEQUENCE public."Barrel_id_seq" OWNED BY public.barrel.id;
+
+ALTER TABLE ONLY public.barrel ALTER COLUMN id SET DEFAULT nextval('public."Barrel_id_seq"'::regclass);
+
+ALTER TABLE ONLY public.barrel
+    ADD CONSTRAINT "Barrel_pkey" PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.barrel
+    ADD CONSTRAINT fk_barrel_company FOREIGN KEY (company_id) REFERENCES public.company(id);
+
+ALTER TABLE ONLY public.barrel
+    ADD CONSTRAINT fk_barrel_order FOREIGN KEY (order_id) REFERENCES public.orders(id);
+
+ALTER TABLE ONLY public.barrel
+    ADD CONSTRAINT fk_barrel_rickhouse FOREIGN KEY (rickhouse_id) REFERENCES public.rickhouse(id);
+
+ALTER TABLE ONLY public.barrel
+    ADD CONSTRAINT fk_barrel_batch FOREIGN KEY (batch_id, company_id) REFERENCES public.batch(id, company_id);
+
+--
 -- Completed on 2025-02-16 19:36:39
 
 --
