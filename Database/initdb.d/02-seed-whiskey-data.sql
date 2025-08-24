@@ -86,11 +86,11 @@ INSERT INTO public.products (id, owner_id, notes) VALUES
     (3, 3, 'Irish Whiskey');
 
 -- Orders in units of barrels
-INSERT INTO public.orders (name, owner_id, status_id, spirit_type_id) VALUES
-    ('Sinatra 2', 1, 1, 1),
-    ('Knob 25', 2, 2, 2),
-    ('Cameron Mitchel', 3, 3, 3),
-    ('92', 4, 4, 4);
+INSERT INTO public.orders (name, owner_id, status_id, spirit_type_id, batch_id, quantity) VALUES
+    ('Sinatra 2', 1, 1, 1, 1, 100),
+    ('Knob 25', 2, 2, 2, 1, 150),
+    ('Cameron Mitchel', 3, 3, 3, 1, 200),
+    ('92', 4, 4, 4, 1, 250);
 
 -- Tasks for orders
 INSERT INTO public.tasks (order_id, name, completed_date) VALUES

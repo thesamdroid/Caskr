@@ -59,6 +59,10 @@ public partial class CaskrDbContext : DbContext
                 .HasDefaultValueSql("nextval('\"Orders_spirit_type_id_seq\"'::regclass)")
                 .HasColumnName("spirit_type_id");
 
+            entity.Property(e => e.BatchId).HasColumnName("batch_id");
+
+            entity.Property(e => e.Quantity).HasColumnName("quantity");
+
             entity.HasOne(d => d.Owner).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.OwnerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)

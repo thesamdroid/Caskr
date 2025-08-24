@@ -35,7 +35,9 @@ CREATE TABLE public.orders (
     created_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     status_id integer NOT NULL,
-    spirit_type_id integer NOT NULL
+    spirit_type_id integer NOT NULL,
+    batch_id integer NOT NULL,
+    quantity integer NOT NULL
 );
 
 

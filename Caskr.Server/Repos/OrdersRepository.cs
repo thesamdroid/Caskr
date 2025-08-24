@@ -46,6 +46,18 @@ namespace Caskr.server.Repos
             {
                 throw new ArgumentNullException(nameof(order));
             }
+            var owner = await dbContext.Users.SingleOrDefaultAsync(u => u.Id == order.OwnerId);
+            if (owner == null)
+            {
+                throw new InvalidOperationException($"Owner with ID {order.OwnerId} not found");
+            }
+
+            var maxBatch = await dbContext.Orders
+                .Include(o => o.Owner)
+                .Where(o => o.Owner.CompanyId == owner.CompanyId)
+                .MaxAsync(o => (int?)o.BatchId) ?? 0;
+
+            order.BatchId = maxBatch + 1;
             order.CreatedAt = DateTime.UtcNow;
             order.UpdatedAt = DateTime.UtcNow;
             var addedOrder = await dbContext.Orders.AddAsync(order);

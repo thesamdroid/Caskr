@@ -18,6 +18,10 @@ public partial class Order
 
     public int SpiritTypeId { get; set; }
 
+    public int BatchId { get; set; }
+
+    public int Quantity { get; set; }
+
     public virtual User Owner { get; set; } = null!;
 
     public virtual Status Status { get; set; } = null!;
