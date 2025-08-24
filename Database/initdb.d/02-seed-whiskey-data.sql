@@ -128,6 +128,58 @@ INSERT INTO public.tasks (order_id, name, completed_date) VALUES
     (4, 'Glass', CURRENT_TIMESTAMP),
     (4, 'Labels', NULL);
 
+-- Additional bulk test data for comprehensive coverage
+
+-- Generate extra users
+INSERT INTO public.users (name, email, user_type_id, company_id)
+SELECT CONCAT('Test User ', gs),
+       CONCAT('test.user.', gs, '@example.invalid'),
+       (gs % 3) + 1,
+       (gs % 4) + 1
+FROM generate_series(25, 124) AS gs;
+
+-- Generate additional products
+INSERT INTO public.products (owner_id, notes)
+SELECT ((gs % 124) + 1), CONCAT('Bulk product ', gs)
+FROM generate_series(4, 103) AS gs;
+
+-- Generate a large number of orders
+INSERT INTO public.orders (name, owner_id, status_id, spirit_type_id, batch_id, quantity, company_id)
+SELECT CONCAT('Bulk Order ', gs),
+       ((gs % 124) + 1),
+       (gs % 6) + 1,
+       (gs % 4) + 1,
+       1,
+       gs * 10,
+       (gs % 4) + 1
+FROM generate_series(5, 54) AS gs;
+
+-- Tasks for all orders
+INSERT INTO public.tasks (order_id, name, completed_date)
+SELECT o.id,
+       CONCAT('Auto Task ', gs),
+       CASE WHEN gs % 2 = 0 THEN CURRENT_TIMESTAMP ELSE NULL END
+FROM public.orders o
+CROSS JOIN generate_series(1,3) AS gs;
+
+-- Rickhouses per company
+INSERT INTO public.rickhouse (company_id, name, address)
+SELECT c.id,
+       CONCAT('Rickhouse ', c.id, '-', gs),
+       CONCAT('Address ', c.id, '-', gs)
+FROM public.company c
+CROSS JOIN generate_series(1,3) AS gs;
+
+-- Barrels for each order
+INSERT INTO public.barrel (company_id, sku, batch_id, order_id, rickhouse_id)
+SELECT o.company_id,
+       CONCAT('SKU', o.id, '-', gs),
+       o.batch_id,
+       o.id,
+       (SELECT r.id FROM public.rickhouse r WHERE r.company_id = o.company_id ORDER BY r.id LIMIT 1)
+FROM public.orders o
+CROSS JOIN generate_series(1,5) AS gs;
+
 -- Sync sequences with inserted ids
 SELECT pg_catalog.setval('"Users_id_seq"', (SELECT MAX(id) FROM public.users));
 SELECT pg_catalog.setval('"Orders_id_seq"', (SELECT MAX(id) FROM public.orders));
