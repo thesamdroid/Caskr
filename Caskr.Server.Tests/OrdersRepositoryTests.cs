@@ -21,11 +21,15 @@ public class OrdersRepositoryTests
             new User { Id = 3, Name = "Owner3", Email = "owner3@example.com", UserTypeId = 1, CompanyId = 2 }
         );
 
+        context.MashBills.Add(new MashBill { Id = 1, CompanyId = 1, Name = "MB1" });
+        context.Batches.Add(new Batch { Id = 1, CompanyId = 1, MashBillId = 1 });
+
         context.Orders.Add(new Order
         {
             Id = 1,
             Name = "Existing",
             OwnerId = 1,
+            CompanyId = 1,
             StatusId = 1,
             SpiritTypeId = 1,
             BatchId = 1,

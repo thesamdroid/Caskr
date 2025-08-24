@@ -31,6 +31,12 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<SpiritType?> SpiritTypes { get; set; }
 
+    public virtual DbSet<Batch?> Batches { get; set; }
+
+    public virtual DbSet<MashBill?> MashBills { get; set; }
+
+    public virtual DbSet<Component?> Components { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -52,6 +58,7 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.OwnerId)
                 .HasDefaultValueSql("nextval('\"Orders_owner_id_seq\"'::regclass)")
                 .HasColumnName("owner_id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
             entity.Property(e => e.StatusId)
                 .HasDefaultValueSql("nextval('\"Orders_status_id_seq\"'::regclass)")
                 .HasColumnName("status_id");
@@ -77,6 +84,10 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.SpiritTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_spirit_typeid_spirit_typeid");
+
+            entity.HasOne(d => d.Batch)
+                .WithMany()
+                .HasForeignKey(d => new { d.BatchId, d.CompanyId });
         });
 
         modelBuilder.Entity<TaskItem>(entity =>
@@ -228,6 +239,45 @@ public partial class CaskrDbContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name");
+        });
+
+        modelBuilder.Entity<MashBill>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("MashBill_pkey");
+
+            entity.ToTable("mash_bill");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.ComponentIds).HasColumnName("component_ids");
+        });
+
+        modelBuilder.Entity<Batch>(entity =>
+        {
+            entity.HasKey(e => new { e.Id, e.CompanyId }).HasName("Batch_pkey");
+
+            entity.ToTable("batch");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.MashBillId).HasColumnName("mash_bill_id");
+
+            entity.HasOne(d => d.MashBill)
+                .WithMany()
+                .HasForeignKey(d => d.MashBillId);
+        });
+
+        modelBuilder.Entity<Component>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("Component_pkey");
+
+            entity.ToTable("component");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BatchId).HasColumnName("batch_id");
+            entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.Percentage).HasColumnName("percentage");
         });
 
         OnModelCreatingPartial(modelBuilder);

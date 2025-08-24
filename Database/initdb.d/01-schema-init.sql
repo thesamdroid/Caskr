@@ -36,6 +36,7 @@ CREATE TABLE public.orders (
     updated_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     status_id integer NOT NULL,
     spirit_type_id integer NOT NULL,
+    company_id integer NOT NULL,
     batch_id integer NOT NULL,
     quantity integer NOT NULL
 );
@@ -576,6 +577,62 @@ ALTER TABLE ONLY public.company
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT fk_user_company FOREIGN KEY (company_id) REFERENCES public.company(id);
+
+--
+-- Name: mash_bill; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.mash_bill (
+    id integer NOT NULL,
+    company_id integer NOT NULL,
+    name text NOT NULL,
+    component_ids integer[] NOT NULL
+);
+
+ALTER TABLE ONLY public.mash_bill
+    ADD CONSTRAINT "MashBill_pkey" PRIMARY KEY (id);
+
+ALTER TABLE public.mash_bill OWNER TO postgres;
+
+--
+-- Name: batch; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.batch (
+    id integer NOT NULL,
+    company_id integer NOT NULL,
+    mash_bill_id integer NOT NULL
+);
+
+ALTER TABLE ONLY public.batch
+    ADD CONSTRAINT "Batch_pkey" PRIMARY KEY (id, company_id);
+
+ALTER TABLE public.batch OWNER TO postgres;
+
+--
+-- Name: component; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.component (
+    id integer NOT NULL,
+    batch_id integer NOT NULL,
+    name text NOT NULL,
+    percentage integer NOT NULL
+);
+
+ALTER TABLE ONLY public.component
+    ADD CONSTRAINT "Component_pkey" PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.batch
+    ADD CONSTRAINT fk_batch_mash_bill FOREIGN KEY (mash_bill_id) REFERENCES public.mash_bill(id);
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT fk_orders_batch FOREIGN KEY (batch_id, company_id) REFERENCES public.batch(id, company_id);
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT fk_orders_company FOREIGN KEY (company_id) REFERENCES public.company(id);
+
+ALTER TABLE public.component OWNER TO postgres;
 
 --
 -- Completed on 2025-02-16 19:36:39

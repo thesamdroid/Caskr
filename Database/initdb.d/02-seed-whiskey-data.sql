@@ -85,12 +85,33 @@ INSERT INTO public.products (id, owner_id, notes) VALUES
     (2, 2, 'Kentucky Straight Bourbon'),
     (3, 3, 'Irish Whiskey');
 
+-- Components
+INSERT INTO public.component (id, batch_id, name, percentage) VALUES
+    (1, 1, 'Corn', 70),
+    (2, 1, 'Rye', 20),
+    (3, 1, 'Barley', 10),
+    (4, 1, 'Wheat', 5);
+
+-- Mash bills
+INSERT INTO public.mash_bill (id, company_id, name, component_ids) VALUES
+    (1, 4, 'Standard', ARRAY[1,2,3]),
+    (2, 3, 'Standard', ARRAY[1,2,3]),
+    (3, 1, 'Standard', ARRAY[1,2,3]),
+    (4, 2, 'Standard', ARRAY[1,2,3]);
+
+-- Batches
+INSERT INTO public.batch (id, company_id, mash_bill_id) VALUES
+    (1, 4, 1),
+    (1, 3, 2),
+    (1, 1, 3),
+    (1, 2, 4);
+
 -- Orders in units of barrels
-INSERT INTO public.orders (name, owner_id, status_id, spirit_type_id, batch_id, quantity) VALUES
-    ('Sinatra 2', 1, 1, 1, 1, 100),
-    ('Knob 25', 2, 2, 2, 1, 150),
-    ('Cameron Mitchel', 3, 3, 3, 1, 200),
-    ('92', 4, 4, 4, 1, 250);
+INSERT INTO public.orders (name, owner_id, status_id, spirit_type_id, batch_id, quantity, company_id) VALUES
+    ('Sinatra 2', 1, 1, 1, 1, 100, 4),
+    ('Knob 25', 2, 2, 2, 1, 150, 3),
+    ('Cameron Mitchel', 3, 3, 3, 1, 200, 1),
+    ('92', 4, 4, 4, 1, 250, 2);
 
 -- Tasks for orders
 INSERT INTO public.tasks (order_id, name, completed_date) VALUES

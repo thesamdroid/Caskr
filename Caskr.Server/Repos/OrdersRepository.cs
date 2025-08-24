@@ -52,12 +52,21 @@ namespace Caskr.server.Repos
                 throw new InvalidOperationException($"Owner with ID {order.OwnerId} not found");
             }
 
-            var maxBatch = await dbContext.Orders
-                .Include(o => o.Owner)
-                .Where(o => o.Owner.CompanyId == owner.CompanyId)
-                .MaxAsync(o => (int?)o.BatchId) ?? 0;
+            var maxBatch = await dbContext.Batches
+                .Where(b => b.CompanyId == owner.CompanyId)
+                .MaxAsync(b => (int?)b.Id) ?? 0;
 
-            order.BatchId = maxBatch + 1;
+            var batch = new Batch
+            {
+                Id = maxBatch + 1,
+                CompanyId = owner.CompanyId,
+                MashBillId = 1
+            };
+
+            await dbContext.Batches.AddAsync(batch);
+
+            order.BatchId = batch.Id;
+            order.CompanyId = owner.CompanyId;
             order.CreatedAt = DateTime.UtcNow;
             order.UpdatedAt = DateTime.UtcNow;
             var addedOrder = await dbContext.Orders.AddAsync(order);
