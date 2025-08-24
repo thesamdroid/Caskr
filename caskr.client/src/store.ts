@@ -4,6 +4,8 @@ import statusReducer from './features/statusSlice'
 import productsReducer from './features/productsSlice'
 import usersReducer from './features/usersSlice'
 import userTypesReducer from './features/userTypesSlice'
+import spiritTypesReducer from './features/spiritTypesSlice'
+import mashBillsReducer from './features/mashBillsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -11,7 +13,9 @@ export const store = configureStore({
     statuses: statusReducer,
     products: productsReducer,
     users: usersReducer,
-    userTypes: userTypesReducer
+    userTypes: userTypesReducer,
+    spiritTypes: spiritTypesReducer,
+    mashBills: mashBillsReducer
   }
 })
 

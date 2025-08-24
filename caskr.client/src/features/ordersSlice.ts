@@ -5,6 +5,10 @@ export interface Order {
   id: number
   name: string
   statusId: number
+  ownerId: number
+  spiritTypeId: number
+  quantity: number
+  mashBillId: number
 }
 
 export const fetchOrders = createAsyncThunk('orders/fetchOrders', async () => {

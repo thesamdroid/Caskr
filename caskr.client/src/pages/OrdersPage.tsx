@@ -33,7 +33,7 @@ function OrdersPage() {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault()
-    dispatch(addOrder({ name: newName, statusId: newStatus }))
+    dispatch(addOrder({ name: newName, statusId: newStatus, ownerId: 1, spiritTypeId: 1, quantity: 1, mashBillId: 1 }))
     setNewName('')
   }
 
@@ -44,7 +44,15 @@ function OrdersPage() {
   }
 
   const handleUpdate = (id: number) => {
-    dispatch(updateOrder({ id, name: editName, statusId: editStatus }))
+    const existing = orders.find(o => o.id === id)
+    if (!existing) return
+    dispatch(
+      updateOrder({
+        ...existing,
+        name: editName,
+        statusId: editStatus
+      })
+    )
     setEditing(null)
   }
 

@@ -5,6 +5,8 @@ export interface User {
   name: string
   email: string
   userTypeId: number
+  companyId: number
+  companyName: string
 }
 
 export const fetchUsers = createAsyncThunk('users/fetchUsers', async () => {
