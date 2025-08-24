@@ -10,6 +10,8 @@ public partial class Order
 
     public int OwnerId { get; set; }
 
+    public int CompanyId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
@@ -18,7 +20,13 @@ public partial class Order
 
     public int SpiritTypeId { get; set; }
 
+    public int BatchId { get; set; }
+
+    public int Quantity { get; set; }
+
     public virtual User Owner { get; set; } = null!;
+
+    public virtual Batch? Batch { get; set; }
 
     public virtual Status Status { get; set; } = null!;
 
