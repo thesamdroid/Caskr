@@ -25,11 +25,15 @@ namespace Caskr.server.Repos
         }
         public async Task<Order?> GetOrderAsync(int id)
         {
-            return await dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
+            return await dbContext.Orders
+                .AsNoTracking()
+                .Include(o => o.SpiritType)
+                .FirstOrDefaultAsync(o => o.Id == id);
         }
         public async Task<Order?> GetOrderWithTasksAsync(int id)
         {
             return await dbContext.Orders
+                .Include(o => o.SpiritType)
                 .Include(o => o.Status)
                     .ThenInclude(s => s.StatusTasks)
                 .Include(o => o.Tasks)

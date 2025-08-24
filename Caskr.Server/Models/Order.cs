@@ -16,9 +16,13 @@ public partial class Order
 
     public int StatusId { get; set; }
 
+    public int SpiritTypeId { get; set; }
+
     public virtual User Owner { get; set; } = null!;
 
     public virtual Status Status { get; set; } = null!;
+
+    public virtual SpiritType SpiritType { get; set; } = null!;
 
     public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
 }
