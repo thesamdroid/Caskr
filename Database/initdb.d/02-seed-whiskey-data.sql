@@ -15,6 +15,13 @@ INSERT INTO public.status (id, name) VALUES
     (5, 'OHLQ Listing'),
     (6, 'National Listing');
 
+-- Spirit types
+INSERT INTO public.spirit_type (id, name) VALUES
+    (1, 'Bourbon'),
+    (2, 'Vodka'),
+    (3, 'Gin'),
+    (4, 'Tequila');
+
 -- Status tasks
 INSERT INTO public.status_task (id, status_id, name) VALUES
     (1, 1, 'Determination of Spirit'),
@@ -79,11 +86,11 @@ INSERT INTO public.products (id, owner_id, notes) VALUES
     (3, 3, 'Irish Whiskey');
 
 -- Orders in units of barrels
-INSERT INTO public.orders (name, owner_id, status_id) VALUES
-    ('Sinatra 2', 1, 1),
-    ('Knob 25', 2, 2),
-    ('Cameron Mitchel', 3, 3),
-    ('92', 4, 4);
+INSERT INTO public.orders (name, owner_id, status_id, spirit_type_id) VALUES
+    ('Sinatra 2', 1, 1, 1),
+    ('Knob 25', 2, 2, 2),
+    ('Cameron Mitchel', 3, 3, 3),
+    ('92', 4, 4, 4);
 
 -- Tasks for orders
 INSERT INTO public.tasks (order_id, name, completed_date) VALUES
@@ -105,7 +112,9 @@ SELECT pg_catalog.setval('"Users_id_seq"', (SELECT MAX(id) FROM public.users));
 SELECT pg_catalog.setval('"Orders_id_seq"', (SELECT MAX(id) FROM public.orders));
 SELECT pg_catalog.setval('"Orders_owner_id_seq"', (SELECT MAX(owner_id) FROM public.orders));
 SELECT pg_catalog.setval('"Orders_status_id_seq"', (SELECT MAX(status_id) FROM public.orders));
+SELECT pg_catalog.setval('"Orders_spirit_type_id_seq"', (SELECT MAX(spirit_type_id) FROM public.orders));
 SELECT pg_catalog.setval('"Status_id_seq"', (SELECT MAX(id) FROM public.status));
+SELECT pg_catalog.setval('"SpiritType_id_seq"', (SELECT MAX(id) FROM public.spirit_type));
 SELECT pg_catalog.setval('"StatusTask_id_seq"', (SELECT MAX(id) FROM public.status_task));
 SELECT pg_catalog.setval('"Tasks_id_seq"', (SELECT MAX(id) FROM public.tasks));
 SELECT pg_catalog.setval('"Company_id_seq"', (SELECT MAX(id) FROM public.company));

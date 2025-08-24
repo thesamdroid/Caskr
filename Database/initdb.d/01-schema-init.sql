@@ -34,7 +34,8 @@ CREATE TABLE public.orders (
     owner_id integer NOT NULL,
     created_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    status_id integer NOT NULL
+    status_id integer NOT NULL,
+    spirit_type_id integer NOT NULL
 );
 
 
@@ -113,6 +114,47 @@ ALTER SEQUENCE public."Orders_status_id_seq" OWNER TO postgres;
 --
 
 ALTER SEQUENCE public."Orders_status_id_seq" OWNED BY public.orders.status_id;
+
+-- Name: Orders_spirit_type_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+CREATE SEQUENCE public."Orders_spirit_type_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public."Orders_spirit_type_id_seq" OWNER TO postgres;
+
+-- Name: Orders_spirit_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+ALTER SEQUENCE public."Orders_spirit_type_id_seq" OWNED BY public.orders.spirit_type_id;
+
+-- Name: spirit_type; Type: TABLE; Schema: public; Owner: postgres
+--
+CREATE TABLE public.spirit_type (
+    id integer NOT NULL,
+    name text NOT NULL
+);
+
+ALTER TABLE public.spirit_type OWNER TO postgres;
+
+-- Name: SpiritType_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+CREATE SEQUENCE public."SpiritType_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public."SpiritType_id_seq" OWNER TO postgres;
+
+-- Name: SpiritType_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+ALTER SEQUENCE public."SpiritType_id_seq" OWNED BY public.spirit_type.id;
 
 
 --
@@ -280,6 +322,11 @@ ALTER TABLE ONLY public.orders ALTER COLUMN owner_id SET DEFAULT nextval('public
 --
 
 ALTER TABLE ONLY public.orders ALTER COLUMN status_id SET DEFAULT nextval('public."Orders_status_id_seq"'::regclass);
+-- Name: orders spirit_type_id; Type: DEFAULT; Schema: public; Owner: postgres
+ALTER TABLE ONLY public.orders ALTER COLUMN spirit_type_id SET DEFAULT nextval('public."Orders_spirit_type_id_seq"'::regclass);
+
+-- Name: spirit_type id; Type: DEFAULT; Schema: public; Owner: postgres
+ALTER TABLE ONLY public.spirit_type ALTER COLUMN id SET DEFAULT nextval('public."SpiritType_id_seq"'::regclass);
 
 
 --
@@ -311,6 +358,11 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public."Users
 
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT "Orders_pkey" PRIMARY KEY (id);
+
+-- Name: spirit_type SpiritType_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+ALTER TABLE ONLY public.spirit_type
+    ADD CONSTRAINT "SpiritType_pkey" PRIMARY KEY (id);
 
 
 --
@@ -388,6 +440,11 @@ ALTER TABLE ONLY public.orders
 
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT fk_statusid_stautusid FOREIGN KEY (status_id) REFERENCES public.status(id) NOT VALID;
+
+-- Name: orders fk_spirit_typeid_spirit_typeid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT fk_spirit_typeid_spirit_typeid FOREIGN KEY (spirit_type_id) REFERENCES public.spirit_type(id);
 
 
 --

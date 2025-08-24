@@ -23,7 +23,7 @@ public class OrdersServiceTests
     [Fact]
     public async Task GetOrdersAsync_ReturnsRepositoryResults()
     {
-        var expected = new[] { new Order { Id = 1, StatusId = (int)StatusType.ResearchAndDevelopment } };
+        var expected = new[] { new Order { Id = 1, StatusId = (int)StatusType.ResearchAndDevelopment, SpiritTypeId = 1 } };
         _repo.Setup(r => r.GetOrdersAsync()).ReturnsAsync(expected);
 
         var result = await _service.GetOrdersAsync();
@@ -34,7 +34,7 @@ public class OrdersServiceTests
     [Fact]
     public async Task GetOrderAsync_DelegatesToRepository()
     {
-        var expected = new Order { Id = 2, StatusId = (int)StatusType.AssetCreation };
+        var expected = new Order { Id = 2, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 };
         _repo.Setup(r => r.GetOrderAsync(2)).ReturnsAsync(expected);
 
         var result = await _service.GetOrderAsync(2);
@@ -45,7 +45,7 @@ public class OrdersServiceTests
     [Fact]
     public async Task AddOrderAsync_DelegatesToRepository()
     {
-        var order = new Order { Id = 3, StatusId = (int)StatusType.TtbApproval };
+        var order = new Order { Id = 3, StatusId = (int)StatusType.TtbApproval, SpiritTypeId = 1 };
         _repo.Setup(r => r.AddOrderAsync(order)).ReturnsAsync(order);
 
         var result = await _service.AddOrderAsync(order);
@@ -56,8 +56,8 @@ public class OrdersServiceTests
     [Fact]
     public async Task UpdateOrderAsync_StatusChanged_CreatesTasks()
     {
-        var order = new Order { Id = 4, OwnerId = 1, StatusId = (int)StatusType.Ordering };
-        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 4, OwnerId = 1, StatusId = (int)StatusType.AssetCreation });
+        var order = new Order { Id = 4, OwnerId = 1, StatusId = (int)StatusType.Ordering, SpiritTypeId = 1 };
+        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 4, OwnerId = 1, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
         _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
 
         var result = await _service.UpdateOrderAsync(order);
@@ -70,8 +70,8 @@ public class OrdersServiceTests
     [Fact]
     public async Task UpdateOrderAsync_StatusChangedToTtbApproval_SendsEmail()
     {
-        var order = new Order { Id = 6, OwnerId = 2, StatusId = (int)StatusType.TtbApproval, Name = "Order" };
-        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 6, OwnerId = 2, StatusId = (int)StatusType.AssetCreation });
+        var order = new Order { Id = 6, OwnerId = 2, StatusId = (int)StatusType.TtbApproval, Name = "Order", SpiritTypeId = 1 };
+        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 6, OwnerId = 2, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
         _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
         var user = new User { Id = 2, Email = "owner@example.com", Name = "Owner" };
         _usersRepo.Setup(r => r.GetUserAsync(order.OwnerId)).ReturnsAsync(user);
@@ -85,8 +85,8 @@ public class OrdersServiceTests
     [Fact]
     public async Task UpdateOrderAsync_StatusUnchanged_DoesNotCreateTasks()
     {
-        var order = new Order { Id = 8, OwnerId = 1, StatusId = (int)StatusType.AssetCreation };
-        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 8, OwnerId = 1, StatusId = (int)StatusType.AssetCreation });
+        var order = new Order { Id = 8, OwnerId = 1, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 };
+        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 8, OwnerId = 1, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
         _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
 
         var result = await _service.UpdateOrderAsync(order);
@@ -112,6 +112,7 @@ public class OrdersServiceTests
         {
             Id = orderId,
             StatusId = 1,
+            SpiritTypeId = 1,
             Status = status,
             Tasks = new List<TaskItem>
             {

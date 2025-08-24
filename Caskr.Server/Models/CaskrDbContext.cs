@@ -29,6 +29,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<Company?> Companies { get; set; }
 
+    public virtual DbSet<SpiritType?> SpiritTypes { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -53,6 +55,9 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.StatusId)
                 .HasDefaultValueSql("nextval('\"Orders_status_id_seq\"'::regclass)")
                 .HasColumnName("status_id");
+            entity.Property(e => e.SpiritTypeId)
+                .HasDefaultValueSql("nextval('\"Orders_spirit_type_id_seq\"'::regclass)")
+                .HasColumnName("spirit_type_id");
 
             entity.HasOne(d => d.Owner).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.OwnerId)
@@ -63,6 +68,11 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.StatusId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_statusid_stautusid");
+
+            entity.HasOne(d => d.SpiritType).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.SpiritTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_spirit_typeid_spirit_typeid");
         });
 
         modelBuilder.Entity<TaskItem>(entity =>
@@ -146,6 +156,18 @@ public partial class CaskrDbContext : DbContext
 
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("nextval('\"Status_id_seq\"'::regclass)")
+                .HasColumnName("id");
+            entity.Property(e => e.Name).HasColumnName("name");
+        });
+
+        modelBuilder.Entity<SpiritType>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("SpiritType_pkey");
+
+            entity.ToTable("spirit_type");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("nextval('\"SpiritType_id_seq\"'::regclass)")
                 .HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name");
         });
