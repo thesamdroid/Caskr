@@ -38,6 +38,17 @@ public class UsersServiceTests
     }
 
     [Fact]
+    public async Task GetUserByEmailAsync_DelegatesToRepository()
+    {
+        var expected = new User { Id = 6, Email = "test@example.com" };
+        _repo.Setup(r => r.GetUserByEmailAsync("test@example.com")).ReturnsAsync(expected);
+
+        var result = await _service.GetUserByEmailAsync("test@example.com");
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
     public async Task AddUserAsync_DelegatesToRepository()
     {
         var user = new User { Id = 3 };

@@ -10,15 +10,22 @@ export interface User {
 }
 
 export const fetchUsers = createAsyncThunk('users/fetchUsers', async () => {
-  const response = await fetch('api/users')
+  const token = localStorage.getItem('token')
+  const response = await fetch('api/users', {
+    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+  })
   if (!response.ok) throw new Error('Failed to fetch users')
   return (await response.json()) as User[]
 })
 
 export const addUser = createAsyncThunk('users/addUser', async (user: Omit<User, 'id'>) => {
+  const token = localStorage.getItem('token')
   const response = await fetch('api/users', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
     body: JSON.stringify(user)
   })
   if (!response.ok) throw new Error('Failed to add user')
@@ -26,9 +33,13 @@ export const addUser = createAsyncThunk('users/addUser', async (user: Omit<User,
 })
 
 export const updateUser = createAsyncThunk('users/updateUser', async (user: User) => {
+  const token = localStorage.getItem('token')
   const response = await fetch(`api/users/${user.id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
     body: JSON.stringify(user)
   })
   if (!response.ok) throw new Error('Failed to update user')
@@ -36,7 +47,11 @@ export const updateUser = createAsyncThunk('users/updateUser', async (user: User
 })
 
 export const deleteUser = createAsyncThunk('users/deleteUser', async (id: number) => {
-  const response = await fetch(`api/users/${id}`, { method: 'DELETE' })
+  const token = localStorage.getItem('token')
+  const response = await fetch(`api/users/${id}`, {
+    method: 'DELETE',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+  })
   if (!response.ok) throw new Error('Failed to delete user')
   return id
 })
