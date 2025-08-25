@@ -7,6 +7,7 @@ namespace Caskr.server.Services
     {
         Task<IEnumerable<User>> GetUsersAsync();
         Task<User?> GetUserAsync(int id);
+        Task<User?> GetUserByEmailAsync(string email);
         Task<User> AddUserAsync(User? user);
         Task<User> UpdateUserAsync(User user);
         Task DeleteUserAsync(int id);
@@ -21,6 +22,10 @@ namespace Caskr.server.Services
         public async Task<User?> GetUserAsync(int id)
         {
             return await usersRepository.GetUserAsync(id);
+        }
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            return await usersRepository.GetUserByEmailAsync(email);
         }
         public async Task<User> AddUserAsync(User? user)
         {

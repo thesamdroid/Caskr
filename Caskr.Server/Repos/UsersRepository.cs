@@ -7,6 +7,7 @@ namespace Caskr.server.Repos
     {
         Task<IEnumerable<User>> GetUsersAsync();
         Task<User?> GetUserAsync(int id);
+        Task<User?> GetUserByEmailAsync(string email);
         Task<User> AddUserAsync(User? user);
         Task<User> UpdateUserAsync(User user);
         Task DeleteUserAsync(int id);
@@ -43,6 +44,21 @@ namespace Caskr.server.Repos
                     CompanyName = u.Company.CompanyName
                 })
                 .FirstOrDefaultAsync(u => u.Id == id);
+        }
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            return await dbContext.Users
+                .Include(u => u.Company)
+                .Select(u => new User
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    UserTypeId = u.UserTypeId,
+                    CompanyId = u.CompanyId,
+                    CompanyName = u.Company.CompanyName
+                })
+                .FirstOrDefaultAsync(u => u.Email == email);
         }
         public async Task<User> AddUserAsync(User? user)
         {
