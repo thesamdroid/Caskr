@@ -5,6 +5,7 @@ import { fetchStatuses } from '../features/statusSlice'
 import { fetchUsers } from '../features/usersSlice'
 import CreateOrderModal from '../components/CreateOrderModal'
 import TransferModal from '../components/TransferModal'
+import LabelModal from '../components/LabelModal'
 import './LandingPage.css'
 
 function LandingPage() {
@@ -15,6 +16,7 @@ function LandingPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isTransferOpen, setIsTransferOpen] = useState(false)
+  const [isLabelOpen, setIsLabelOpen] = useState(false)
 
   useEffect(() => {
     dispatch(fetchOrders())
@@ -67,8 +69,12 @@ function LandingPage() {
       <button className='transfer-button' onClick={() => setIsTransferOpen(true)}>
         Initiate Transfer
       </button>
+      <button className='label-button' onClick={() => setIsLabelOpen(true)}>
+        Create Label
+      </button>
       <CreateOrderModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       <TransferModal isOpen={isTransferOpen} onClose={() => setIsTransferOpen(false)} />
+      <LabelModal isOpen={isLabelOpen} onClose={() => setIsLabelOpen(false)} />
     </div>
   )
 }
