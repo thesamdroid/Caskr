@@ -65,7 +65,7 @@ namespace Caskr.server.Services
             }
             if (existing?.StatusId != (int)StatusType.TtbApproval && updated.StatusId == (int)StatusType.TtbApproval)
             {
-                var user = await usersRepository.GetUserAsync(updated.OwnerId);
+                var user = await usersRepository.GetUserByIdAsync(updated.OwnerId);
                 if (user != null)
                 {
                     await emailService.SendEmailAsync(user.Email, "Order requires TTB approval", $"Order '{updated.Name}' has moved to TTB Approval.");

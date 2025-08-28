@@ -22,7 +22,7 @@ namespace Caskr.server.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
-            var user = await usersService.GetUserAsync(id);
+            var user = await usersService.GetUserByIdAsync(id);
 
             if (user == null)
             {
@@ -60,7 +60,7 @@ namespace Caskr.server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = await usersService.GetUserAsync(id);
+            var user = await usersService.GetUserByIdAsync(id);
             if (user == null)
             {
                 return NotFound();

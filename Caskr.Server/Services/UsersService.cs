@@ -6,10 +6,10 @@ namespace Caskr.server.Services
     public interface IUsersService
     {
         Task<IEnumerable<User>> GetUsersAsync();
-        Task<User?> GetUserAsync(int id);
+        Task<User?> GetUserByIdAsync(int id);
         Task<User?> GetUserByEmailAsync(string email);
-        Task<User> AddUserAsync(User? user);
-        Task<User> UpdateUserAsync(User user);
+        Task<User> AddUserAsync(User? newUser);
+        Task<User> UpdateUserAsync(User updatedUser);
         Task DeleteUserAsync(int id);
     }
 
@@ -19,21 +19,21 @@ namespace Caskr.server.Services
         {
             return await usersRepository.GetUsersAsync();
         }
-        public async Task<User?> GetUserAsync(int id)
+        public async Task<User?> GetUserByIdAsync(int id)
         {
-            return await usersRepository.GetUserAsync(id);
+            return await usersRepository.GetUserByIdAsync(id);
         }
         public async Task<User?> GetUserByEmailAsync(string email)
         {
             return await usersRepository.GetUserByEmailAsync(email);
         }
-        public async Task<User> AddUserAsync(User? user)
+        public async Task<User> AddUserAsync(User? newUser)
         {
-            return await usersRepository.AddUserAsync(user);
+            return await usersRepository.AddUserAsync(newUser);
         }
-        public async Task<User> UpdateUserAsync(User user)
+        public async Task<User> UpdateUserAsync(User updatedUser)
         {
-            return await usersRepository.UpdateUserAsync(user);
+            return await usersRepository.UpdateUserAsync(updatedUser);
         }
         public async Task DeleteUserAsync(int id)
         {

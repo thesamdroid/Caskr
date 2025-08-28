@@ -27,12 +27,12 @@ public class UsersServiceTests
     }
 
     [Fact]
-    public async Task GetUserAsync_DelegatesToRepository()
+    public async Task GetUserByIdAsync_DelegatesToRepository()
     {
         var expected = new User { Id = 2 };
-        _repo.Setup(r => r.GetUserAsync(2)).ReturnsAsync(expected);
+        _repo.Setup(r => r.GetUserByIdAsync(2)).ReturnsAsync(expected);
 
-        var result = await _service.GetUserAsync(2);
+        var result = await _service.GetUserByIdAsync(2);
 
         Assert.Equal(expected, result);
     }
