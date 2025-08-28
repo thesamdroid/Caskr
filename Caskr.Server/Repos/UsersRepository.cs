@@ -6,72 +6,59 @@ namespace Caskr.server.Repos
     public interface IUsersRepository
     {
         Task<IEnumerable<User>> GetUsersAsync();
-        Task<User?> GetUserAsync(int id);
+        Task<User?> GetUserByIdAsync(int id);
         Task<User?> GetUserByEmailAsync(string email);
-        Task<User> AddUserAsync(User? user);
-        Task<User> UpdateUserAsync(User user);
+        Task<User> AddUserAsync(User? newUser);
+        Task<User> UpdateUserAsync(User updatedUser);
         Task DeleteUserAsync(int id);
     }
 
     public class UsersRepository(CaskrDbContext dbContext) : IUsersRepository
     {
+        private IQueryable<User> BuildUserQuery()
+        {
+            return dbContext.Users
+                .Include(u => u.Company)
+                .Select(u => new User
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    UserTypeId = u.UserTypeId,
+                    CompanyId = u.CompanyId,
+                    CompanyName = u.Company.CompanyName
+                });
+        }
+
         public async Task<IEnumerable<User>> GetUsersAsync()
         {
-            return await dbContext.Users
-                .Include(u => u.Company)
-                .Select(u => new User
-                {
-                    Id = u.Id,
-                    Name = u.Name,
-                    Email = u.Email,
-                    UserTypeId = u.UserTypeId,
-                    CompanyId = u.CompanyId,
-                    CompanyName = u.Company.CompanyName
-                })
-                .ToListAsync();
+            return await BuildUserQuery().ToListAsync();
         }
-        public async Task<User?> GetUserAsync(int id)
+
+        public async Task<User?> GetUserByIdAsync(int id)
         {
-            return await dbContext.Users
-                .Include(u => u.Company)
-                .Select(u => new User
-                {
-                    Id = u.Id,
-                    Name = u.Name,
-                    Email = u.Email,
-                    UserTypeId = u.UserTypeId,
-                    CompanyId = u.CompanyId,
-                    CompanyName = u.Company.CompanyName
-                })
-                .FirstOrDefaultAsync(u => u.Id == id);
+            return await BuildUserQuery().FirstOrDefaultAsync(u => u.Id == id);
         }
+
         public async Task<User?> GetUserByEmailAsync(string email)
         {
-            return await dbContext.Users
-                .Include(u => u.Company)
-                .Select(u => new User
-                {
-                    Id = u.Id,
-                    Name = u.Name,
-                    Email = u.Email,
-                    UserTypeId = u.UserTypeId,
-                    CompanyId = u.CompanyId,
-                    CompanyName = u.Company.CompanyName
-                })
-                .FirstOrDefaultAsync(u => u.Email == email);
+            return await BuildUserQuery().FirstOrDefaultAsync(u => u.Email == email);
         }
-        public async Task<User> AddUserAsync(User? user)
+
+        public async Task<User> AddUserAsync(User? newUser)
         {
-            var createdUser = await dbContext.Users.AddAsync(user);
+            var createdUser = await dbContext.Users.AddAsync(newUser);
             await dbContext.SaveChangesAsync();
             return createdUser.Entity!;
         }
-        public async Task<User> UpdateUserAsync(User user)
+
+        public async Task<User> UpdateUserAsync(User updatedUser)
         {
-            dbContext.Entry(user).State = EntityState.Modified;
+            dbContext.Entry(updatedUser).State = EntityState.Modified;
             await dbContext.SaveChangesAsync();
-            return (await GetUserAsync(user.Id))!;
+            return (await GetUserByIdAsync(updatedUser.Id))!;
         }
+
         public async Task DeleteUserAsync(int id)
         {
             var user = await dbContext.Users.FindAsync(id);

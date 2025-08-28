@@ -85,7 +85,7 @@ public class OrdersServiceTests
         _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 6, OwnerId = 2, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
         _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
         var user = new User { Id = 2, Email = "owner@example.com", Name = "Owner" };
-        _usersRepo.Setup(r => r.GetUserAsync(order.OwnerId)).ReturnsAsync(user);
+        _usersRepo.Setup(r => r.GetUserByIdAsync(order.OwnerId)).ReturnsAsync(user);
 
         await _service.UpdateOrderAsync(order);
 
