@@ -13,7 +13,7 @@ function App() {
   return (
     <div>
       <nav>
-        <Link to="/">Home</Link> |{' '}
+        <Link to="/landing">Home</Link> |{' '}
         <Link to="/orders">Orders</Link> |{' '}
         <Link to="/barrels">Barrels</Link> |{' '}
         <Link to="/products">Products</Link> |{' '}
@@ -23,7 +23,8 @@ function App() {
         <Link to="/login">Login</Link>
       </nav>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/landing" element={<LandingPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/barrels" element={<BarrelsPage />} />
         <Route path="/products" element={<ProductsPage />} />
