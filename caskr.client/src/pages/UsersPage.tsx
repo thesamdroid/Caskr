@@ -36,7 +36,7 @@ function UsersPage() {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault()
-    dispatch(addUser({ name: newName, email: newEmail, userTypeId: newType }))
+    dispatch(addUser({ name: newName, email: newEmail, userTypeId: newType, companyId: 1, companyName: '' }))
     setNewName('')
     setNewEmail('')
   }
@@ -49,7 +49,9 @@ function UsersPage() {
   }
 
   const handleUpdate = (id: number) => {
-    dispatch(updateUser({ id, name: editName, email: editEmail, userTypeId: editType }))
+    const existing = users.find(u => u.id === id)
+    if (!existing) return
+    dispatch(updateUser({ ...existing, name: editName, email: editEmail, userTypeId: editType }))
     setEditing(null)
   }
 
