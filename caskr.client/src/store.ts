@@ -6,6 +6,7 @@ import usersReducer from './features/usersSlice'
 import userTypesReducer from './features/userTypesSlice'
 import spiritTypesReducer from './features/spiritTypesSlice'
 import mashBillsReducer from './features/mashBillsSlice'
+import barrelsReducer from './features/barrelsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -15,7 +16,8 @@ export const store = configureStore({
     users: usersReducer,
     userTypes: userTypesReducer,
     spiritTypes: spiritTypesReducer,
-    mashBills: mashBillsReducer
+    mashBills: mashBillsReducer,
+    barrels: barrelsReducer
   }
 })
 

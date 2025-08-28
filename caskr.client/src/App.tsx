@@ -7,6 +7,7 @@ import StatusesPage from './pages/StatusesPage'
 import UsersPage from './pages/UsersPage'
 import UserTypesPage from './pages/UserTypesPage'
 import LoginPage from './pages/LoginPage'
+import BarrelsPage from './pages/BarrelsPage'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <nav>
         <Link to="/">Home</Link> |{' '}
         <Link to="/orders">Orders</Link> |{' '}
+        <Link to="/barrels">Barrels</Link> |{' '}
         <Link to="/products">Products</Link> |{' '}
         <Link to="/statuses">Statuses</Link> |{' '}
         <Link to="/users">Users</Link> |{' '}
@@ -23,6 +25,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/barrels" element={<BarrelsPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/statuses" element={<StatusesPage />} />
         <Route path="/users" element={<UsersPage />} />
