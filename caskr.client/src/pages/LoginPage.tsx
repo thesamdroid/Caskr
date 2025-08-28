@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function LoginPage() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
+  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,7 +19,7 @@ function LoginPage() {
     }
     const data = await response.json()
     localStorage.setItem('token', data.token)
-    setMessage('Logged in')
+    navigate('/landing')
   }
 
   return (
