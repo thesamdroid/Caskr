@@ -8,7 +8,7 @@ namespace Caskr.server.Services
     {
         Task<IEnumerable<Order>> GetOrdersAsync();
         Task<IEnumerable<Order>> GetOrdersForOwnerAsync(int ownerId);
-        Task<Order?> GetOrderAsync(int id);
+        Task<Order?> GetOrderByIdAsync(int id);
         Task<Order> AddOrderAsync(Order? order);
         Task<Order> UpdateOrderAsync(Order order);
         Task DeleteOrderAsync(int id);
@@ -27,9 +27,9 @@ namespace Caskr.server.Services
             return await ordersRepository.GetOrdersForOwnerAsync(ownerId);
         }
 
-        public async Task<Order?> GetOrderAsync(int id)
+        public async Task<Order?> GetOrderByIdAsync(int id)
         {
-            return await ordersRepository.GetOrderAsync(id);
+            return await ordersRepository.GetOrderByIdAsync(id);
         }
         public async Task<IEnumerable<StatusTask>?> GetOutstandingTasksAsync(int orderId)
         {
@@ -57,13 +57,13 @@ namespace Caskr.server.Services
 
         public async Task<Order> UpdateOrderAsync(Order order)
         {
-            var existing = await ordersRepository.GetOrderAsync(order.Id);
+            var existingOrder = await ordersRepository.GetOrderByIdAsync(order.Id);
             var updated = await ordersRepository.UpdateOrderAsync(order);
-            if (existing?.StatusId != updated.StatusId)
+            if (existingOrder?.StatusId != updated.StatusId)
             {
                 await ordersRepository.AddTasksForStatusAsync(updated.Id, updated.StatusId);
             }
-            if (existing?.StatusId != (int)StatusType.TtbApproval && updated.StatusId == (int)StatusType.TtbApproval)
+            if (existingOrder?.StatusId != (int)StatusType.TtbApproval && updated.StatusId == (int)StatusType.TtbApproval)
             {
                 var user = await usersRepository.GetUserAsync(updated.OwnerId);
                 if (user != null)

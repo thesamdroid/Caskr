@@ -43,12 +43,12 @@ public class OrdersServiceTests
     }
 
     [Fact]
-    public async Task GetOrderAsync_DelegatesToRepository()
+    public async Task GetOrderByIdAsync_DelegatesToRepository()
     {
         var expected = new Order { Id = 2, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 };
-        _repo.Setup(r => r.GetOrderAsync(2)).ReturnsAsync(expected);
+        _repo.Setup(r => r.GetOrderByIdAsync(2)).ReturnsAsync(expected);
 
-        var result = await _service.GetOrderAsync(2);
+        var result = await _service.GetOrderByIdAsync(2);
 
         Assert.Equal(expected, result);
     }
@@ -68,7 +68,7 @@ public class OrdersServiceTests
     public async Task UpdateOrderAsync_StatusChanged_CreatesTasks()
     {
         var order = new Order { Id = 4, OwnerId = 1, StatusId = (int)StatusType.Ordering, SpiritTypeId = 1 };
-        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 4, OwnerId = 1, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
+        _repo.Setup(r => r.GetOrderByIdAsync(order.Id)).ReturnsAsync(new Order { Id = 4, OwnerId = 1, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
         _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
 
         var result = await _service.UpdateOrderAsync(order);
@@ -82,7 +82,7 @@ public class OrdersServiceTests
     public async Task UpdateOrderAsync_StatusChangedToTtbApproval_SendsEmail()
     {
         var order = new Order { Id = 6, OwnerId = 2, StatusId = (int)StatusType.TtbApproval, Name = "Order", SpiritTypeId = 1 };
-        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 6, OwnerId = 2, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
+        _repo.Setup(r => r.GetOrderByIdAsync(order.Id)).ReturnsAsync(new Order { Id = 6, OwnerId = 2, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
         _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
         var user = new User { Id = 2, Email = "owner@example.com", Name = "Owner" };
         _usersRepo.Setup(r => r.GetUserAsync(order.OwnerId)).ReturnsAsync(user);
@@ -97,7 +97,7 @@ public class OrdersServiceTests
     public async Task UpdateOrderAsync_StatusUnchanged_DoesNotCreateTasks()
     {
         var order = new Order { Id = 8, OwnerId = 1, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 };
-        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 8, OwnerId = 1, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
+        _repo.Setup(r => r.GetOrderByIdAsync(order.Id)).ReturnsAsync(new Order { Id = 8, OwnerId = 1, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
         _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
 
         var result = await _service.UpdateOrderAsync(order);

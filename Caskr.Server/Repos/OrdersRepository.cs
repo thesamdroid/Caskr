@@ -1,6 +1,5 @@
 using Caskr.server.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Linq;
 
@@ -10,7 +9,7 @@ namespace Caskr.server.Repos
     {
         Task<IEnumerable<Order>> GetOrdersAsync();
         Task<IEnumerable<Order>> GetOrdersForOwnerAsync(int ownerId);
-        Task<Order?> GetOrderAsync(int id);
+        Task<Order?> GetOrderByIdAsync(int id);
         Task<Order?> GetOrderWithTasksAsync(int id);
         Task<Order> AddOrderAsync(Order? order);
         Task<Order> UpdateOrderAsync(Order order);
@@ -20,31 +19,29 @@ namespace Caskr.server.Repos
 
     public class OrdersRepository(CaskrDbContext dbContext) : IOrdersRepository
     {
-        public async Task<IEnumerable<Order>> GetOrdersAsync()
+        private IQueryable<Order> GetOrdersWithIncludes()
         {
-            return await dbContext.Orders
+            return dbContext.Orders
                 .AsNoTracking()
                 .Include(o => o.Status)
-                .Include(o => o.SpiritType)
-                .ToListAsync();
+                .Include(o => o.SpiritType);
+        }
+
+        public async Task<IEnumerable<Order>> GetOrdersAsync()
+        {
+            return await GetOrdersWithIncludes().ToListAsync();
         }
 
         public async Task<IEnumerable<Order>> GetOrdersForOwnerAsync(int ownerId)
         {
-            return await dbContext.Orders
-                .AsNoTracking()
-                .Include(o => o.Status)
-                .Include(o => o.SpiritType)
+            return await GetOrdersWithIncludes()
                 .Where(o => o.OwnerId == ownerId)
                 .ToListAsync();
         }
 
-        public async Task<Order?> GetOrderAsync(int id)
+        public async Task<Order?> GetOrderByIdAsync(int id)
         {
-            return await dbContext.Orders
-                .AsNoTracking()
-                .Include(o => o.Status)
-                .Include(o => o.SpiritType)
+            return await GetOrdersWithIncludes()
                 .FirstOrDefaultAsync(o => o.Id == id);
         }
         public async Task<Order?> GetOrderWithTasksAsync(int id)
@@ -95,7 +92,7 @@ namespace Caskr.server.Repos
             order.UpdatedAt = DateTime.UtcNow;
             dbContext.Entry(order).State = EntityState.Modified;
             await dbContext.SaveChangesAsync();
-            return (await GetOrderAsync(order.Id))!;
+            return (await GetOrderByIdAsync(order.Id))!;
         }
         public async Task AddTasksForStatusAsync(int orderId, int statusId)
         {
@@ -104,16 +101,16 @@ namespace Caskr.server.Repos
                 .Select(t => t.Name)
                 .ToListAsync();
 
-            var statusTasks = await dbContext.StatusTasks
+            var newStatusTasks = await dbContext.StatusTasks
                 .Where(st => st.StatusId == statusId && !existingTaskNames.Contains(st.Name))
                 .ToListAsync();
 
-            if (statusTasks.Count == 0)
+            if (newStatusTasks.Count == 0)
             {
                 return;
             }
 
-            var tasks = statusTasks.Select(st => new TaskItem
+            var tasks = newStatusTasks.Select(st => new TaskItem
             {
                 OrderId = orderId,
                 Name = st.Name,

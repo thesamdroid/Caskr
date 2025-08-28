@@ -29,7 +29,7 @@ namespace Caskr.server.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Order>> GetOrder(int id)
         {
-            var order = await ordersService.GetOrderAsync(id);
+            var order = await ordersService.GetOrderByIdAsync(id);
 
             if (order == null)
             {
@@ -77,7 +77,7 @@ namespace Caskr.server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
-            var order = await ordersService.GetOrderAsync(id);
+            var order = await ordersService.GetOrderByIdAsync(id);
             if (order == null)
             {
                 return NotFound();
