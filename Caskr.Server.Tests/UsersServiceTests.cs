@@ -52,7 +52,7 @@ public class UsersServiceTests
     [Fact]
     public async Task AddUserAsync_DelegatesToRepository()
     {
-        var user = new User { Id = 3, Password = "pass" };
+        var user = new User { Id = 3, TemporaryPassword = "pass" };
         _repo.Setup(r => r.AddUserAsync(user)).ReturnsAsync(user);
         _kcClient.Setup(k => k.CreateUserAsync(user, "pass")).Returns(Task.CompletedTask);
 
@@ -60,6 +60,16 @@ public class UsersServiceTests
 
         Assert.Equal(user, result);
         _kcClient.Verify(k => k.CreateUserAsync(user, "pass"), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddUserAsync_WhenUserExists_Throws()
+    {
+        var user = new User { Id = 7, Email = "exists@example.com", TemporaryPassword = "pass" };
+        _repo.Setup(r => r.GetUserByEmailAsync("exists@example.com")).ReturnsAsync(new User());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.AddUserAsync(user));
+        _kcClient.Verify(k => k.CreateUserAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]

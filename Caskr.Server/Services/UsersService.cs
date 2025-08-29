@@ -34,7 +34,13 @@ namespace Caskr.server.Services
                 throw new ArgumentNullException(nameof(newUser));
             }
 
-            await keycloakClient.CreateUserAsync(newUser, newUser.Password);
+            var existing = await usersRepository.GetUserByEmailAsync(newUser.Email);
+            if (existing is not null)
+            {
+                throw new InvalidOperationException("User already exists");
+            }
+
+            await keycloakClient.CreateUserAsync(newUser, newUser.TemporaryPassword);
             return await usersRepository.AddUserAsync(newUser);
         }
         public async Task<User> UpdateUserAsync(User updatedUser)

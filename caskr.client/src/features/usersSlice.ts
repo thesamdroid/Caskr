@@ -9,6 +9,13 @@ export interface User {
   companyName: string
 }
 
+export interface NewUser {
+  name: string
+  email: string
+  userTypeId: number
+  temporaryPassword: string
+}
+
 export const fetchUsers = createAsyncThunk('users/fetchUsers', async () => {
   const token = localStorage.getItem('token')
   const response = await fetch('api/users', {
@@ -18,7 +25,7 @@ export const fetchUsers = createAsyncThunk('users/fetchUsers', async () => {
   return (await response.json()) as User[]
 })
 
-export const addUser = createAsyncThunk('users/addUser', async (user: Omit<User, 'id'>) => {
+export const addUser = createAsyncThunk('users/addUser', async (user: NewUser) => {
   const token = localStorage.getItem('token')
   const response = await fetch('api/users', {
     method: 'POST',

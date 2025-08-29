@@ -17,6 +17,7 @@ function UsersPage() {
   const [newName, setNewName] = useState('')
   const [newEmail, setNewEmail] = useState('')
   const [newType, setNewType] = useState<number>(0)
+  const [newPassword, setNewPassword] = useState('')
 
   const [editing, setEditing] = useState<number | null>(null)
   const [editName, setEditName] = useState('')
@@ -36,9 +37,10 @@ function UsersPage() {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault()
-    dispatch(addUser({ name: newName, email: newEmail, userTypeId: newType, companyId: 1, companyName: '' }))
+    dispatch(addUser({ name: newName, email: newEmail, userTypeId: newType, temporaryPassword: newPassword }))
     setNewName('')
     setNewEmail('')
+    setNewPassword('')
   }
 
   const startEdit = (user: User) => {
@@ -63,10 +65,11 @@ function UsersPage() {
       <form onSubmit={handleAdd}>
         <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name'/>
         <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder='Email'/>
+        <input value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder='Temporary Password'/>
         <select value={newType} onChange={e => setNewType(Number(e.target.value))}>
           {userTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        <button type='submit'>Add</button>
+        <button type='submit'>Create User</button>
       </form>
       <table className='table'>
         <thead>

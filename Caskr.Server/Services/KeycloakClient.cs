@@ -8,7 +8,7 @@ namespace Caskr.server.Services;
 public interface IKeycloakClient
 {
     Task<string?> GetTokenAsync(string username, string password);
-    Task CreateUserAsync(User user, string password);
+    Task CreateUserAsync(User user, string temporaryPassword);
 }
 
 public class KeycloakClient(HttpClient httpClient, IConfiguration configuration) : IKeycloakClient
@@ -34,7 +34,7 @@ public class KeycloakClient(HttpClient httpClient, IConfiguration configuration)
         return doc.RootElement.GetProperty("access_token").GetString();
     }
 
-    public async Task CreateUserAsync(User user, string password)
+    public async Task CreateUserAsync(User user, string temporaryPassword)
     {
         var adminToken = await GetTokenAsync(_configuration["Keycloak:AdminUser"]!, _configuration["Keycloak:AdminPassword"]!);
         if (adminToken is null) return;
@@ -46,7 +46,7 @@ public class KeycloakClient(HttpClient httpClient, IConfiguration configuration)
             enabled = true,
             credentials = new[]
             {
-                new { type = "password", value = password, temporary = false }
+                new { type = "password", value = temporaryPassword, temporary = true }
             }
         };
         var request = new HttpRequestMessage(HttpMethod.Post,
