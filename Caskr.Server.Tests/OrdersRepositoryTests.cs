@@ -2,6 +2,7 @@ using Caskr.server.Models;
 using Caskr.server.Repos;
 using Microsoft.EntityFrameworkCore;
 using UserTypeEnum = Caskr.server.UserType;
+using System.Linq;
 
 namespace Caskr.Server.Tests;
 
@@ -101,6 +102,73 @@ public class OrdersRepositoryTests
         Assert.Equal(1, order.Id);
         Assert.NotNull(order.Status);
         Assert.NotNull(order.SpiritType);
+    }
+
+    [Fact]
+    public async Task GetOrdersForCompanyAsync_ReturnsOrdersWithDetails()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase("GetOrdersForCompanyAsync_ReturnsOrdersWithDetails")
+            .Options;
+
+        using var context = new CaskrDbContext(options);
+
+        context.Statuses.Add(new Status { Id = 1, Name = "Open" });
+        context.SpiritTypes.Add(new SpiritType { Id = 1, Name = "Whiskey" });
+
+        context.Orders.AddRange(
+            new Order
+            {
+                Id = 1,
+                Name = "Company1Order1",
+                OwnerId = 1,
+                CompanyId = 1,
+                StatusId = 1,
+                SpiritTypeId = 1,
+                BatchId = 1,
+                Quantity = 5,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Order
+            {
+                Id = 2,
+                Name = "Company1Order2",
+                OwnerId = 2,
+                CompanyId = 1,
+                StatusId = 1,
+                SpiritTypeId = 1,
+                BatchId = 1,
+                Quantity = 5,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Order
+            {
+                Id = 3,
+                Name = "Company2Order",
+                OwnerId = 3,
+                CompanyId = 2,
+                StatusId = 1,
+                SpiritTypeId = 1,
+                BatchId = 1,
+                Quantity = 5,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+        await context.SaveChangesAsync();
+
+        var repo = new OrdersRepository(context);
+
+        var orders = await repo.GetOrdersForCompanyAsync(1);
+        Assert.Equal(2, orders.Count());
+        Assert.All(orders, o =>
+        {
+            Assert.Equal(1, o.CompanyId);
+            Assert.NotNull(o.Status);
+            Assert.NotNull(o.SpiritType);
+        });
     }
 }
 

@@ -1,6 +1,7 @@
 using Caskr.server.Models;
 using Caskr.server.Repos;
 using Caskr.server.Services;
+using UserTypeEnum = Caskr.server.UserType;
 using Moq;
 using System.Linq;
 using System;
@@ -32,12 +33,27 @@ public class OrdersServiceTests
     }
 
     [Fact]
-    public async Task GetOrdersForOwnerAsync_DelegatesToRepository()
+    public async Task GetOrdersForOwnerAsync_NonAdminUser_ReturnsOwnerOrders()
     {
+        var user = new User { Id = 5, CompanyId = 1, UserTypeId = (int)UserTypeEnum.Distiller };
         var expected = new[] { new Order { Id = 9, OwnerId = 5, StatusId = (int)StatusType.ResearchAndDevelopment, SpiritTypeId = 1 } };
+        _usersRepo.Setup(r => r.GetUserByIdAsync(user.Id)).ReturnsAsync(user);
         _repo.Setup(r => r.GetOrdersForOwnerAsync(5)).ReturnsAsync(expected);
 
         var result = await _service.GetOrdersForOwnerAsync(5);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public async Task GetOrdersForOwnerAsync_AdminUser_ReturnsCompanyOrders()
+    {
+        var user = new User { Id = 7, CompanyId = 3, UserTypeId = (int)UserTypeEnum.Admin };
+        var expected = new[] { new Order { Id = 1, CompanyId = 3, OwnerId = 2, StatusId = (int)StatusType.ResearchAndDevelopment, SpiritTypeId = 1 } };
+        _usersRepo.Setup(r => r.GetUserByIdAsync(user.Id)).ReturnsAsync(user);
+        _repo.Setup(r => r.GetOrdersForCompanyAsync(3)).ReturnsAsync(expected);
+
+        var result = await _service.GetOrdersForOwnerAsync(7);
 
         Assert.Equal(expected, result);
     }
