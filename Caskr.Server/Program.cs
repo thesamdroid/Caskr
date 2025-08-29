@@ -1,5 +1,6 @@
 using Caskr.server;
 using Caskr.server.Models;
+using Caskr.server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
