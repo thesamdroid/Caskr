@@ -1,4 +1,6 @@
-﻿using Caskr.server.Models;
+using System.Security.Claims;
+using Caskr.server;
+using Caskr.server.Models;
 using Caskr.server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -51,9 +53,27 @@ namespace Caskr.server.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> PostUser(User? user)
         {
-            var createdUser = await usersService.AddUserAsync(user);
+            var currentUser = await GetCurrentUserAsync();
+            if (currentUser is null || ((UserType)currentUser.UserTypeId != UserType.Admin && (UserType)currentUser.UserTypeId != UserType.SuperAdmin))
+            {
+                return Forbid();
+            }
 
-            return CreatedAtAction("GetUser", new { id = createdUser.Id }, createdUser);
+            if (user is null)
+            {
+                return BadRequest();
+            }
+
+            user.CompanyId = currentUser.CompanyId;
+            try
+            {
+                var createdUser = await usersService.AddUserAsync(user);
+                return CreatedAtAction("GetUser", new { id = createdUser.Id }, createdUser);
+            }
+            catch (InvalidOperationException)
+            {
+                return Conflict();
+            }
         }
 
         // DELETE: api/Users/5
@@ -70,5 +90,17 @@ namespace Caskr.server.Controllers
 
             return NoContent();
         }
+
+        private async Task<User?> GetCurrentUserAsync()
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                return null;
+            }
+
+            return await usersService.GetUserByIdAsync(userId);
+        }
     }
 }
+
