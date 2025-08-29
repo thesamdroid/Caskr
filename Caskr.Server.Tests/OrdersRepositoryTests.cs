@@ -1,6 +1,7 @@
 using Caskr.server.Models;
 using Caskr.server.Repos;
 using Microsoft.EntityFrameworkCore;
+using UserTypeEnum = Caskr.server.UserType;
 
 namespace Caskr.Server.Tests;
 
@@ -16,9 +17,9 @@ public class OrdersRepositoryTests
         using var context = new CaskrDbContext(options);
 
         context.Users.AddRange(
-            new User { Id = 1, Name = "Owner1", Email = "owner1@example.com", UserTypeId = 1, CompanyId = 1 },
-            new User { Id = 2, Name = "Owner2", Email = "owner2@example.com", UserTypeId = 1, CompanyId = 1 },
-            new User { Id = 3, Name = "Owner3", Email = "owner3@example.com", UserTypeId = 1, CompanyId = 2 }
+            new User { Id = 1, Name = "Owner1", Email = "owner1@example.com", UserTypeId = (int)UserTypeEnum.Distiller, CompanyId = 1 },
+            new User { Id = 2, Name = "Owner2", Email = "owner2@example.com", UserTypeId = (int)UserTypeEnum.Distiller, CompanyId = 1 },
+            new User { Id = 3, Name = "Owner3", Email = "owner3@example.com", UserTypeId = (int)UserTypeEnum.Distiller, CompanyId = 2 }
         );
 
         context.MashBills.Add(new MashBill { Id = 1, CompanyId = 1, Name = "MB1" });
