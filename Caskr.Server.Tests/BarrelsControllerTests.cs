@@ -34,7 +34,7 @@ public class BarrelsControllerTests
     }
 
     [Fact]
-    public async Task GetBarrelsForCompany_NonAdminDifferentCompany_ReturnsForbid()
+    public async Task GetBarrelsForCompany_NonSuperAdminDifferentCompany_ReturnsForbid()
     {
         var user = new User { Id = 1, CompanyId = 1, UserTypeId = (int)UserTypeEnum.Distiller };
         var controller = CreateController(user);
@@ -45,9 +45,9 @@ public class BarrelsControllerTests
     }
 
     [Fact]
-    public async Task GetBarrelsForCompany_AdminAnyCompany_ReturnsOk()
+    public async Task GetBarrelsForCompany_SuperAdminAnyCompany_ReturnsOk()
     {
-        var user = new User { Id = 2, CompanyId = 1, UserTypeId = (int)UserTypeEnum.Admin };
+        var user = new User { Id = 2, CompanyId = 1, UserTypeId = (int)UserTypeEnum.SuperAdmin };
         var controller = CreateController(user);
         _barrelsService.Setup(s => s.GetBarrelsForCompanyAsync(3)).ReturnsAsync(new[] { new Barrel { Id = 10 } });
 
