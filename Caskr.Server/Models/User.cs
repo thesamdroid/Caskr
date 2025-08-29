@@ -22,4 +22,7 @@ public partial class User
     public virtual Company Company { get; set; } = null!;
 
     public virtual UserType UserType { get; set; } = null!;
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string Password { get; set; } = string.Empty;
 }

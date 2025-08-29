@@ -8,11 +8,12 @@ namespace Caskr.Server.Tests;
 public class UsersServiceTests
 {
     private readonly Mock<IUsersRepository> _repo = new();
+    private readonly Mock<IKeycloakClient> _kcClient = new();
     private readonly IUsersService _service;
 
     public UsersServiceTests()
     {
-        _service = new UsersService(_repo.Object);
+        _service = new UsersService(_repo.Object, _kcClient.Object);
     }
 
     [Fact]
@@ -51,12 +52,14 @@ public class UsersServiceTests
     [Fact]
     public async Task AddUserAsync_DelegatesToRepository()
     {
-        var user = new User { Id = 3 };
+        var user = new User { Id = 3, Password = "pass" };
         _repo.Setup(r => r.AddUserAsync(user)).ReturnsAsync(user);
+        _kcClient.Setup(k => k.CreateUserAsync(user, "pass")).Returns(Task.CompletedTask);
 
         var result = await _service.AddUserAsync(user);
 
         Assert.Equal(user, result);
+        _kcClient.Verify(k => k.CreateUserAsync(user, "pass"), Times.Once);
     }
 
     [Fact]

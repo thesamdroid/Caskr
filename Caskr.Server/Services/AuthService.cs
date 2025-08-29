@@ -9,13 +9,19 @@ namespace Caskr.server.Services
 {
     public interface IAuthService
     {
-        Task<string?> LoginAsync(string email);
+        Task<string?> LoginAsync(string email, string password);
     }
 
-    public class AuthService(IUsersService usersService, IConfiguration configuration) : IAuthService
+    public class AuthService(IUsersService usersService, IConfiguration configuration, IKeycloakClient keycloakClient) : IAuthService
     {
-        public async Task<string?> LoginAsync(string email)
+        public async Task<string?> LoginAsync(string email, string password)
         {
+            var keycloakToken = await keycloakClient.GetTokenAsync(email, password);
+            if (keycloakToken is null)
+            {
+                return null;
+            }
+
             var user = await usersService.GetUserByEmailAsync(email);
             if (user is null)
             {

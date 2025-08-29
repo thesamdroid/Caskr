@@ -13,7 +13,7 @@ namespace Caskr.server.Services
         Task DeleteUserAsync(int id);
     }
 
-    public class UsersService(IUsersRepository usersRepository) : IUsersService
+    public class UsersService(IUsersRepository usersRepository, IKeycloakClient keycloakClient) : IUsersService
     {
         public async Task<IEnumerable<User>> GetUsersAsync()
         {
@@ -29,6 +29,12 @@ namespace Caskr.server.Services
         }
         public async Task<User> AddUserAsync(User? newUser)
         {
+            if (newUser is null)
+            {
+                throw new ArgumentNullException(nameof(newUser));
+            }
+
+            await keycloakClient.CreateUserAsync(newUser, newUser.Password);
             return await usersRepository.AddUserAsync(newUser);
         }
         public async Task<User> UpdateUserAsync(User updatedUser)

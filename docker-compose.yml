@@ -1,0 +1,46 @@
+version: '3.9'
+services:
+  caskr-db:
+    image: postgres:alpine
+    container_name: caskr-db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=caskr-db
+    volumes:
+      - ./Database/postgres/data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+      - pgconf:/etc/postgresql
+      - pglog:/var/log/postgresql
+      - ./Database/initdb.d:/docker-entrypoint-initdb.d
+  keycloak:
+    build: ./Keycloak
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+  caskr-server:
+    build: ./Caskr.Server
+    container_name: caskr-server
+    depends_on:
+      - caskr-db
+      - keycloak
+    ports:
+      - "5000:8080"
+    environment:
+      ConnectionStrings__CaskrDatabaseConnectionString: Host=caskr-db; Database=caskr-db; Username=postgres; Password=docker
+      Keycloak__Authority: http://keycloak:8080
+      Keycloak__Realm: master
+      Keycloak__ClientId: caskr-client
+      Keycloak__ClientSecret: secret
+      Keycloak__AdminUser: admin
+      Keycloak__AdminPassword: admin
+volumes:
+  pgdata:
+  pgconf:
+  pglog:

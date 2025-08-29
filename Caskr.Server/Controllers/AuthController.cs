@@ -13,7 +13,7 @@ namespace Caskr.server.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
         {
-            var token = await authService.LoginAsync(request.Email);
+            var token = await authService.LoginAsync(request.Email, request.Password);
             if (token is null)
             {
                 return Unauthorized();

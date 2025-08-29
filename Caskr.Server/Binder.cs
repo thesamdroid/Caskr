@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Caskr.server.Models;
+using Caskr.server.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -13,8 +14,11 @@ public static void BindServices(this IServiceCollection services, IConfiguration
         {
             var connectionString = configuration.GetConnectionString("CaskrDatabaseConnectionString");
             
+            services.AddSingleton(configuration);
             services.AddDbContext<CaskrDbContext>(options =>
                 options.UseNpgsql(connectionString));
+
+            services.AddHttpClient<IKeycloakClient, KeycloakClient>();
 
             var bindableTypes = GetAutoBindedTypes(Assembly.GetAssembly(typeof(Binder))!);
 
