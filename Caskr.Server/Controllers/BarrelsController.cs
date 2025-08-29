@@ -16,7 +16,7 @@ namespace Caskr.server.Controllers
         public async Task<ActionResult<IEnumerable<Barrel>>> GetBarrelsForCompany(int companyId)
         {
             var user = await GetCurrentUserAsync();
-            if (user is null || ((UserType)user.UserTypeId != UserType.Admin && user.CompanyId != companyId))
+            if (user is null || ((UserType)user.UserTypeId != UserType.SuperAdmin && user.CompanyId != companyId))
             {
                 return Forbid();
             }
@@ -29,7 +29,7 @@ namespace Caskr.server.Controllers
         public async Task<ActionResult<object>> Forecast(int companyId, [FromQuery] DateTime targetDate, [FromQuery] int ageYears)
         {
             var user = await GetCurrentUserAsync();
-            if (user is null || ((UserType)user.UserTypeId != UserType.Admin && user.CompanyId != companyId))
+            if (user is null || ((UserType)user.UserTypeId != UserType.SuperAdmin && user.CompanyId != companyId))
             {
                 return Forbid();
             }

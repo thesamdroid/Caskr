@@ -2,7 +2,7 @@
 
 -- User types
 INSERT INTO public.user_type (id, name) VALUES
-    (1, 'Admin'),
+    (1, 'SuperAdmin'),
     (2, 'Distiller'),
     (3, 'Distributor'),
     (4, 'Retailer');

@@ -6,9 +6,9 @@ namespace Caskr.server;
 public enum UserType
 {
     /// <summary>
-    /// Administrator user type identifier.
+    /// Super administrator user type identifier.
     /// </summary>
-    Admin = 1,
+    SuperAdmin = 1,
 
     /// <summary>
     /// Distiller user type identifier.
