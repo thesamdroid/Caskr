@@ -1,5 +1,6 @@
-﻿using Caskr.server.Models;
+using Caskr.server.Models;
 using Caskr.server.Services;
+using UserTypeModel = Caskr.server.Models.UserType;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Caskr.server.Controllers
@@ -10,7 +11,7 @@ namespace Caskr.server.Controllers
     {
         // GET: api/UserTypes
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserType>>> GetUserTypes()
+        public async Task<ActionResult<IEnumerable<UserTypeModel>>> GetUserTypes()
         {
             var userTypes = (await userTypesService.GetUserTypesAsync()).ToList();
             return Ok(userTypes);
@@ -18,7 +19,7 @@ namespace Caskr.server.Controllers
 
         // GET: api/UserTypes/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<UserType>> GetUserType(int id)
+        public async Task<ActionResult<UserTypeModel>> GetUserType(int id)
         {
             var userType = await userTypesService.GetUserTypeAsync(id);
 
@@ -33,7 +34,7 @@ namespace Caskr.server.Controllers
         // PUT: api/UserTypes/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<ActionResult<UserType>> PutUserType(int id, UserType userType)
+        public async Task<ActionResult<UserTypeModel>> PutUserType(int id, UserTypeModel userType)
         {
             if (id != userType.Id)
             {
@@ -46,7 +47,7 @@ namespace Caskr.server.Controllers
         // POST: api/UserTypes
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<UserType>> PostUserType(UserType? userType)
+        public async Task<ActionResult<UserTypeModel>> PostUserType(UserTypeModel? userType)
         {
             var createdUserType = await userTypesService.AddUserTypeAsync(userType);
 
