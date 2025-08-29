@@ -3,9 +3,10 @@
 -- User types
 INSERT INTO public.user_type (id, name) VALUES
     (1, 'SuperAdmin'),
-    (2, 'Distiller'),
-    (3, 'Distributor'),
-    (4, 'Retailer');
+    (2, 'Admin'),
+    (3, 'Distiller'),
+    (4, 'Distributor'),
+    (5, 'Retailer');
 
 -- Order status values
 INSERT INTO public.status (id, name) VALUES
@@ -48,30 +49,30 @@ INSERT INTO public.status_task (id, status_id, name) VALUES
 
 -- Users
 INSERT INTO public.users (id, name, email, user_type_id, company_id) VALUES
-    (1, 'Alice Johnson', 'alice.johnson.147@example.invalid', 2, 4),
-    (2, 'Bob Smith', 'bob.smith.938@example.invalid', 2, 3),
-    (3, 'Carol Williams', 'carol.williams.259@example.invalid', 3, 1),
-    (4, 'David Brown', 'david.brown.740@example.invalid', 4, 2),
-    (5, 'Eve Davis', 'eve.davis.572@example.invalid', 2, 1),
-    (6, 'Frank Miller', 'frank.miller.863@example.invalid', 3, 2),
-    (7, 'Grace Wilson', 'grace.wilson.314@example.invalid', 4, 3),
-    (8, 'Hank Moore', 'hank.moore.485@example.invalid', 2, 4),
-    (9, 'Ivy Taylor', 'ivy.taylor.697@example.invalid', 3, 1),
-    (10, 'Jake Anderson', 'jake.anderson.208@example.invalid', 4, 2),
-    (11, 'Laura Thomas', 'laura.thomas.559@example.invalid', 2, 3),
-    (12, 'Mike Jackson', 'mike.jackson.631@example.invalid', 3, 4),
-    (13, 'Nina White', 'nina.white.942@example.invalid', 4, 1),
-    (14, 'Oscar Harris', 'oscar.harris.173@example.invalid', 2, 2),
-    (15, 'Paula Martin', 'paula.martin.384@example.invalid', 3, 3),
-    (16, 'Quincy Lee', 'quincy.lee.795@example.invalid', 4, 4),
-    (17, 'Rachel Perez', 'rachel.perez.516@example.invalid', 2, 1),
-    (18, 'Steve Clark', 'steve.clark.627@example.invalid', 3, 2),
-    (19, 'Tina Lewis', 'tina.lewis.838@example.invalid', 4, 3),
-    (20, 'Umar Walker', 'umar.walker.249@example.invalid', 2, 4),
-    (21, 'Victor Hall', 'victor.hall.460@example.invalid', 3, 1),
-    (22, 'Wendy Young', 'wendy.young.571@example.invalid', 4, 2),
-    (23, 'Xavier King', 'xavier.king.682@example.invalid', 2, 3),
-    (24, 'Yvonne Scott', 'yvonne.scott.793@example.invalid', 3, 4),
+    (1, 'Alice Johnson', 'alice.johnson.147@example.invalid', 3, 4),
+    (2, 'Bob Smith', 'bob.smith.938@example.invalid', 3, 3),
+    (3, 'Carol Williams', 'carol.williams.259@example.invalid', 4, 1),
+    (4, 'David Brown', 'david.brown.740@example.invalid', 5, 2),
+    (5, 'Eve Davis', 'eve.davis.572@example.invalid', 3, 1),
+    (6, 'Frank Miller', 'frank.miller.863@example.invalid', 4, 2),
+    (7, 'Grace Wilson', 'grace.wilson.314@example.invalid', 5, 3),
+    (8, 'Hank Moore', 'hank.moore.485@example.invalid', 3, 4),
+    (9, 'Ivy Taylor', 'ivy.taylor.697@example.invalid', 4, 1),
+    (10, 'Jake Anderson', 'jake.anderson.208@example.invalid', 5, 2),
+    (11, 'Laura Thomas', 'laura.thomas.559@example.invalid', 3, 3),
+    (12, 'Mike Jackson', 'mike.jackson.631@example.invalid', 4, 4),
+    (13, 'Nina White', 'nina.white.942@example.invalid', 5, 1),
+    (14, 'Oscar Harris', 'oscar.harris.173@example.invalid', 3, 2),
+    (15, 'Paula Martin', 'paula.martin.384@example.invalid', 4, 3),
+    (16, 'Quincy Lee', 'quincy.lee.795@example.invalid', 5, 4),
+    (17, 'Rachel Perez', 'rachel.perez.516@example.invalid', 3, 1),
+    (18, 'Steve Clark', 'steve.clark.627@example.invalid', 4, 2),
+    (19, 'Tina Lewis', 'tina.lewis.838@example.invalid', 5, 3),
+    (20, 'Umar Walker', 'umar.walker.249@example.invalid', 3, 4),
+    (21, 'Victor Hall', 'victor.hall.460@example.invalid', 4, 1),
+    (22, 'Wendy Young', 'wendy.young.571@example.invalid', 5, 2),
+    (23, 'Xavier King', 'xavier.king.682@example.invalid', 3, 3),
+    (24, 'Yvonne Scott', 'yvonne.scott.793@example.invalid', 4, 4),
     (125, 'Super Admin', 'admin@example.invalid', 1, 1);
 
 -- Companies
@@ -136,7 +137,7 @@ INSERT INTO public.tasks (order_id, name, completed_date) VALUES
 INSERT INTO public.users (name, email, user_type_id, company_id)
 SELECT CONCAT('Test User ', gs),
        CONCAT('test.user.', gs, '@example.invalid'),
-       (gs % 3) + 2,
+       (gs % 3) + 3,
        (gs % 4) + 1
 FROM generate_series(25, 124) AS gs;
 

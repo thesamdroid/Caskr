@@ -1,6 +1,7 @@
 using System.Linq;
 using Caskr.server.Models;
 using Caskr.server.Repos;
+using Caskr.server;
 
 namespace Caskr.server.Services
 {
@@ -24,6 +25,12 @@ namespace Caskr.server.Services
 
         public async Task<IEnumerable<Order>> GetOrdersForOwnerAsync(int ownerId)
         {
+            var user = await usersRepository.GetUserByIdAsync(ownerId);
+            if (user != null && user.UserTypeId == (int)UserType.Admin)
+            {
+                return await ordersRepository.GetOrdersForCompanyAsync(user.CompanyId);
+            }
+
             return await ordersRepository.GetOrdersForOwnerAsync(ownerId);
         }
 

@@ -11,18 +11,23 @@ public enum UserType
     SuperAdmin = 1,
 
     /// <summary>
+    /// Administrator user type identifier.
+    /// </summary>
+    Admin = 2,
+
+    /// <summary>
     /// Distiller user type identifier.
     /// </summary>
-    Distiller = 2,
+    Distiller = 3,
 
     /// <summary>
     /// Distributor user type identifier.
     /// </summary>
-    Distributor = 3,
+    Distributor = 4,
 
     /// <summary>
     /// Retailer user type identifier.
     /// </summary>
-    Retailer = 4
+    Retailer = 5
 }
 

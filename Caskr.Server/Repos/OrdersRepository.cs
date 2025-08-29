@@ -9,6 +9,7 @@ namespace Caskr.server.Repos
     public interface IOrdersRepository
     {
         Task<IEnumerable<Order>> GetOrdersAsync();
+        Task<IEnumerable<Order>> GetOrdersForCompanyAsync(int companyId);
         Task<IEnumerable<Order>> GetOrdersForOwnerAsync(int ownerId);
         Task<Order?> GetOrderAsync(int id);
         Task<Order?> GetOrderWithTasksAsync(int id);
@@ -26,6 +27,16 @@ namespace Caskr.server.Repos
                 .AsNoTracking()
                 .Include(o => o.Status)
                 .Include(o => o.SpiritType)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Order>> GetOrdersForCompanyAsync(int companyId)
+        {
+            return await dbContext.Orders
+                .AsNoTracking()
+                .Include(o => o.Status)
+                .Include(o => o.SpiritType)
+                .Where(o => o.CompanyId == companyId)
                 .ToListAsync();
         }
 
