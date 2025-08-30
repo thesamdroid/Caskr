@@ -73,7 +73,8 @@ INSERT INTO public.users (id, name, email, user_type_id, company_id) VALUES
     (22, 'Wendy Young', 'wendy.young.571@example.invalid', 5, 2),
     (23, 'Xavier King', 'xavier.king.682@example.invalid', 3, 3),
     (24, 'Yvonne Scott', 'yvonne.scott.793@example.invalid', 4, 4),
-    (125, 'Super Admin', 'admin@example.invalid', 1, 1);
+    (125, 'Super Admin', 'admin@example.invalid', 1, 1),
+    (126, 'Shaw', 'shaw@caskr.co', 1, 1);
 
 -- Companies
 INSERT INTO public.company (company_name, primary_contact_id, renewal_date) VALUES
