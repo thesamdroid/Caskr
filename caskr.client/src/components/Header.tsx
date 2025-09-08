@@ -11,18 +11,33 @@ export default function Header() {
         <nav>
           <ul className="nav-menu">
             <li className="nav-item">
-              <NavLink to="/" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+              <NavLink to="/" className={({ isActive }) => (isActive ? 'active' : '')}>
                 Dashboard
               </NavLink>
             </li>
             <li className="nav-item">
-              <NavLink to="/orders" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+              <NavLink to="/orders" className={({ isActive }) => (isActive ? 'active' : '')}>
                 Orders
               </NavLink>
             </li>
             <li className="nav-item">
-              <NavLink to="/barrels" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+              <NavLink to="/barrels" className={({ isActive }) => (isActive ? 'active' : '')}>
                 Barrels
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink to="/forecasting" className={({ isActive }) => (isActive ? 'active' : '')}>
+                Forecasting
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink to="/reports" className={({ isActive }) => (isActive ? 'active' : '')}>
+                Reports
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
+                Settings
               </NavLink>
             </li>
           </ul>
