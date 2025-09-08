@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CASKr - Barrel Logistics Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #1e40af;
+            --primary-blue-light: #3b82f6;
+            --primary-blue-dark: #1e3a8a;
+            --secondary-orange: #ea580c;
+            --secondary-orange-light: #f97316;
+            --success-green: #16a34a;
+            --warning-yellow: #eab308;
+            --danger-red: #dc2626;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 70px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+
+        .barrel-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #8B4513 100%);
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+        }
+
+        .barrel-icon::before {
+            content: '';
+            width: 28px;
+            height: 32px;
+            background: linear-gradient(90deg, #CD853F 0%, #DEB887 50%, #CD853F 100%);
+            border-radius: 4px;
+            border: 2px solid #8B4513;
+            position: relative;
+        }
+
+        .barrel-icon::after {
+            content: '';
+            position: absolute;
+            width: 32px;
+            height: 2px;
+            background: #654321;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-item a {
+            text-decoration: none;
+            color: var(--gray-600);
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-item a:hover, .nav-item a.active {
+            color: var(--primary-blue);
+            background-color: var(--gray-100);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: var(--gray-100);
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Main Layout */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            gap: 2rem;
+        }
+
+        /* Dashboard Cards */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-200);
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .stat-icon.orders { background: var(--primary-blue); color: white; }
+        .stat-icon.barrels { background: var(--secondary-orange); color: white; }
+        .stat-icon.status { background: var(--success-green); color: white; }
+        .stat-icon.forecast { background: var(--warning-yellow); color: white; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .stat-change.positive { color: var(--success-green); }
+        .stat-change.negative { color: var(--danger-red); }
+
+        /* Content Sections */
+        .content-section {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--gray-50);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-blue-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .btn-success {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-yellow);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table thead {
+            background: var(--gray-50);
+        }
+
+        .table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .table tr:hover {
+            background: var(--gray-50);
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.in-progress {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-badge.completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.delayed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Progress bars */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success-green);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-xl);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 2rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .nav-menu {
+                display: none;
+            }
+
+            .main-container {
+                padding: 1rem;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .section-actions {
+                justify-content: space-between;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--gray-100);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-400);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-500);
+        }
+
+        /* Additional utilities */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .text-sm { font-size: 14px; }
+        .text-xs { font-size: 12px; }
+        .text-gray { color: var(--gray-600); }
+        .mb-4 { margin-bottom: 1rem; }
+        .mt-4 { margin-top: 1rem; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="#" class="logo">
+                <div class="barrel-icon"></div>
+                <span>CASKr</span>
+            </a>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="#" class="active">Dashboard</a></li>
+                    <li class="nav-item"><a href="#">Orders</a></li>
+                    <li class="nav-item"><a href="#">Barrels</a></li>
+                    <li class="nav-item"><a href="#">Forecasting</a></li>
+                    <li class="nav-item"><a href="#">Reports</a></li>
+                    <li class="nav-item"><a href="#">Settings</a></li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar">JD</div>
+                <span class="font-medium">John Distiller</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <!-- Dashboard Stats -->
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Active Orders</div>
+                    <div class="stat-icon orders">📦</div>
+                </div>
+                <div class="stat-value">247</div>
+                <div class="stat-change positive">↗ +12% from last month</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Barrels in Stock</div>
+                    <div class="stat-icon barrels">🛢️</div>
+                </div>
+                <div class="stat-value">1,847</div>
+                <div class="stat-change positive">↗ +8% from last month</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Ready for Shipment</div>
+                    <div class="stat-icon status">✅</div>
+                </div>
+                <div class="stat-value">89</div>
+                <div class="stat-change negative">↘ -3% from last week</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Forecasted Demand</div>
+                    <div class="stat-icon forecast">📊</div>
+                </div>
+                <div class="stat-value">312</div>
+                <div class="stat-change positive">↗ +15% next quarter</div>
+            </div>
+        </div>
+
+        <!-- Current Orders Section -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Current Orders</h2>
+                <div class="section-actions">
+                    <button class="btn btn-success">Create Label</button>
+                    <button class="btn btn-warning">Initiate Transfer</button>
+                    <button class="btn btn-primary">Create New Order</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Outstanding Tasks</th>
+                            <th>Due Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-medium">#ORD-2024-001</td>
+                            <td>Premium Bourbon Batch</td>
+                            <td><span class="status-badge in-progress">In Progress</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 75%;"></div>
+                                </div>
+                                <span class="text-xs text-gray mt-1">75% Complete</span>
+                            </td>
+                            <td>
+                                <ul class="text-sm">
+                                    <li>• Quality inspection</li>
+                                    <li>• Label approval</li>
+                                </ul>
+                            </td>
+                            <td class="text-sm">Mar 15, 2024</td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-secondary btn-sm">Edit</button>
+                                    <button class="btn btn-primary btn-sm">View</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="font-medium">#ORD-2024-002</td>
+                            <td>Single Malt Collection</td>
+                            <td><span class="status-badge pending">Pending</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 25%;"></div>
+                                </div>
+                                <span class="text-xs text-gray mt-1">25% Complete</span>
+                            </td>
+                            <td>
+                                <ul class="text-sm">
+                                    <li>• Barrel selection</li>
+                                    <li>• Aging verification</li>
+                                    <li>• Documentation review</li>
+                                </ul>
+                            </td>
+                            <td class="text-sm">Apr 2, 2024</td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-secondary btn-sm">Edit</button>
+                                    <button class="btn btn-primary btn-sm">View</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="font-medium">#ORD-2024-003</td>
+                            <td>Rye Whiskey Reserve</td>
+                            <td><span class="status-badge completed">Completed</span></td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 100%;"></div>
+                                </div>
+                                <span class="text-xs text-gray mt-1">100% Complete</span>
+                            </td>
+                            <td class="text-gray text-sm">No outstanding tasks</td>
+                            <td class="text-sm">Feb 28, 2024</td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-secondary btn-sm">Archive</button>
+                                    <button class="btn btn-primary btn-sm">View</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Barrel Inventory Section -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">Barrel Inventory</h2>
+                <div class="section-actions">
+                    <button class="btn btn-secondary">Export Report</button>
+                    <button class="btn btn-primary">Forecasting</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Spirit Type</th>
+                            <th>Age</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-medium">BRL-2024-001</td>
+                            <td>Bourbon</td>
+                            <td>4 years</td>
+                            <td>Warehouse A-12</td>
+                            <td><span class="status-badge in-progress">Aging</span></td>
+                            <td class="text-sm">2 days ago</td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm">View Details</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="font-medium">BRL-2024-002</td>
+                            <td>Rye Whiskey</td>
+                            <td>6 years</td>
+                            <td>Warehouse B-08</td>
+                            <td><span class="status-badge completed">Ready</span></td>
+                            <td class="text-sm">1 week ago</td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm">View Details</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="font-medium">BRL-2024-003</td>
+                            <td>Single Malt</td>
+                            <td>8 years</td>
+                            <td>Warehouse C-15</td>
+                            <td><span class="status-badge pending">Quality Check</span></td>
+                            <td class="text-sm">3 days ago</td>
+                            <td>
+                                <button class="btn btn-secondary btn-sm">View Details</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Sample Modal (hidden by default) -->
+    <div class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Order</h3>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label class="form-label">Order Name</label>
+                        <input type="text" class="form-input" placeholder="Enter order name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Spirit Type</label>
+                        <select class="form-select">
+                            <option>Select spirit type</option>
+                            <option>Bourbon</option>
+                            <option>Rye Whiskey</option>
+                            <option>Single Malt</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-input" placeholder="Enter quantity">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary">Cancel</button>
+                <button class="btn btn-primary">Create Order</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
