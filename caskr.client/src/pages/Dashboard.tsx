@@ -186,38 +186,6 @@ export default function Dashboard() {
         </div>
       </main>
 
-      <div className="modal-overlay" style={{ display: 'none' }}>
-        <div className="modal">
-          <div className="modal-header">
-            <h3 className="modal-title">Create New Order</h3>
-          </div>
-          <div className="modal-body">
-            <form>
-              <div className="form-group">
-                <label className="form-label">Order Name</label>
-                <input type="text" className="form-input" placeholder="Enter order name" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Spirit Type</label>
-                <select className="form-select">
-                  <option>Select spirit type</option>
-                  <option>Bourbon</option>
-                  <option>Rye Whiskey</option>
-                  <option>Single Malt</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Quantity</label>
-                <input type="number" className="form-input" placeholder="Enter quantity" />
-              </div>
-            </form>
-          </div>
-          <div className="modal-footer">
-            <button className="btn btn-secondary">Cancel</button>
-            <button className="btn btn-primary">Create Order</button>
-          </div>
-        </div>
-      </div>
     </>
   )
 }

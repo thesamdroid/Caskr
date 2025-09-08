@@ -1,4 +1,5 @@
 import './App.css'
+import './caskr-ui-redesign.css'
 import { Route, Routes } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import OrdersPage from './pages/OrdersPage'

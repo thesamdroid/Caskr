@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom'
-import '../caskr-ui-redesign.css'
+import { NavLink, Link } from 'react-router-dom'
 
 export default function Header() {
   return (
@@ -11,12 +10,21 @@ export default function Header() {
         </Link>
         <nav>
           <ul className="nav-menu">
-            <li className="nav-item"><Link to="/" className="active">Dashboard</Link></li>
-            <li className="nav-item"><Link to="/orders">Orders</Link></li>
-            <li className="nav-item"><Link to="/barrels">Barrels</Link></li>
-            <li className="nav-item"><a href="#">Forecasting</a></li>
-            <li className="nav-item"><a href="#">Reports</a></li>
-            <li className="nav-item"><a href="#">Settings</a></li>
+            <li className="nav-item">
+              <NavLink to="/" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                Dashboard
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink to="/orders" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                Orders
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink to="/barrels" className={({ isActive }) => (isActive ? 'active' : undefined)}>
+                Barrels
+              </NavLink>
+            </li>
           </ul>
         </nav>
         <div className="user-profile">
