@@ -60,8 +60,10 @@ function UsersPage() {
   const typeName = (id: number) => userTypes.find(t => t.id === id)?.name || id
 
   return (
-    <div>
-      <h1>Users</h1>
+    <section className='content-section'>
+      <div className='section-header'>
+        <h2 className='section-title'>Users</h2>
+      </div>
       <form onSubmit={handleAdd}>
         <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name'/>
         <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder='Email'/>
@@ -71,54 +73,56 @@ function UsersPage() {
         </select>
         <button type='submit'>Create User</button>
       </form>
-      <table className='table'>
-        <thead>
-          <tr><th>Name</th><th>Email</th><th>Type</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-          {users.map(u => (
-            <tr key={u.id}>
-              <td>
-                {editing === u.id ? (
-                  <input value={editName} onChange={e => setEditName(e.target.value)} />
-                ) : (
-                  u.name
-                )}
-              </td>
-              <td>
-                {editing === u.id ? (
-                  <input value={editEmail} onChange={e => setEditEmail(e.target.value)} />
-                ) : (
-                  u.email
-                )}
-              </td>
-              <td>
-                {editing === u.id ? (
-                  <select value={editType} onChange={e => setEditType(Number(e.target.value))}>
-                    {userTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                ) : (
-                  typeName(u.userTypeId)
-                )}
-              </td>
-              <td>
-                {editing === u.id ? (
-                  <>
-                    <button onClick={() => handleUpdate(u.id)}>Save</button>
-                    <button onClick={() => setEditing(null)}>Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => startEdit(u)}>Edit</button>
-                    <button onClick={() => dispatch(deleteUser(u.id))}>Delete</button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      <div className='table-container'>
+        <table className='table'>
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Type</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id}>
+                <td>
+                  {editing === u.id ? (
+                    <input value={editName} onChange={e => setEditName(e.target.value)} />
+                  ) : (
+                    u.name
+                  )}
+                </td>
+                <td>
+                  {editing === u.id ? (
+                    <input value={editEmail} onChange={e => setEditEmail(e.target.value)} />
+                  ) : (
+                    u.email
+                  )}
+                </td>
+                <td>
+                  {editing === u.id ? (
+                    <select value={editType} onChange={e => setEditType(Number(e.target.value))}>
+                      {userTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  ) : (
+                    typeName(u.userTypeId)
+                  )}
+                </td>
+                <td>
+                  {editing === u.id ? (
+                    <>
+                      <button onClick={() => handleUpdate(u.id)}>Save</button>
+                      <button onClick={() => setEditing(null)}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(u)}>Edit</button>
+                      <button onClick={() => dispatch(deleteUser(u.id))}>Delete</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
 

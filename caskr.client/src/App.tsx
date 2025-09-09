@@ -21,8 +21,8 @@ function App() {
         <Route path='statuses' element={<StatusesPage />} />
         <Route path='users' element={<UsersPage />} />
         <Route path='usertypes' element={<UserTypesPage />} />
+        <Route path='login' element={<LoginPage />} />
       </Route>
-      <Route path='/login' element={<LoginPage />} />
     </Routes>
   )
 }

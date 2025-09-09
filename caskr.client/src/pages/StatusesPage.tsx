@@ -34,32 +34,48 @@ function StatusesPage() {
   }
 
   return (
-    <div>
-      <h1>Statuses</h1>
+    <section className='content-section'>
+      <div className='section-header'>
+        <h2 className='section-title'>Statuses</h2>
+      </div>
       <form onSubmit={handleAdd}>
-        <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name'/>
+        <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name' />
         <button type='submit'>Add</button>
       </form>
-      <ul>
-        {statuses.map(s => (
-          <li key={s.id}>
-            {editing === s.id ? (
-              <>
-                <input value={editName} onChange={e => setEditName(e.target.value)} />
-                <button onClick={() => handleUpdate(s.id)}>Save</button>
-                <button onClick={() => setEditing(null)}>Cancel</button>
-              </>
-            ) : (
-              <>
-                {s.name}
-                <button onClick={() => startEdit(s)}>Edit</button>
-                <button onClick={() => dispatch(deleteStatus(s.id))}>Delete</button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
+      <div className='table-container'>
+        <table className='table'>
+          <thead>
+            <tr><th>Name</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {statuses.map(s => (
+              <tr key={s.id}>
+                <td>
+                  {editing === s.id ? (
+                    <input value={editName} onChange={e => setEditName(e.target.value)} />
+                  ) : (
+                    s.name
+                  )}
+                </td>
+                <td>
+                  {editing === s.id ? (
+                    <>
+                      <button onClick={() => handleUpdate(s.id)}>Save</button>
+                      <button onClick={() => setEditing(null)}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(s)}>Edit</button>
+                      <button onClick={() => dispatch(deleteStatus(s.id))}>Delete</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
 

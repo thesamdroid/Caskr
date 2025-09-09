@@ -41,52 +41,56 @@ function ProductsPage() {
   }
 
   return (
-    <div>
-      <h1>Products</h1>
+    <section className='content-section'>
+      <div className='section-header'>
+        <h2 className='section-title'>Products</h2>
+      </div>
       <form onSubmit={handleAdd}>
         <input type='number' value={newOwner} onChange={e => setNewOwner(Number(e.target.value))} placeholder='Owner ID' />
         <input value={newNotes} onChange={e => setNewNotes(e.target.value)} placeholder='Notes' />
         <button type='submit'>Add</button>
       </form>
-      <table className='table'>
-        <thead>
-          <tr><th>OwnerId</th><th>Notes</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-          {products.map(p => (
-            <tr key={p.id}>
-              <td>
-                {editing === p.id ? (
-                  <input type='number' value={editOwner} onChange={e => setEditOwner(Number(e.target.value))} />
-                ) : (
-                  p.ownerId
-                )}
-              </td>
-              <td>
-                {editing === p.id ? (
-                  <input value={editNotes} onChange={e => setEditNotes(e.target.value)} />
-                ) : (
-                  p.notes
-                )}
-              </td>
-              <td>
-                {editing === p.id ? (
-                  <>
-                    <button onClick={() => handleUpdate(p.id)}>Save</button>
-                    <button onClick={() => setEditing(null)}>Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => startEdit(p)}>Edit</button>
-                    <button onClick={() => dispatch(deleteProduct(p.id))}>Delete</button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      <div className='table-container'>
+        <table className='table'>
+          <thead>
+            <tr><th>OwnerId</th><th>Notes</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {products.map(p => (
+              <tr key={p.id}>
+                <td>
+                  {editing === p.id ? (
+                    <input type='number' value={editOwner} onChange={e => setEditOwner(Number(e.target.value))} />
+                  ) : (
+                    p.ownerId
+                  )}
+                </td>
+                <td>
+                  {editing === p.id ? (
+                    <input value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+                  ) : (
+                    p.notes
+                  )}
+                </td>
+                <td>
+                  {editing === p.id ? (
+                    <>
+                      <button onClick={() => handleUpdate(p.id)}>Save</button>
+                      <button onClick={() => setEditing(null)}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(p)}>Edit</button>
+                      <button onClick={() => dispatch(deleteProduct(p.id))}>Delete</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
 
