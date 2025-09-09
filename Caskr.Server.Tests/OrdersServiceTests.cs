@@ -157,6 +157,57 @@ public class OrdersServiceTests
     }
 
     [Fact]
+    public async Task GetOutstandingTasksAsync_OrderNotFound_ReturnsNull()
+    {
+        _repo.Setup(r => r.GetOrderWithTasksAsync(10)).ReturnsAsync((Order?)null);
+
+        var result = await _service.GetOutstandingTasksAsync(10);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetOrdersForOwnerAsync_UserNotFound_ReturnsOwnerOrders()
+    {
+        var expected = new[] { new Order { Id = 9, OwnerId = 5, StatusId = (int)StatusType.ResearchAndDevelopment, SpiritTypeId = 1 } };
+        _usersRepo.Setup(r => r.GetUserByIdAsync(5)).ReturnsAsync((User?)null);
+        _repo.Setup(r => r.GetOrdersForOwnerAsync(5)).ReturnsAsync(expected);
+
+        var result = await _service.GetOrdersForOwnerAsync(5);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public async Task UpdateOrderAsync_StatusChangedToTtbApproval_UserNotFound_NoEmail()
+    {
+        var order = new Order { Id = 10, OwnerId = 3, StatusId = (int)StatusType.TtbApproval, Name = "Order", SpiritTypeId = 1 };
+        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync(new Order { Id = 10, OwnerId = 3, StatusId = (int)StatusType.AssetCreation, SpiritTypeId = 1 });
+        _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
+        _usersRepo.Setup(r => r.GetUserByIdAsync(order.OwnerId)).ReturnsAsync((User?)null);
+
+        await _service.UpdateOrderAsync(order);
+
+        _repo.Verify(r => r.AddTasksForStatusAsync(order.Id, order.StatusId), Times.Once);
+        _email.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateOrderAsync_ExistingOrderNull_SendsEmailWhenTtbApproval()
+    {
+        var order = new Order { Id = 11, OwnerId = 4, StatusId = (int)StatusType.TtbApproval, Name = "Order2", SpiritTypeId = 1 };
+        _repo.Setup(r => r.GetOrderAsync(order.Id)).ReturnsAsync((Order?)null);
+        _repo.Setup(r => r.UpdateOrderAsync(order)).ReturnsAsync(order);
+        var user = new User { Id = 4, Email = "owner@example.com", Name = "Owner" };
+        _usersRepo.Setup(r => r.GetUserByIdAsync(order.OwnerId)).ReturnsAsync(user);
+
+        await _service.UpdateOrderAsync(order);
+
+        _repo.Verify(r => r.AddTasksForStatusAsync(order.Id, order.StatusId), Times.Once);
+        _email.Verify(e => e.SendEmailAsync(user.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
     public async Task DeleteOrderAsync_DelegatesToRepository()
     {
         _repo.Setup(r => r.DeleteOrderAsync(5)).Returns(Task.CompletedTask);

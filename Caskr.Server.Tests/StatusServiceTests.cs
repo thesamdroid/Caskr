@@ -38,6 +38,16 @@ public class StatusServiceTests
     }
 
     [Fact]
+    public async Task GetStatusAsync_ReturnsNull_WhenNotFound()
+    {
+        _repo.Setup(r => r.GetStatusAsync(99)).ReturnsAsync((Status?)null);
+
+        var result = await _service.GetStatusAsync(99);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task AddStatusAsync_DelegatesToRepository()
     {
         var status = new Status { Id = (int)StatusType.TtbApproval };
