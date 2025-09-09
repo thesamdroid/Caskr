@@ -34,32 +34,48 @@ function UserTypesPage() {
   }
 
   return (
-    <div>
-      <h1>User Types</h1>
+    <section className='content-section'>
+      <div className='section-header'>
+        <h2 className='section-title'>User Types</h2>
+      </div>
       <form onSubmit={handleAdd}>
         <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name'/>
         <button type='submit'>Add</button>
       </form>
-      <ul>
-        {userTypes.map(ut => (
-          <li key={ut.id}>
-            {editing === ut.id ? (
-              <>
-                <input value={editName} onChange={e => setEditName(e.target.value)} />
-                <button onClick={() => handleUpdate(ut.id)}>Save</button>
-                <button onClick={() => setEditing(null)}>Cancel</button>
-              </>
-            ) : (
-              <>
-                {ut.name}
-                <button onClick={() => startEdit(ut)}>Edit</button>
-                <button onClick={() => dispatch(deleteUserType(ut.id))}>Delete</button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
+      <div className='table-container'>
+        <table className='table'>
+          <thead>
+            <tr><th>Name</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {userTypes.map(ut => (
+              <tr key={ut.id}>
+                <td>
+                  {editing === ut.id ? (
+                    <input value={editName} onChange={e => setEditName(e.target.value)} />
+                  ) : (
+                    ut.name
+                  )}
+                </td>
+                <td>
+                  {editing === ut.id ? (
+                    <>
+                      <button onClick={() => handleUpdate(ut.id)}>Save</button>
+                      <button onClick={() => setEditing(null)}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(ut)}>Edit</button>
+                      <button onClick={() => dispatch(deleteUserType(ut.id))}>Delete</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
 

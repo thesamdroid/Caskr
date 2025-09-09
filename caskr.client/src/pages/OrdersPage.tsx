@@ -61,8 +61,10 @@ function OrdersPage() {
   }
 
   return (
-    <div>
-      <h1>Orders</h1>
+    <section className='content-section'>
+      <div className='section-header'>
+        <h2 className='section-title'>Orders</h2>
+      </div>
       <form onSubmit={handleAdd}>
         <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name' />
         <select value={newStatus} onChange={e => setNewStatus(Number(e.target.value))}>
@@ -72,53 +74,55 @@ function OrdersPage() {
         </select>
         <button type='submit'>Add</button>
       </form>
-      <table className='table'>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map(o => (
-            <tr key={o.id}>
-              <td>
-                {editing === o.id ? (
-                  <input value={editName} onChange={e => setEditName(e.target.value)} />
-                ) : (
-                  o.name
-                )}
-              </td>
-              <td>
-                {editing === o.id ? (
-                  <select value={editStatus} onChange={e => setEditStatus(Number(e.target.value))}>
-                    {statuses.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                ) : (
-                  getStatusName(o.statusId)
-                )}
-              </td>
-              <td>
-                {editing === o.id ? (
-                  <>
-                    <button onClick={() => handleUpdate(o.id)}>Save</button>
-                    <button onClick={() => setEditing(null)}>Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => startEdit(o)}>Edit</button>
-                    <button onClick={() => dispatch(deleteOrder(o.id))}>Delete</button>
-                  </>
-                )}
-              </td>
+      <div className='table-container'>
+        <table className='table'>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {orders.map(o => (
+              <tr key={o.id}>
+                <td>
+                  {editing === o.id ? (
+                    <input value={editName} onChange={e => setEditName(e.target.value)} />
+                  ) : (
+                    o.name
+                  )}
+                </td>
+                <td>
+                  {editing === o.id ? (
+                    <select value={editStatus} onChange={e => setEditStatus(Number(e.target.value))}>
+                      {statuses.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    getStatusName(o.statusId)
+                  )}
+                </td>
+                <td>
+                  {editing === o.id ? (
+                    <>
+                      <button onClick={() => handleUpdate(o.id)}>Save</button>
+                      <button onClick={() => setEditing(null)}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(o)}>Edit</button>
+                      <button onClick={() => dispatch(deleteOrder(o.id))}>Delete</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
 

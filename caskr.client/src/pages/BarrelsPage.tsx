@@ -25,59 +25,75 @@ function BarrelsPage() {
   }
 
   return (
-    <div>
-      <h1>Barrels</h1>
-      <button onClick={() => setShowModal(true)}>Forecasting</button>
-
-      {showModal && (
-        <div className='modal'>
-          <form onSubmit={handleForecast}>
-            <label>
-              Date:
-              <input type='date' value={targetDate} onChange={e => setTargetDate(e.target.value)} />
-            </label>
-            <label>
-              Age Statement:
-              <input
-                value={ageStatement}
-                onChange={e => setAgeStatement(e.target.value)}
-                placeholder='e.g. 5 years'
-              />
-            </label>
-            <button type='submit'>Submit</button>
-            <button type='button' onClick={() => setShowModal(false)}>Cancel</button>
-          </form>
+    <>
+      <section className='content-section'>
+        <div className='section-header'>
+          <h2 className='section-title'>Barrels</h2>
+          <button onClick={() => setShowModal(true)}>Forecasting</button>
         </div>
-      )}
-
-      <table className='table'>
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Order</th>
-          </tr>
-        </thead>
-        <tbody>
-          {barrels.map(b => (
-            <tr key={b.id}>
-              <td>{b.sku}</td>
-              <td>{b.orderId}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
+        {showModal && (
+          <div className='modal'>
+            <form onSubmit={handleForecast}>
+              <label>
+                Date:
+                <input type='date' value={targetDate} onChange={e => setTargetDate(e.target.value)} />
+              </label>
+              <label>
+                Age Statement:
+                <input
+                  value={ageStatement}
+                  onChange={e => setAgeStatement(e.target.value)}
+                  placeholder='e.g. 5 years'
+                />
+              </label>
+              <button type='submit'>Submit</button>
+              <button type='button' onClick={() => setShowModal(false)}>Cancel</button>
+            </form>
+          </div>
+        )}
+        <div className='table-container'>
+          <table className='table'>
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Order</th>
+              </tr>
+            </thead>
+            <tbody>
+              {barrels.map(b => (
+                <tr key={b.id}>
+                  <td>{b.sku}</td>
+                  <td>{b.orderId}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
       {forecast.length > 0 && (
-        <div>
-          <h2>Forecast Result (Total: {forecastCount})</h2>
-          <ul>
-            {forecast.map(b => (
-              <li key={b.id}>{b.sku}</li>
-            ))}
-          </ul>
-        </div>
+        <section className='content-section'>
+          <div className='section-header'>
+            <h2 className='section-title'>Forecast Result (Total: {forecastCount})</h2>
+          </div>
+          <div className='table-container'>
+            <table className='table'>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                </tr>
+              </thead>
+              <tbody>
+                {forecast.map(b => (
+                  <tr key={b.id}>
+                    <td>{b.sku}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
-    </div>
+    </>
   )
 }
 

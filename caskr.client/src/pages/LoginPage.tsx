@@ -23,14 +23,16 @@ function LoginPage() {
   }
 
   return (
-    <div>
-      <h1>Login</h1>
+    <section className='content-section'>
+      <div className='section-header'>
+        <h2 className='section-title'>Login</h2>
+      </div>
       <form onSubmit={handleSubmit}>
         <input value={email} onChange={e => setEmail(e.target.value)} placeholder='Email' />
         <button type='submit'>Login</button>
       </form>
       {message && <p>{message}</p>}
-    </div>
+    </section>
   )
 }
 
