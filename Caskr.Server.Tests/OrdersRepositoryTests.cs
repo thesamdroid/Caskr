@@ -170,5 +170,79 @@ public class OrdersRepositoryTests
             Assert.NotNull(o.SpiritType);
         });
     }
+
+    [Fact]
+    public async Task AddOrderAsync_NullOrder_Throws()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase("AddOrderAsync_NullOrder_Throws")
+            .Options;
+
+        using var context = new CaskrDbContext(options);
+        var repo = new OrdersRepository(context);
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => repo.AddOrderAsync(null));
+    }
+
+    [Fact]
+    public async Task AddOrderAsync_OwnerNotFound_Throws()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase("AddOrderAsync_OwnerNotFound_Throws")
+            .Options;
+
+        using var context = new CaskrDbContext(options);
+        var repo = new OrdersRepository(context);
+        var order = new Order { OwnerId = 99, StatusId = 1, SpiritTypeId = 1, MashBillId = 1 };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => repo.AddOrderAsync(order));
+    }
+
+    [Fact]
+    public async Task GetOrderAsync_ReturnsNull_WhenMissing()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase("GetOrderAsync_ReturnsNull_WhenMissing")
+            .Options;
+
+        using var context = new CaskrDbContext(options);
+        var repo = new OrdersRepository(context);
+
+        var result = await repo.GetOrderAsync(123);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task AddTasksForStatusAsync_NoNewTasks_NoChanges()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase("AddTasksForStatusAsync_NoNewTasks_NoChanges")
+            .Options;
+
+        using var context = new CaskrDbContext(options);
+        context.StatusTasks.Add(new StatusTask { Id = 1, StatusId = 1, Name = "Task1" });
+        context.Orders.Add(new Order
+        {
+            Id = 1,
+            Name = "Order",
+            OwnerId = 1,
+            CompanyId = 1,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            StatusId = 1,
+            SpiritTypeId = 1,
+            BatchId = 1,
+            Quantity = 1
+        });
+        await context.SaveChangesAsync();
+
+        var repo = new OrdersRepository(context);
+        await repo.AddTasksForStatusAsync(1, 1);
+        Assert.Equal(1, context.Tasks.Count());
+
+        await repo.AddTasksForStatusAsync(1, 1);
+        Assert.Equal(1, context.Tasks.Count());
+    }
 }
 

@@ -38,6 +38,16 @@ public class ProductsServiceTests
     }
 
     [Fact]
+    public async Task GetProductAsync_ReturnsNull_WhenNotFound()
+    {
+        _repo.Setup(r => r.GetProductAsync(9)).ReturnsAsync((Product?)null);
+
+        var result = await _service.GetProductAsync(9);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task AddProductAsync_DelegatesToRepository()
     {
         var product = new Product { Id = 3 };

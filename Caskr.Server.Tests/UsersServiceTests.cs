@@ -73,6 +73,22 @@ public class UsersServiceTests
     }
 
     [Fact]
+    public async Task AddUserAsync_NullUser_Throws()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _service.AddUserAsync(null));
+    }
+
+    [Fact]
+    public async Task AddUserAsync_KeycloakThrows_Propagates()
+    {
+        var user = new User { Id = 8, TemporaryPassword = "pass" };
+        _kcClient.Setup(k => k.CreateUserAsync(user, "pass")).ThrowsAsync(new InvalidOperationException());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.AddUserAsync(user));
+        _repo.Verify(r => r.AddUserAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Fact]
     public async Task UpdateUserAsync_DelegatesToRepository()
     {
         var user = new User { Id = 4 };

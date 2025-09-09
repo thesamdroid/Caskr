@@ -128,6 +128,7 @@ namespace Caskr.server.Repos
             {
                 OrderId = orderId,
                 Name = st.Name,
+                CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             });
 
