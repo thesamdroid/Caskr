@@ -1,0 +1,17 @@
+{
+  "realm": "caskr",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "caskr-client",
+      "secret": "secret",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "redirectUris": ["*"],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true
+    }
+  ]
+}

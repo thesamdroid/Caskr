@@ -11,3 +11,12 @@ services:
       - '5432:5432'
     volumes:
       - ./Database/postgres:/var/lib/postgresql/data
+
+  keycloak:
+    build: ./Keycloak
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
