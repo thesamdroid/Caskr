@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 function LoginPage() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const navigate = useNavigate()
 
@@ -11,7 +12,7 @@ function LoginPage() {
     const response = await fetch('api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, password })
     })
     if (!response.ok) {
       setMessage('Login failed')
@@ -19,6 +20,7 @@ function LoginPage() {
     }
     const data = await response.json()
     localStorage.setItem('token', data.token)
+    setPassword('')
     navigate('/landing')
   }
 
@@ -29,6 +31,12 @@ function LoginPage() {
       </div>
       <form onSubmit={handleSubmit}>
         <input value={email} onChange={e => setEmail(e.target.value)} placeholder='Email' />
+        <input
+          type='password'
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder='Password'
+        />
         <button type='submit'>Login</button>
       </form>
       {message && <p>{message}</p>}
