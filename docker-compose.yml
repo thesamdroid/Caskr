@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  db:
+    build: ./Database
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: caskr
+      POSTGRES_USER: caskr
+      POSTGRES_PASSWORD: caskr
+    volumes:
+      - db_data:/var/lib/postgresql/data
+volumes:
+  db_data:
