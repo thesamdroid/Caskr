@@ -2,7 +2,8 @@
 $ErrorActionPreference = 'Stop'
 
 # Start PostgreSQL in the background using the image's default entrypoint
-Start-Process -FilePath '/docker-entrypoint.sh' -ArgumentList 'postgres'
+$postgresEntrypoint = (Get-Command docker-entrypoint.sh).Source
+Start-Process -FilePath $postgresEntrypoint -ArgumentList 'postgres'
 
 # Wait for PostgreSQL to be ready to accept connections
 while (-not (pg_isready -h localhost -U $env:POSTGRES_USER *> $null)) {
