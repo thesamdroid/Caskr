@@ -5,7 +5,7 @@ ENV KEYCLOAK_ADMIN_PASSWORD=admin
 # package manager. Installing additional tools such as curl via microdnf isn't
 # possible in this environment. Instead we download a pre-built static curl
 # binary directly and mark it as executable.
-ADD https://github.com/moparisthebest/static-curl/releases/download/v8.5.0/curl-linux-x86_64 /usr/bin/curl
+ADD https://github.com/moparisthebest/static-curl/releases/download/v8.5.0/curl-amd64 /usr/bin/curl
 RUN chmod +x /usr/bin/curl
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 CMD ["start-dev"]
