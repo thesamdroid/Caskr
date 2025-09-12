@@ -47,6 +47,13 @@ INSERT INTO public.status_task (id, status_id, name) VALUES
     (19, 5, 'Product Listing'),
     (20, 6, 'Product Listing');
 
+-- Companies
+INSERT INTO public.company (company_name, primary_contact_id, renewal_date) VALUES
+    ('Middle West', 3, CURRENT_TIMESTAMP + INTERVAL '1 year'),
+    ('Makers Mark', 4, CURRENT_TIMESTAMP + INTERVAL '1 year'),
+    ('Jim Beam', 2, CURRENT_TIMESTAMP + INTERVAL '1 year'),
+    ('Jack Daniels', 1, CURRENT_TIMESTAMP + INTERVAL '1 year');
+
 -- Users
 INSERT INTO public.users (id, name, email, user_type_id, company_id) VALUES
     (1, 'Alice Johnson', 'alice.johnson.147@example.invalid', 3, 4),
@@ -75,13 +82,6 @@ INSERT INTO public.users (id, name, email, user_type_id, company_id) VALUES
     (24, 'Yvonne Scott', 'yvonne.scott.793@example.invalid', 4, 4),
     (125, 'Super Admin', 'admin@example.invalid', 1, 1),
     (126, 'Shaw', 'shaw@caskr.co', 1, 1);
-
--- Companies
-INSERT INTO public.company (company_name, primary_contact_id, renewal_date) VALUES
-    ('Middle West', 3, CURRENT_TIMESTAMP + INTERVAL '1 year'),
-    ('Makers Mark', 4, CURRENT_TIMESTAMP + INTERVAL '1 year'),
-    ('Jim Beam', 2, CURRENT_TIMESTAMP + INTERVAL '1 year'),
-    ('Jack Daniels', 1, CURRENT_TIMESTAMP + INTERVAL '1 year');
 
 -- Products
 INSERT INTO public.products (id, owner_id, notes) VALUES
