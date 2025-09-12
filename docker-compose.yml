@@ -19,17 +19,26 @@ services:
   keycloak:
     build: ./Keycloak
     container_name: keycloak
+    restart: always
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
   caskr-server:
     build: ./Caskr.Server
     container_name: caskr-server
     depends_on:
-      - caskr-db
-      - keycloak
+      caskr-db:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
     ports:
       - "5000:8080"
     environment:
