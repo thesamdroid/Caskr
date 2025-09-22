@@ -18,7 +18,18 @@ namespace Caskr.server.Services
 
         public Task<IEnumerable<Barrel>> ForecastBarrelsAsync(int companyId, DateTime targetDate, int ageYears)
         {
-            return repository.ForecastBarrelsAsync(companyId, targetDate, ageYears);
+            var normalizedTargetDate = NormalizeToUtc(targetDate);
+            return repository.ForecastBarrelsAsync(companyId, normalizedTargetDate, ageYears);
+        }
+
+        private static DateTime NormalizeToUtc(DateTime value)
+        {
+            return value.Kind switch
+            {
+                DateTimeKind.Utc => value,
+                DateTimeKind.Local => value.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            };
         }
     }
 }
