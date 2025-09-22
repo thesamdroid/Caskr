@@ -1,24 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import {
   fetchOrders,
   addOrder,
   updateOrder,
   deleteOrder,
+  fetchOutstandingTasks,
   Order
 } from '../features/ordersSlice'
 import { fetchStatuses } from '../features/statusSlice'
+import OrderActionsModal from '../components/OrderActionsModal'
 
 function OrdersPage() {
   const dispatch = useAppDispatch()
   const orders = useAppSelector(state => state.orders.items)
   const statuses = useAppSelector(state => state.statuses.items)
+  const outstandingTasks = useAppSelector(state => state.orders.outstandingTasks)
 
   const [newName, setNewName] = useState('')
   const [newStatus, setNewStatus] = useState<number>(0)
-  const [editing, setEditing] = useState<number | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editStatus, setEditStatus] = useState<number>(0)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   useEffect(() => {
     dispatch(fetchOrders())
@@ -31,33 +32,39 @@ function OrdersPage() {
     }
   }, [statuses, newStatus])
 
+  const statusNames = useMemo(
+    () => Object.fromEntries(statuses.map(status => [status.id, status.name])),
+    [statuses]
+  )
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault()
     dispatch(addOrder({ name: newName, statusId: newStatus, ownerId: 1, spiritTypeId: 1, quantity: 1, mashBillId: 1 }))
     setNewName('')
   }
 
-  const startEdit = (order: Order) => {
-    setEditing(order.id)
-    setEditName(order.name)
-    setEditStatus(order.statusId)
+  const handleOpenActions = (order: Order) => {
+    setSelectedOrder(order)
+    dispatch(fetchOutstandingTasks(order.id))
   }
 
-  const handleUpdate = (id: number) => {
-    const existing = orders.find(o => o.id === id)
-    if (!existing) return
-    dispatch(
-      updateOrder({
-        ...existing,
-        name: editName,
-        statusId: editStatus
+  const handleCloseActions = () => {
+    setSelectedOrder(null)
+  }
+
+  const handleUpdate = (order: Order) => {
+    dispatch(updateOrder(order))
+      .unwrap()
+      .then(updated => {
+        setSelectedOrder(updated)
       })
-    )
-    setEditing(null)
+      .catch(() => {
+        // ignore failure; toast/notification system not available yet
+      })
   }
 
-  const getStatusName = (id: number) => {
-    return statuses.find(s => s.id === id)?.name || id
+  const handleDelete = (id: number) => {
+    dispatch(deleteOrder(id))
   }
 
   return (
@@ -65,7 +72,7 @@ function OrdersPage() {
       <div className='section-header'>
         <h2 className='section-title'>Orders</h2>
       </div>
-      <form onSubmit={handleAdd}>
+      <form onSubmit={handleAdd} className='inline-form'>
         <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name' />
         <select value={newStatus} onChange={e => setNewStatus(Number(e.target.value))}>
           {statuses.map(s => (
@@ -80,48 +87,29 @@ function OrdersPage() {
             <tr>
               <th>Name</th>
               <th>Status</th>
-              <th>Actions</th>
+              <th>Outstanding Tasks</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map(o => (
-              <tr key={o.id}>
-                <td>
-                  {editing === o.id ? (
-                    <input value={editName} onChange={e => setEditName(e.target.value)} />
-                  ) : (
-                    o.name
-                  )}
-                </td>
-                <td>
-                  {editing === o.id ? (
-                    <select value={editStatus} onChange={e => setEditStatus(Number(e.target.value))}>
-                      {statuses.map(s => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    getStatusName(o.statusId)
-                  )}
-                </td>
-                <td>
-                  {editing === o.id ? (
-                    <>
-                      <button onClick={() => handleUpdate(o.id)}>Save</button>
-                      <button onClick={() => setEditing(null)}>Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => startEdit(o)}>Edit</button>
-                      <button onClick={() => dispatch(deleteOrder(o.id))}>Delete</button>
-                    </>
-                  )}
-                </td>
+            {orders.map(order => (
+              <tr key={order.id} onClick={() => handleOpenActions(order)} className='clickable-row'>
+                <td>{order.name}</td>
+                <td>{statusNames[order.statusId] ?? order.statusId}</td>
+                <td>{outstandingTasks[order.id]?.length ?? '-'}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <OrderActionsModal
+        isOpen={selectedOrder !== null}
+        order={selectedOrder}
+        statuses={statuses}
+        tasks={selectedOrder ? outstandingTasks[selectedOrder.id] : undefined}
+        onClose={handleCloseActions}
+        onUpdate={handleUpdate}
+        onDelete={handleDelete}
+      />
     </section>
   )
 }
