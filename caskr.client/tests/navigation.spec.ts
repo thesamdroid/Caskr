@@ -18,12 +18,10 @@ test.describe('navigation links', () => {
   });
 
   const pages = [
+    { link: 'Dashboard', heading: 'Forecasting', path: '/' },
     { link: 'Orders', heading: 'Orders', path: '/orders' },
     { link: 'Barrels', heading: 'Barrels', path: '/barrels' },
     { link: 'Products', heading: 'Products', path: '/products' },
-    { link: 'Statuses', heading: 'Statuses', path: '/statuses' },
-    { link: 'Users', heading: 'Users', path: '/users' },
-    { link: 'User Types', heading: 'User Types', path: '/usertypes' },
     { link: 'Login', heading: 'Login', path: '/login' }
   ];
 
@@ -37,5 +35,12 @@ test.describe('navigation links', () => {
       await link.click();
       await expect(page.getByRole('heading', { name: p.heading })).toBeVisible();
     }
+  });
+
+  test('navigation does not include restricted links', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Statuses' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'User Types' })).toHaveCount(0);
   });
 });

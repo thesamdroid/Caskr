@@ -11,6 +11,9 @@ export default function Layout() {
           </Link>
           <ul className='nav-menu'>
             <li className='nav-item'>
+              <Link to='/'>Dashboard</Link>
+            </li>
+            <li className='nav-item'>
               <Link to='/orders'>Orders</Link>
             </li>
             <li className='nav-item'>
@@ -18,15 +21,6 @@ export default function Layout() {
             </li>
             <li className='nav-item'>
               <Link to='/products'>Products</Link>
-            </li>
-            <li className='nav-item'>
-              <Link to='/statuses'>Statuses</Link>
-            </li>
-            <li className='nav-item'>
-              <Link to='/users'>Users</Link>
-            </li>
-            <li className='nav-item'>
-              <Link to='/usertypes'>User Types</Link>
             </li>
             <li className='nav-item'>
               <Link to='/login'>Login</Link>
