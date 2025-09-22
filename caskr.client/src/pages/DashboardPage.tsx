@@ -5,8 +5,9 @@ import {
   fetchOutstandingTasks
 } from '../features/ordersSlice'
 import { fetchStatuses } from '../features/statusSlice'
-import { fetchBarrels, forecastBarrels } from '../features/barrelsSlice'
+import { fetchBarrels, forecastBarrels, importBarrels } from '../features/barrelsSlice'
 import ForecastingModal from '../components/ForecastingModal'
+import BarrelImportModal from '../components/BarrelImportModal'
 import { formatForecastSummary } from '../utils/forecastSummary'
 
 export default function DashboardPage() {
@@ -20,6 +21,10 @@ export default function DashboardPage() {
   const [forecastResult, setForecastResult] = useState<
     { date: string; count: number; ageYears: number }
   | null>(null)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [requireMashBillId, setRequireMashBillId] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+  const companyId = 1
 
   useEffect(() => {
     dispatch(fetchOrders()).then(action => {
@@ -28,8 +33,8 @@ export default function DashboardPage() {
       }
     })
     dispatch(fetchStatuses())
-    dispatch(fetchBarrels(1))
-  }, [dispatch])
+    dispatch(fetchBarrels(companyId))
+  }, [dispatch, companyId])
 
   const handleForecastSubmit = async (targetDate: string, ageYears: number) => {
     setForecastError(null)
@@ -40,6 +45,32 @@ export default function DashboardPage() {
     } catch (error) {
       setForecastError('Unable to forecast barrels right now. Please try again later.')
       throw error
+    }
+  }
+
+  const openImportModal = () => {
+    setRequireMashBillId(false)
+    setImportError(null)
+    setShowImportModal(true)
+  }
+
+  const handleImport = async ({ file, batchId, mashBillId }: { file: File; batchId?: number; mashBillId?: number }) => {
+    try {
+      await dispatch(importBarrels({ companyId, file, batchId, mashBillId })).unwrap()
+      setShowImportModal(false)
+      setRequireMashBillId(false)
+      setImportError(null)
+      await dispatch(fetchBarrels(companyId))
+    } catch (err) {
+      if (err && typeof err === 'object') {
+        const errorObject = err as { message?: string; requiresMashBillId?: boolean }
+        if (errorObject.requiresMashBillId) {
+          setRequireMashBillId(true)
+        }
+        setImportError(errorObject.message ?? 'Unable to import barrels. Please try again.')
+      } else {
+        setImportError('Unable to import barrels. Please try again.')
+      }
     }
   }
 
@@ -69,6 +100,17 @@ export default function DashboardPage() {
         isOpen={showForecastModal}
         onClose={() => setShowForecastModal(false)}
         onSubmit={handleForecastSubmit}
+      />
+      <BarrelImportModal
+        isOpen={showImportModal}
+        requireMashBillId={requireMashBillId}
+        error={importError}
+        onClose={() => {
+          setShowImportModal(false)
+          setRequireMashBillId(false)
+          setImportError(null)
+        }}
+        onSubmit={handleImport}
       />
       <section className='content-section'>
         <div className='section-header'>
@@ -102,6 +144,9 @@ export default function DashboardPage() {
       <section className='content-section'>
         <div className='section-header'>
           <h2 className='section-title'>Barrel Inventory</h2>
+          <div className='section-actions'>
+            <button onClick={openImportModal}>Import Barrells</button>
+          </div>
         </div>
         <div className='table-container'>
           <table className='table'>

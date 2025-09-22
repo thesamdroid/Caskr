@@ -22,7 +22,7 @@ test.describe('login', () => {
     await page.goto('/login');
     await page.fill('input[placeholder="Email"]', 'test@example.com');
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/landing$/);
+    await expect(page).toHaveURL('/');
     const token = await page.evaluate(() => localStorage.getItem('token'));
     expect(token).toBe('fake-token');
   });
