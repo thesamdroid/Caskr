@@ -6,7 +6,8 @@ INSERT INTO public.user_type (id, name) VALUES
     (2, 'Admin'),
     (3, 'Distiller'),
     (4, 'Distributor'),
-    (5, 'Retailer');
+    (5, 'Retailer')
+ON CONFLICT (id) DO NOTHING;
 
 -- Order status values
 INSERT INTO public.status (id, name) VALUES
@@ -15,14 +16,16 @@ INSERT INTO public.status (id, name) VALUES
     (3, 'TTB Approval'),
     (4, 'Ordering'),
     (5, 'OHLQ Listing'),
-    (6, 'National Listing');
+    (6, 'National Listing')
+ON CONFLICT (id) DO NOTHING;
 
 -- Spirit types
 INSERT INTO public.spirit_type (id, name) VALUES
     (1, 'Bourbon'),
     (2, 'Vodka'),
     (3, 'Gin'),
-    (4, 'Tequila');
+    (4, 'Tequila')
+ON CONFLICT (id) DO NOTHING;
 
 -- Status tasks
 INSERT INTO public.status_task (id, status_id, name) VALUES
@@ -45,7 +48,8 @@ INSERT INTO public.status_task (id, status_id, name) VALUES
     (17, 4, 'Corrugated'),
     (18, 4, 'Labels'),
     (19, 5, 'Product Listing'),
-    (20, 6, 'Product Listing');
+    (20, 6, 'Product Listing')
+ON CONFLICT (id) DO NOTHING;
 
 -- Companies
 INSERT INTO public.company (company_name, renewal_date) VALUES
@@ -87,21 +91,24 @@ INSERT INTO public.users (id, name, email, user_type_id, company_id, is_primary_
 INSERT INTO public.products (id, owner_id, notes) VALUES
     (1, 1, 'Tennessee Whiskey'),
     (2, 2, 'Kentucky Straight Bourbon'),
-    (3, 3, 'Irish Whiskey');
+    (3, 3, 'Irish Whiskey')
+ON CONFLICT (id) DO NOTHING;
 
 -- Components
 INSERT INTO public.component (id, batch_id, name, percentage) VALUES
     (1, 1, 'Corn', 70),
     (2, 1, 'Rye', 20),
     (3, 1, 'Barley', 10),
-    (4, 1, 'Wheat', 5);
+    (4, 1, 'Wheat', 5)
+ON CONFLICT (id) DO NOTHING;
 
 -- Mash bills
 INSERT INTO public.mash_bill (id, company_id, name, component_ids) VALUES
     (1, 4, 'Standard', ARRAY[1,2,3]),
     (2, 3, 'Standard', ARRAY[1,2,3]),
     (3, 1, 'Standard', ARRAY[1,2,3]),
-    (4, 2, 'Standard', ARRAY[1,2,3]);
+    (4, 2, 'Standard', ARRAY[1,2,3])
+ON CONFLICT (id) DO NOTHING;
 
 -- Batches
 INSERT INTO public.batch (id, company_id, mash_bill_id) VALUES
