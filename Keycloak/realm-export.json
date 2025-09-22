@@ -13,5 +13,22 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true
     }
+  ],
+  "users": [
+    {
+      "username": "shaw@caskr.co",
+      "email": "shaw@caskr.co",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Whiskey123!",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [],
+      "groups": []
+    }
   ]
 }
