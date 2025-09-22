@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { authorizedFetch } from '../api/authorizedFetch'
 
 export interface MashBill {
   id: number
@@ -6,7 +7,7 @@ export interface MashBill {
 }
 
 export const fetchMashBills = createAsyncThunk('mashBills/fetchMashBills', async () => {
-  const response = await fetch('api/mashbills')
+  const response = await authorizedFetch('api/mashbills')
   if (!response.ok) throw new Error('Failed to fetch mash bills')
   return (await response.json()) as MashBill[]
 })

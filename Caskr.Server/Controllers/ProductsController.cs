@@ -4,9 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Caskr.server.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ProductsController(IProductsService productsService) : ControllerBase
+    public class ProductsController(IProductsService productsService) : AuthorizedApiControllerBase
     {
         // GET: api/Products
         [HttpGet]

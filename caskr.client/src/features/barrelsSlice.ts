@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { authorizedFetch } from '../api/authorizedFetch'
 
 export interface Barrel {
   id: number
@@ -12,7 +13,7 @@ export interface Barrel {
 export const fetchBarrels = createAsyncThunk(
   'barrels/fetchBarrels',
   async (companyId: number) => {
-    const response = await fetch(`api/barrels/company/${companyId}`)
+    const response = await authorizedFetch(`api/barrels/company/${companyId}`)
     if (!response.ok) throw new Error('Failed to fetch barrels')
     return (await response.json()) as Barrel[]
   }
@@ -27,7 +28,7 @@ export interface ForecastParams {
 export const forecastBarrels = createAsyncThunk(
   'barrels/forecast',
   async ({ companyId, targetDate, ageYears }: ForecastParams) => {
-    const response = await fetch(
+    const response = await authorizedFetch(
       `api/barrels/company/${companyId}/forecast?targetDate=${encodeURIComponent(targetDate)}&ageYears=${ageYears}`
     )
     if (!response.ok) throw new Error('Failed to forecast barrels')

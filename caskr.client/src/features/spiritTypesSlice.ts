@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { authorizedFetch } from '../api/authorizedFetch'
 
 export interface SpiritType {
   id: number
@@ -6,7 +7,7 @@ export interface SpiritType {
 }
 
 export const fetchSpiritTypes = createAsyncThunk('spiritTypes/fetchSpiritTypes', async () => {
-  const response = await fetch('api/spirittypes')
+  const response = await authorizedFetch('api/spirittypes')
   if (!response.ok) throw new Error('Failed to fetch spirit types')
   return (await response.json()) as SpiritType[]
 })

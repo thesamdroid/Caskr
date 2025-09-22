@@ -4,9 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Caskr.server.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class StatusController(IStatusService statusService) : ControllerBase
+    public class StatusController(IStatusService statusService) : AuthorizedApiControllerBase
     {
         // GET: api/Status
         [HttpGet]

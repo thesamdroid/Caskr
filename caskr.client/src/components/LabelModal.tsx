@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppSelector } from '../hooks'
+import { authorizedFetch } from '../api/authorizedFetch'
 import './CreateOrderModal.css'
 
 type Props = {
@@ -16,7 +17,7 @@ const LabelModal = ({ isOpen, onClose }: Props) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
-    const response = await fetch('/api/labels/ttb-form', {
+    const response = await authorizedFetch('/api/labels/ttb-form', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

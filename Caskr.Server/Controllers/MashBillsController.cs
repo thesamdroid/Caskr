@@ -5,9 +5,7 @@ using System.Collections.Generic;
 
 namespace Caskr.server.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class MashBillsController(CaskrDbContext dbContext) : ControllerBase
+    public class MashBillsController(CaskrDbContext dbContext) : AuthorizedApiControllerBase
     {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<MashBill>>> GetMashBills()

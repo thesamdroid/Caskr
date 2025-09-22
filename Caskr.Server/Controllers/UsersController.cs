@@ -2,15 +2,11 @@ using System.Security.Claims;
 using Caskr.server;
 using Caskr.server.Models;
 using Caskr.server.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Caskr.server.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class UsersController(IUsersService usersService) : ControllerBase
+    public class UsersController(IUsersService usersService) : AuthorizedApiControllerBase
     {
         // GET: api/Users
         [HttpGet]

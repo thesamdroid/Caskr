@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { authorizedFetch } from '../api/authorizedFetch'
 
 export interface User {
   id: number
@@ -17,21 +18,16 @@ export interface NewUser {
 }
 
 export const fetchUsers = createAsyncThunk('users/fetchUsers', async () => {
-  const token = localStorage.getItem('token')
-  const response = await fetch('api/users', {
-    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
-  })
+  const response = await authorizedFetch('api/users')
   if (!response.ok) throw new Error('Failed to fetch users')
   return (await response.json()) as User[]
 })
 
 export const addUser = createAsyncThunk('users/addUser', async (user: NewUser) => {
-  const token = localStorage.getItem('token')
-  const response = await fetch('api/users', {
+  const response = await authorizedFetch('api/users', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify(user)
   })
@@ -40,12 +36,10 @@ export const addUser = createAsyncThunk('users/addUser', async (user: NewUser) =
 })
 
 export const updateUser = createAsyncThunk('users/updateUser', async (user: User) => {
-  const token = localStorage.getItem('token')
-  const response = await fetch(`api/users/${user.id}`, {
+  const response = await authorizedFetch(`api/users/${user.id}`, {
     method: 'PUT',
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify(user)
   })
@@ -54,10 +48,8 @@ export const updateUser = createAsyncThunk('users/updateUser', async (user: User
 })
 
 export const deleteUser = createAsyncThunk('users/deleteUser', async (id: number) => {
-  const token = localStorage.getItem('token')
-  const response = await fetch(`api/users/${id}`, {
-    method: 'DELETE',
-    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+  const response = await authorizedFetch(`api/users/${id}`, {
+    method: 'DELETE'
   })
   if (!response.ok) throw new Error('Failed to delete user')
   return id

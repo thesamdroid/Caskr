@@ -5,9 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Caskr.server.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class UserTypesController(IUserTypesService userTypesService) : ControllerBase
+    public class UserTypesController(IUserTypesService userTypesService) : AuthorizedApiControllerBase
     {
         // GET: api/UserTypes
         [HttpGet]

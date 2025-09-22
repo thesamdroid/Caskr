@@ -4,9 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Caskr.server.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class TransfersController(ITransfersService transfersService) : ControllerBase
+public class TransfersController(ITransfersService transfersService) : AuthorizedApiControllerBase
 {
     [HttpPost("ttb-form")]
     public async Task<IActionResult> GenerateTtbForm([FromBody] TransferRequest request)
