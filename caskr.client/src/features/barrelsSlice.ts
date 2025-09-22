@@ -77,9 +77,17 @@ interface BarrelsState {
   items: Barrel[]
   forecast: Barrel[]
   forecastCount: number
+  forecastDate: string | null
+  forecastAgeYears: number | null
 }
 
-const initialState: BarrelsState = { items: [], forecast: [], forecastCount: 0 }
+const initialState: BarrelsState = {
+  items: [],
+  forecast: [],
+  forecastCount: 0,
+  forecastDate: null,
+  forecastAgeYears: null
+}
 
 const barrelsSlice = createSlice({
   name: 'barrels',
@@ -92,6 +100,8 @@ const barrelsSlice = createSlice({
     builder.addCase(forecastBarrels.fulfilled, (state, action) => {
       state.forecast = action.payload.barrels
       state.forecastCount = action.payload.count
+      state.forecastDate = action.meta.arg.targetDate
+      state.forecastAgeYears = action.meta.arg.ageYears
     })
   }
 })

@@ -9,6 +9,8 @@ function BarrelsPage() {
   const barrels = useAppSelector(state => state.barrels.items)
   const forecast = useAppSelector(state => state.barrels.forecast)
   const forecastCount = useAppSelector(state => state.barrels.forecastCount)
+  const forecastDate = useAppSelector(state => state.barrels.forecastDate)
+  const forecastAgeYears = useAppSelector(state => state.barrels.forecastAgeYears)
   const [showModal, setShowModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [requireMashBillId, setRequireMashBillId] = useState(false)
@@ -98,8 +100,9 @@ function BarrelsPage() {
       {forecast.length > 0 && (
         <section className='content-section'>
           <div className='section-header'>
-            <h2 className='section-title'>Forecast Result (Total: {forecastCount})</h2>
+            <h2 className='section-title'>Forecast Result</h2>
           </div>
+          <p>{formatForecastSummary(forecastDate, forecastAgeYears, forecastCount)}</p>
           <div className='table-container'>
             <table className='table'>
               <thead>
