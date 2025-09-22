@@ -105,6 +105,55 @@ public class BarrelsServiceTests
         _repository.Verify(r => r.CreateBatchAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
+    [Fact]
+    public async Task ImportBarrelsAsync_SampleCsvFile_IsValid()
+    {
+        var samplePath = Path.Combine(AppContext.BaseDirectory, "TestData", "barrel-import-sample.csv");
+        Assert.True(File.Exists(samplePath));
+
+        var bytes = await File.ReadAllBytesAsync(samplePath);
+        using var memoryStream = new MemoryStream(bytes);
+        var file = new FormFile(memoryStream, 0, memoryStream.Length, "file", "barrel-import-sample.csv");
+
+        _repository.Setup(r => r.GetRickhouseIdsByNameAsync(1, It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(new Dictionary<string, int>
+            {
+                { "rickhouse a", 10 },
+                { "rickhouse b", 11 }
+            });
+        _repository.Setup(r => r.MashBillExistsForCompanyAsync(1, 7)).ReturnsAsync(true);
+        _repository.Setup(r => r.CreateBatchAsync(1, 7)).ReturnsAsync(5);
+        _repository.Setup(r => r.EnsureOrderForBatchAsync(1, 2, 5, 4)).ReturnsAsync(13);
+
+        IEnumerable<Barrel>? savedBarrels = null;
+        _repository
+            .Setup(r => r.AddBarrelsAsync(It.IsAny<IEnumerable<Barrel>>()))
+            .Callback<IEnumerable<Barrel>>(barrels => savedBarrels = barrels)
+            .Returns(Task.CompletedTask);
+
+        var result = await _service.ImportBarrelsAsync(1, 2, file, null, 7);
+
+        Assert.Equal(5, result.BatchId);
+        Assert.Equal(4, result.CreatedCount);
+        Assert.True(result.CreatedNewBatch);
+
+        Assert.NotNull(savedBarrels);
+        var list = savedBarrels!.ToList();
+        Assert.Equal(4, list.Count);
+        Assert.All(list, barrel =>
+        {
+            Assert.Equal(1, barrel.CompanyId);
+            Assert.Equal(5, barrel.BatchId);
+            Assert.Equal(13, barrel.OrderId);
+        });
+
+        var skuOrder = list.Select(barrel => barrel.Sku).ToList();
+        Assert.Equal(new[] { "BAR-0001", "BAR-0002", "BAR-0003", "BAR-0004" }, skuOrder);
+
+        var rickhouseIds = list.Select(barrel => barrel.RickhouseId).ToList();
+        Assert.Equal(new[] { 10, 10, 11, 11 }, rickhouseIds);
+    }
+
     private static IFormFile CreateCsvFile(string content)
     {
         var bytes = Encoding.UTF8.GetBytes(content);
