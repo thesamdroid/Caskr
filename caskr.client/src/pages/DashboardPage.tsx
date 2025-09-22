@@ -1,11 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import {
   fetchOrders,
   fetchOutstandingTasks
 } from '../features/ordersSlice'
 import { fetchStatuses } from '../features/statusSlice'
-import { fetchBarrels } from '../features/barrelsSlice'
+import { fetchBarrels, forecastBarrels } from '../features/barrelsSlice'
+import ForecastingModal from '../components/ForecastingModal'
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
@@ -13,6 +14,9 @@ export default function DashboardPage() {
   const statuses = useAppSelector(state => state.statuses.items)
   const tasks = useAppSelector(state => state.orders.outstandingTasks)
   const barrels = useAppSelector(state => state.barrels.items)
+  const [showForecastModal, setShowForecastModal] = useState(false)
+  const [forecastError, setForecastError] = useState<string | null>(null)
+  const [forecastResult, setForecastResult] = useState<{ date: string; count: number } | null>(null)
 
   useEffect(() => {
     dispatch(fetchOrders()).then(action => {
@@ -23,6 +27,18 @@ export default function DashboardPage() {
     dispatch(fetchStatuses())
     dispatch(fetchBarrels(1))
   }, [dispatch])
+
+  const handleForecastSubmit = async (targetDate: string, ageYears: number) => {
+    setForecastError(null)
+    try {
+      const result = await dispatch(forecastBarrels({ companyId: 1, targetDate, ageYears })).unwrap()
+      setForecastResult({ date: targetDate, count: result.count })
+      setShowForecastModal(false)
+    } catch (error) {
+      setForecastError('Unable to forecast barrels right now. Please try again later.')
+      throw error
+    }
+  }
 
   const getStatusName = (id: number) =>
     statuses.find(s => s.id === id)?.name || 'Unknown'
@@ -36,6 +52,23 @@ export default function DashboardPage() {
 
   return (
     <>
+      <section className='content-section'>
+        <div className='section-header'>
+          <h2 className='section-title'>Forecasting</h2>
+          <button onClick={() => setShowForecastModal(true)}>Open Forecasting</button>
+        </div>
+        {forecastResult && (
+          <p>
+            Barrels available on {new Date(forecastResult.date).toLocaleDateString()}: {forecastResult.count}
+          </p>
+        )}
+        {forecastError && <p className='forecast-error'>{forecastError}</p>}
+      </section>
+      <ForecastingModal
+        isOpen={showForecastModal}
+        onClose={() => setShowForecastModal(false)}
+        onSubmit={handleForecastSubmit}
+      />
       <section className='content-section'>
         <div className='section-header'>
           <h2 className='section-title'>Active Orders</h2>
