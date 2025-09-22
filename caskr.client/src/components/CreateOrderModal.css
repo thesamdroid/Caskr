@@ -8,17 +8,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1000;
 }
 
 .modal {
   background: #fff;
   padding: 20px;
   border-radius: 4px;
+  box-shadow: 0 10px 40px rgba(17, 24, 39, 0.2);
 }
 
 .modal form input,
 .modal form select {
   display: block;
+  width: 100%;
   margin-bottom: 10px;
   padding: 6px;
 }
@@ -26,4 +29,62 @@
 .modal form button {
   margin-right: 10px;
   padding: 6px 12px;
+}
+
+.modal-subtitle {
+  margin-top: 8px;
+  margin-bottom: 16px;
+  color: #4b5563;
+}
+
+.order-actions-modal {
+  max-width: 500px;
+  width: 100%;
+}
+
+.tasks-section {
+  margin-bottom: 16px;
+}
+
+.tasks-section h3 {
+  margin-bottom: 8px;
+}
+
+.tasks-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.tasks-empty {
+  margin: 0;
+  color: #6b7280;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 20px;
+}
+
+.modal-actions button {
+  margin-right: 0;
+}
+
+.modal-actions .danger {
+  background: #dc2626;
+  border: none;
+  color: #fff;
+}
+
+.modal-form label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.modal-form input,
+.modal-form select {
+  margin-top: 4px;
 }

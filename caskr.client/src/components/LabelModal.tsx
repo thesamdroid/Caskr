@@ -1,17 +1,24 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppSelector } from '../hooks'
 import './CreateOrderModal.css'
 
 type Props = {
   isOpen: boolean
   onClose: () => void
+  orderName?: string
 }
 
-const LabelModal = ({ isOpen, onClose }: Props) => {
+const LabelModal = ({ isOpen, onClose, orderName }: Props) => {
   const user = useAppSelector(state => state.users.items[0])
   const [brandName, setBrandName] = useState('')
   const [productName, setProductName] = useState('')
   const [alcoholContent, setAlcoholContent] = useState('')
+
+  useEffect(() => {
+    if (isOpen) {
+      setProductName(orderName ?? '')
+    }
+  }, [isOpen, orderName])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
