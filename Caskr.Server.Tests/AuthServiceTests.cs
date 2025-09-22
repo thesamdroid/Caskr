@@ -1,3 +1,4 @@
+using Caskr.server;
 using Caskr.server.Models;
 using Caskr.server.Services;
 using Microsoft.Extensions.Configuration;
@@ -60,5 +61,17 @@ public class AuthServiceTests
         var token = await _authService.LoginAsync("a@b.com", "bad");
 
         Assert.Null(token);
+    }
+
+    [Fact]
+    public async Task LoginAsync_SuperAdmin_BypassesKeycloak()
+    {
+        var user = new User { Id = 1, Email = "super@admin.com", UserTypeId = (int)UserType.SuperAdmin };
+        _usersService.Setup(s => s.GetUserByEmailAsync(user.Email)).ReturnsAsync(user);
+
+        var token = await _authService.LoginAsync(user.Email, "any-password");
+
+        Assert.False(string.IsNullOrEmpty(token));
+        _keycloak.Verify(k => k.GetTokenAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 }
