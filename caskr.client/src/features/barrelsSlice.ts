@@ -36,6 +36,43 @@ export const forecastBarrels = createAsyncThunk(
   }
 )
 
+export interface BarrelImportParams {
+  companyId: number
+  file: File
+  batchId?: number
+  mashBillId?: number
+}
+
+export const importBarrels = createAsyncThunk(
+  'barrels/import',
+  async ({ companyId, file, batchId, mashBillId }: BarrelImportParams, { rejectWithValue }) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (batchId !== undefined) {
+      formData.append('batchId', batchId.toString())
+    }
+    if (mashBillId !== undefined) {
+      formData.append('mashBillId', mashBillId.toString())
+    }
+
+    const response = await authorizedFetch(`api/barrels/company/${companyId}/import`, {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!response.ok) {
+      try {
+        const error = await response.json()
+        return rejectWithValue(error)
+      } catch (err) {
+        return rejectWithValue({ message: 'Failed to import barrels' })
+      }
+    }
+
+    return (await response.json()) as { created: number; batchId: number; createdNewBatch: boolean }
+  }
+)
+
 interface BarrelsState {
   items: Barrel[]
   forecast: Barrel[]

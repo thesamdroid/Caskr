@@ -3,6 +3,7 @@ using Caskr.server.Models;
 using Caskr.server.Services;
 using Microsoft.Extensions.Configuration;
 using Moq;
+using UserType = Caskr.server.UserType;
 
 namespace Caskr.Server.Tests;
 

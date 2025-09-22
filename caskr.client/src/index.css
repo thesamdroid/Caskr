@@ -141,6 +141,11 @@ button:hover {
   margin-bottom: 1rem;
 }
 
+.section-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
 .section-title {
   font-size: 20px;
   font-weight: 600;
@@ -279,6 +284,12 @@ button:hover {
 }
 
 .forecast-error {
+  margin-top: 0.75rem;
+  color: var(--secondary-orange);
+  font-weight: 600;
+}
+
+.modal-error {
   margin-top: 0.75rem;
   color: var(--secondary-orange);
   font-weight: 600;
