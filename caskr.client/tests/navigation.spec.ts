@@ -12,20 +12,25 @@ test.describe('navigation links', () => {
   });
 
   const pages = [
-    { link: 'Orders', heading: 'Orders' },
-    { link: 'Barrels', heading: 'Barrels' },
-    { link: 'Products', heading: 'Products' },
-    { link: 'Statuses', heading: 'Statuses' },
-    { link: 'Users', heading: 'Users' },
-    { link: 'User Types', heading: 'User Types' },
-    { link: 'Login', heading: 'Login' }
+    { link: 'Dashboard', heading: 'Forecasting', path: '/' },
+    { link: 'Orders', heading: 'Orders', path: '/orders' },
+    { link: 'Barrels', heading: 'Barrels', path: '/barrels' },
+    { link: 'Products', heading: 'Products', path: '/products' },
+    { link: 'Login', heading: 'Login', path: '/login' }
   ];
 
   test('each navigation link leads to correct page', async ({ page }) => {
-    await page.goto('/orders');
     for (const p of pages) {
+      await page.goto(p.path);
       await page.getByRole('link', { name: p.link }).click();
       await expect(page.getByRole('heading', { name: p.heading })).toBeVisible();
     }
+  });
+
+  test('navigation does not include restricted links', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Statuses' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'User Types' })).toHaveCount(0);
   });
 });

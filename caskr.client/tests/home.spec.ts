@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('home page has CASKr header and orders link', async ({ page }) => {
+test('home page loads dashboard content', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/Caskr Orders/);
-  await expect(page.getByRole('link', { name: 'Orders' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Forecasting' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
 });
