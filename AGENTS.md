@@ -2,6 +2,12 @@
 
 All changes must ensure the .NET solution builds and **all tests run and pass**.
 
+Each pull request must include at least one new automated test that exercises the
+behaviour introduced or modified by the change.
+
+Before finishing a task, verify that every project builds successfully and that
+the full test suite completes without failures.
+
 Before committing, run:
 
 ```bash
