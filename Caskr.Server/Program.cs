@@ -3,6 +3,7 @@ using Caskr.server.Models;
 using Caskr.server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -14,6 +15,18 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
+var rawSigningKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(rawSigningKey))
+{
+    throw new InvalidOperationException("JWT signing key is not configured.");
+}
+
+var signingKeyBytes = Encoding.UTF8.GetBytes(rawSigningKey);
+if (signingKeyBytes.Length < 32)
+{
+    signingKeyBytes = SHA256.HashData(signingKeyBytes);
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -24,7 +37,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+            IssuerSigningKey = new SymmetricSecurityKey(signingKeyBytes)
         };
     });
 builder.Services.AddAuthorization();
