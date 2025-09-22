@@ -21,7 +21,7 @@ function LoginPage() {
     const data = await response.json()
     localStorage.setItem('token', data.token)
     setPassword('')
-    navigate('/landing')
+    navigate('/')
   }
 
   return (
