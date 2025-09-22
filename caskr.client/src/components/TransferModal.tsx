@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAppSelector } from '../hooks'
 import { authorizedFetch } from '../api/authorizedFetch'
+import { downloadBlob } from '../utils/downloadBlob'
 import './CreateOrderModal.css'
 
 type Props = {
@@ -29,13 +30,11 @@ const TransferModal = ({ isOpen, onClose }: Props) => {
         barrelCount
       })
     })
+    if (!response.ok) {
+      throw new Error('Failed to generate transfer document')
+    }
     const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'ttb_form_5100_16.pdf'
-    a.click()
-    window.URL.revokeObjectURL(url)
+    downloadBlob(blob, 'ttb_form_5100_16.pdf')
     onClose()
     setToCompanyName('')
     setPermitNumber('')
