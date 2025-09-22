@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Caskr.server.Models;
 using Microsoft.Extensions.Configuration;
@@ -28,7 +29,17 @@ namespace Caskr.server.Services
                 return null;
             }
 
-            var key = Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!);
+            var rawKey = configuration["Jwt:Key"];
+            if (string.IsNullOrWhiteSpace(rawKey))
+            {
+                throw new InvalidOperationException("JWT signing key is not configured.");
+            }
+
+            var key = Encoding.UTF8.GetBytes(rawKey);
+            if (key.Length < 32)
+            {
+                key = SHA256.HashData(key);
+            }
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
