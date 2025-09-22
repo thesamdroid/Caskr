@@ -27,7 +27,7 @@ const LabelModal = ({ isOpen, onClose, orderName }: Props) => {
     if (!user) return
     const response = await authorizedFetch('/api/labels/ttb-form', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/pdf' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/pdf' },
       body: JSON.stringify({
         companyId: user.companyId,
         brandName,
