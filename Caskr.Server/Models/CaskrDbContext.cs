@@ -155,16 +155,10 @@ public partial class CaskrDbContext : DbContext
                 .HasDefaultValueSql("nextval('\"Company_id_seq\"'::regclass)")
                 .HasColumnName("id");
             entity.Property(e => e.CompanyName).HasColumnName("company_name");
-            entity.Property(e => e.PrimaryContactId).HasColumnName("primary_contact_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_date");
             entity.Property(e => e.RenewalDate).HasColumnName("renewal_date");
-
-            entity.HasOne(d => d.PrimaryContact).WithMany()
-                .HasForeignKey(d => d.PrimaryContactId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_company_primary_contact");
         });
 
         modelBuilder.Entity<Status>(entity =>
@@ -222,6 +216,7 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.UserTypeId).HasColumnName("user_type_id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.IsPrimaryContact).HasColumnName("is_primary_contact");
 
             entity.HasOne(d => d.UserType).WithMany(p => p.Users)
                 .HasForeignKey(d => d.UserTypeId)
