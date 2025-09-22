@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Caskr.server;
 using Caskr.server.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -17,18 +18,26 @@ namespace Caskr.server.Services
     {
         public async Task<string?> LoginAsync(string email, string password)
         {
-            var keycloakToken = await keycloakClient.GetTokenAsync(email, password);
-            if (keycloakToken is null)
-            {
-                return null;
-            }
-
             var user = await usersService.GetUserByEmailAsync(email);
             if (user is null)
             {
                 return null;
             }
 
+            if (user.UserTypeId != (int)UserType.SuperAdmin)
+            {
+                var keycloakToken = await keycloakClient.GetTokenAsync(email, password);
+                if (keycloakToken is null)
+                {
+                    return null;
+                }
+            }
+
+            return GenerateToken(user);
+        }
+
+        private string GenerateToken(User user)
+        {
             var rawKey = configuration["Jwt:Key"];
             if (string.IsNullOrWhiteSpace(rawKey))
             {
