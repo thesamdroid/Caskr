@@ -10,7 +10,7 @@ namespace Caskr.server.Repos
     {
         Task<IEnumerable<Barrel>> GetBarrelsForCompanyAsync(int companyId);
         Task<IEnumerable<Barrel>> ForecastBarrelsAsync(int companyId, DateTime targetDate, int ageYears);
-        Task<Dictionary<string, int>> GetRickhouseIdsByNameAsync(int companyId, IEnumerable<string> normalizedNames);
+        Task<Dictionary<string, int>?> GetRickhouseIdsByNameAsync(int companyId, IEnumerable<string> normalizedNames);
         Task<bool> BatchExistsForCompanyAsync(int companyId, int batchId);
         Task<bool> MashBillExistsForCompanyAsync(int companyId, int mashBillId);
         Task<int> CreateBatchAsync(int companyId, int mashBillId);
@@ -37,7 +37,7 @@ namespace Caskr.server.Repos
                 .ToListAsync();
         }
 
-        public async Task<Dictionary<string, int>> GetRickhouseIdsByNameAsync(int companyId, IEnumerable<string> normalizedNames)
+        public async Task<Dictionary<string, int>?> GetRickhouseIdsByNameAsync(int companyId, IEnumerable<string> normalizedNames)
         {
             var normalizedSet = normalizedNames.Select(n => n.ToLowerInvariant()).ToHashSet();
             return await dbContext.Rickhouses
@@ -57,11 +57,13 @@ namespace Caskr.server.Repos
 
         public async Task<int> CreateBatchAsync(int companyId, int mashBillId)
         {
-            var nextId = await dbContext.Batches
+            var maxExistingId = await dbContext.Batches
                 .Where(b => b.CompanyId == companyId)
+                .OrderByDescending(b => b.Id)
                 .Select(b => b.Id)
-                .DefaultIfEmpty(0)
-                .MaxAsync() + 1;
+                .FirstOrDefaultAsync();
+
+            var nextId = maxExistingId + 1;
 
             var batch = new Batch
             {

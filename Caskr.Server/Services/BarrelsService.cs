@@ -85,7 +85,8 @@ namespace Caskr.server.Services
             }
 
             var rickhouseKeys = rows.Select(r => r.RickhouseKey).Distinct().ToList();
-            var rickhouseIds = await repository.GetRickhouseIdsByNameAsync(companyId, rickhouseKeys);
+            var rickhouseIds = await repository.GetRickhouseIdsByNameAsync(companyId, rickhouseKeys)
+                ?? new Dictionary<string, int>();
             var missingRickhouses = rickhouseKeys.Where(key => !rickhouseIds.ContainsKey(key)).ToList();
             if (missingRickhouses.Count > 0)
             {
