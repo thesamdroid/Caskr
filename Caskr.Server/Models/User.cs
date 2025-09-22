@@ -12,6 +12,8 @@ public partial class User
 
     public int CompanyId { get; set; }
 
+    public bool IsPrimaryContact { get; set; }
+
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public string CompanyName { get; set; } = string.Empty;
 

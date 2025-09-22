@@ -48,40 +48,40 @@ INSERT INTO public.status_task (id, status_id, name) VALUES
     (20, 6, 'Product Listing');
 
 -- Companies
-INSERT INTO public.company (company_name, primary_contact_id, renewal_date) VALUES
-    ('Middle West', 3, CURRENT_TIMESTAMP + INTERVAL '1 year'),
-    ('Makers Mark', 4, CURRENT_TIMESTAMP + INTERVAL '1 year'),
-    ('Jim Beam', 2, CURRENT_TIMESTAMP + INTERVAL '1 year'),
-    ('Jack Daniels', 1, CURRENT_TIMESTAMP + INTERVAL '1 year');
+INSERT INTO public.company (company_name, renewal_date) VALUES
+    ('Middle West', CURRENT_TIMESTAMP + INTERVAL '1 year'),
+    ('Makers Mark', CURRENT_TIMESTAMP + INTERVAL '1 year'),
+    ('Jim Beam', CURRENT_TIMESTAMP + INTERVAL '1 year'),
+    ('Jack Daniels', CURRENT_TIMESTAMP + INTERVAL '1 year');
 
 -- Users
-INSERT INTO public.users (id, name, email, user_type_id, company_id) VALUES
-    (1, 'Alice Johnson', 'alice.johnson.147@example.invalid', 3, 4),
-    (2, 'Bob Smith', 'bob.smith.938@example.invalid', 3, 3),
-    (3, 'Carol Williams', 'carol.williams.259@example.invalid', 4, 1),
-    (4, 'David Brown', 'david.brown.740@example.invalid', 5, 2),
-    (5, 'Eve Davis', 'eve.davis.572@example.invalid', 3, 1),
-    (6, 'Frank Miller', 'frank.miller.863@example.invalid', 4, 2),
-    (7, 'Grace Wilson', 'grace.wilson.314@example.invalid', 5, 3),
-    (8, 'Hank Moore', 'hank.moore.485@example.invalid', 3, 4),
-    (9, 'Ivy Taylor', 'ivy.taylor.697@example.invalid', 4, 1),
-    (10, 'Jake Anderson', 'jake.anderson.208@example.invalid', 5, 2),
-    (11, 'Laura Thomas', 'laura.thomas.559@example.invalid', 3, 3),
-    (12, 'Mike Jackson', 'mike.jackson.631@example.invalid', 4, 4),
-    (13, 'Nina White', 'nina.white.942@example.invalid', 5, 1),
-    (14, 'Oscar Harris', 'oscar.harris.173@example.invalid', 3, 2),
-    (15, 'Paula Martin', 'paula.martin.384@example.invalid', 4, 3),
-    (16, 'Quincy Lee', 'quincy.lee.795@example.invalid', 5, 4),
-    (17, 'Rachel Perez', 'rachel.perez.516@example.invalid', 3, 1),
-    (18, 'Steve Clark', 'steve.clark.627@example.invalid', 4, 2),
-    (19, 'Tina Lewis', 'tina.lewis.838@example.invalid', 5, 3),
-    (20, 'Umar Walker', 'umar.walker.249@example.invalid', 3, 4),
-    (21, 'Victor Hall', 'victor.hall.460@example.invalid', 4, 1),
-    (22, 'Wendy Young', 'wendy.young.571@example.invalid', 5, 2),
-    (23, 'Xavier King', 'xavier.king.682@example.invalid', 3, 3),
-    (24, 'Yvonne Scott', 'yvonne.scott.793@example.invalid', 4, 4),
-    (125, 'Super Admin', 'admin@example.invalid', 1, 1),
-    (126, 'Shaw', 'shaw@caskr.co', 1, 1);
+INSERT INTO public.users (id, name, email, user_type_id, company_id, is_primary_contact) VALUES
+    (1, 'Alice Johnson', 'alice.johnson.147@example.invalid', 3, 4, true),
+    (2, 'Bob Smith', 'bob.smith.938@example.invalid', 3, 3, true),
+    (3, 'Carol Williams', 'carol.williams.259@example.invalid', 4, 1, true),
+    (4, 'David Brown', 'david.brown.740@example.invalid', 5, 2, true),
+    (5, 'Eve Davis', 'eve.davis.572@example.invalid', 3, 1, false),
+    (6, 'Frank Miller', 'frank.miller.863@example.invalid', 4, 2, false),
+    (7, 'Grace Wilson', 'grace.wilson.314@example.invalid', 5, 3, false),
+    (8, 'Hank Moore', 'hank.moore.485@example.invalid', 3, 4, false),
+    (9, 'Ivy Taylor', 'ivy.taylor.697@example.invalid', 4, 1, false),
+    (10, 'Jake Anderson', 'jake.anderson.208@example.invalid', 5, 2, false),
+    (11, 'Laura Thomas', 'laura.thomas.559@example.invalid', 3, 3, false),
+    (12, 'Mike Jackson', 'mike.jackson.631@example.invalid', 4, 4, false),
+    (13, 'Nina White', 'nina.white.942@example.invalid', 5, 1, false),
+    (14, 'Oscar Harris', 'oscar.harris.173@example.invalid', 3, 2, false),
+    (15, 'Paula Martin', 'paula.martin.384@example.invalid', 4, 3, false),
+    (16, 'Quincy Lee', 'quincy.lee.795@example.invalid', 5, 4, false),
+    (17, 'Rachel Perez', 'rachel.perez.516@example.invalid', 3, 1, false),
+    (18, 'Steve Clark', 'steve.clark.627@example.invalid', 4, 2, false),
+    (19, 'Tina Lewis', 'tina.lewis.838@example.invalid', 5, 3, false),
+    (20, 'Umar Walker', 'umar.walker.249@example.invalid', 3, 4, false),
+    (21, 'Victor Hall', 'victor.hall.460@example.invalid', 4, 1, false),
+    (22, 'Wendy Young', 'wendy.young.571@example.invalid', 5, 2, false),
+    (23, 'Xavier King', 'xavier.king.682@example.invalid', 3, 3, false),
+    (24, 'Yvonne Scott', 'yvonne.scott.793@example.invalid', 4, 4, false),
+    (125, 'Super Admin', 'admin@example.invalid', 1, 1, false),
+    (126, 'Shaw', 'shaw@caskr.co', 1, 1, false);
 
 -- Products
 INSERT INTO public.products (id, owner_id, notes) VALUES

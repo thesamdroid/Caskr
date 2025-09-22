@@ -243,7 +243,8 @@ CREATE TABLE public.users (
     name text NOT NULL,
     email text NOT NULL,
     user_type_id integer NOT NULL,
-    company_id integer NOT NULL
+    company_id integer NOT NULL,
+    is_primary_contact boolean DEFAULT false NOT NULL
 );
 
 
@@ -522,7 +523,6 @@ ALTER TABLE ONLY public.tasks
 CREATE TABLE public.company (
     id integer NOT NULL,
     company_name text NOT NULL,
-    primary_contact_id integer NOT NULL,
     created_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     renewal_date timestamp with time zone NOT NULL
 );
@@ -564,14 +564,6 @@ ALTER TABLE ONLY public.company ALTER COLUMN id SET DEFAULT nextval('public."Com
 ALTER TABLE ONLY public.company
     ADD CONSTRAINT "Company_pkey" PRIMARY KEY (id);
 
---
--- Name: company fk_company_primary_contact; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.company
-    ADD CONSTRAINT fk_company_primary_contact FOREIGN KEY (primary_contact_id) REFERENCES public.users(id);
-
---
 -- Name: users fk_user_company; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
