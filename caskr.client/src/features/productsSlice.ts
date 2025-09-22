@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { authorizedFetch } from '../api/authorizedFetch'
 
 export interface Product {
   id: number
@@ -7,13 +8,13 @@ export interface Product {
 }
 
 export const fetchProducts = createAsyncThunk('products/fetchProducts', async () => {
-  const response = await fetch('api/products')
+  const response = await authorizedFetch('api/products')
   if (!response.ok) throw new Error('Failed to fetch products')
   return (await response.json()) as Product[]
 })
 
 export const addProduct = createAsyncThunk('products/addProduct', async (product: Omit<Product, 'id'>) => {
-  const response = await fetch('api/products', {
+  const response = await authorizedFetch('api/products', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(product)
@@ -23,7 +24,7 @@ export const addProduct = createAsyncThunk('products/addProduct', async (product
 })
 
 export const updateProduct = createAsyncThunk('products/updateProduct', async (product: Product) => {
-  const response = await fetch(`api/products/${product.id}`, {
+  const response = await authorizedFetch(`api/products/${product.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(product)
@@ -33,7 +34,7 @@ export const updateProduct = createAsyncThunk('products/updateProduct', async (p
 })
 
 export const deleteProduct = createAsyncThunk('products/deleteProduct', async (id: number) => {
-  const response = await fetch(`api/products/${id}`, { method: 'DELETE' })
+  const response = await authorizedFetch(`api/products/${id}`, { method: 'DELETE' })
   if (!response.ok) throw new Error('Failed to delete product')
   return id
 })

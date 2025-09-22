@@ -5,9 +5,7 @@ using System.Collections.Generic;
 
 namespace Caskr.server.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class SpiritTypesController(CaskrDbContext dbContext) : ControllerBase
+    public class SpiritTypesController(CaskrDbContext dbContext) : AuthorizedApiControllerBase
     {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<SpiritType>>> GetSpiritTypes()

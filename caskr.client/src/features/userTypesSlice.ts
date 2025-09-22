@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { authorizedFetch } from '../api/authorizedFetch'
 
 export interface UserType {
   id: number
@@ -6,13 +7,13 @@ export interface UserType {
 }
 
 export const fetchUserTypes = createAsyncThunk('userTypes/fetchUserTypes', async () => {
-  const response = await fetch('api/usertypes')
+  const response = await authorizedFetch('api/usertypes')
   if (!response.ok) throw new Error('Failed to fetch user types')
   return (await response.json()) as UserType[]
 })
 
 export const addUserType = createAsyncThunk('userTypes/addUserType', async (userType: Omit<UserType, 'id'>) => {
-  const response = await fetch('api/usertypes', {
+  const response = await authorizedFetch('api/usertypes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userType)
@@ -22,7 +23,7 @@ export const addUserType = createAsyncThunk('userTypes/addUserType', async (user
 })
 
 export const updateUserType = createAsyncThunk('userTypes/updateUserType', async (userType: UserType) => {
-  const response = await fetch(`api/usertypes/${userType.id}`, {
+  const response = await authorizedFetch(`api/usertypes/${userType.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userType)
@@ -32,7 +33,7 @@ export const updateUserType = createAsyncThunk('userTypes/updateUserType', async
 })
 
 export const deleteUserType = createAsyncThunk('userTypes/deleteUserType', async (id: number) => {
-  const response = await fetch(`api/usertypes/${id}`, { method: 'DELETE' })
+  const response = await authorizedFetch(`api/usertypes/${id}`, { method: 'DELETE' })
   if (!response.ok) throw new Error('Failed to delete user type')
   return id
 })

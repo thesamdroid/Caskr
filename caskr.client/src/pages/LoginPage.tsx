@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { authorizedFetch } from '../api/authorizedFetch'
 
 function LoginPage() {
   const [email, setEmail] = useState('')
@@ -9,7 +10,7 @@ function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const response = await fetch('api/auth/login', {
+    const response = await authorizedFetch('api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })

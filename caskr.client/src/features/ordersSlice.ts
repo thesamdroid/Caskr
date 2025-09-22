@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { authorizedFetch } from '../api/authorizedFetch'
 import type { StatusTask } from './statusSlice'
 
 export interface Order {
@@ -12,13 +13,13 @@ export interface Order {
 }
 
 export const fetchOrders = createAsyncThunk('orders/fetchOrders', async () => {
-  const response = await fetch('api/orders')
+  const response = await authorizedFetch('api/orders')
   if (!response.ok) throw new Error('Failed to fetch orders')
   return (await response.json()) as Order[]
 })
 
 export const addOrder = createAsyncThunk('orders/addOrder', async (order: Omit<Order, 'id'>) => {
-  const response = await fetch('api/orders', {
+  const response = await authorizedFetch('api/orders', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(order)
@@ -28,7 +29,7 @@ export const addOrder = createAsyncThunk('orders/addOrder', async (order: Omit<O
 })
 
 export const updateOrder = createAsyncThunk('orders/updateOrder', async (order: Order) => {
-  const response = await fetch(`api/orders/${order.id}`, {
+  const response = await authorizedFetch(`api/orders/${order.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(order)
@@ -38,7 +39,7 @@ export const updateOrder = createAsyncThunk('orders/updateOrder', async (order: 
 })
 
 export const deleteOrder = createAsyncThunk('orders/deleteOrder', async (id: number) => {
-  const response = await fetch(`api/orders/${id}`, { method: 'DELETE' })
+  const response = await authorizedFetch(`api/orders/${id}`, { method: 'DELETE' })
   if (!response.ok) throw new Error('Failed to delete order')
   return id
 })
@@ -46,7 +47,7 @@ export const deleteOrder = createAsyncThunk('orders/deleteOrder', async (id: num
 export const fetchOutstandingTasks = createAsyncThunk(
   'orders/fetchOutstandingTasks',
   async (orderId: number) => {
-    const response = await fetch(`api/orders/${orderId}/outstanding-tasks`)
+    const response = await authorizedFetch(`api/orders/${orderId}/outstanding-tasks`)
     if (!response.ok) throw new Error('Failed to fetch outstanding tasks')
     return { orderId, tasks: (await response.json()) as StatusTask[] }
   }

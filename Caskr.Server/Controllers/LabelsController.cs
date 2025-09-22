@@ -4,9 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Caskr.server.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class LabelsController(ILabelsService labelsService) : ControllerBase
+public class LabelsController(ILabelsService labelsService) : AuthorizedApiControllerBase
 {
     [HttpPost("ttb-form")]
     public async Task<IActionResult> GenerateTtbForm([FromBody] LabelRequest request)

@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { authorizedFetch } from '../api/authorizedFetch'
 
 export interface StatusTask {
   id: number
@@ -13,13 +14,13 @@ export interface Status {
 }
 
 export const fetchStatuses = createAsyncThunk('statuses/fetchStatuses', async () => {
-  const response = await fetch('api/status')
+  const response = await authorizedFetch('api/status')
   if (!response.ok) throw new Error('Failed to fetch statuses')
   return (await response.json()) as Status[]
 })
 
 export const addStatus = createAsyncThunk('statuses/addStatus', async (status: Omit<Status, 'id' | 'statusTasks'>) => {
-  const response = await fetch('api/status', {
+  const response = await authorizedFetch('api/status', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(status)
@@ -29,7 +30,7 @@ export const addStatus = createAsyncThunk('statuses/addStatus', async (status: O
 })
 
 export const updateStatus = createAsyncThunk('statuses/updateStatus', async (status: Omit<Status, 'statusTasks'>) => {
-  const response = await fetch(`api/status/${status.id}`, {
+  const response = await authorizedFetch(`api/status/${status.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(status)
@@ -39,7 +40,7 @@ export const updateStatus = createAsyncThunk('statuses/updateStatus', async (sta
 })
 
 export const deleteStatus = createAsyncThunk('statuses/deleteStatus', async (id: number) => {
-  const response = await fetch(`api/status/${id}`, { method: 'DELETE' })
+  const response = await authorizedFetch(`api/status/${id}`, { method: 'DELETE' })
   if (!response.ok) throw new Error('Failed to delete status')
   return id
 })
