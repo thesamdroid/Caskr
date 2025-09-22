@@ -46,8 +46,29 @@ public class BarrelsServiceTests
     {
         var file = CreateCsvFile("sku,rickhouse\nSKU1,R1");
 
+        var lookupInvoked = false;
+        _repository
+            .Setup(r => r.GetRickhouseIdsByNameAsync(1, It.IsAny<IEnumerable<string>>()))
+            .Callback(() => lookupInvoked = true)
+            .ReturnsAsync(new Dictionary<string, int> { { "r1", 10 } });
+
         await Assert.ThrowsAsync<BatchRequiredException>(() =>
             _service.ImportBarrelsAsync(1, 2, file, null, null));
+
+        Assert.True(lookupInvoked);
+    }
+
+    [Fact]
+    public async Task ImportBarrelsAsync_NullRickhouseLookup_TreatedAsMissing()
+    {
+        var file = CreateCsvFile("sku,rickhouse\nSKU1,R1");
+
+        _repository
+            .Setup(r => r.GetRickhouseIdsByNameAsync(1, It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync((Dictionary<string, int>?)null);
+
+        await Assert.ThrowsAsync<RickhouseNotFoundException>(() =>
+            _service.ImportBarrelsAsync(1, 2, file, 5, 7));
     }
 
     [Fact]

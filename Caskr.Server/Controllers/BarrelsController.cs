@@ -15,6 +15,10 @@ public class BarrelImportRequest
 
     public int? MashBillId { get; set; }
 }
+
+public record BarrelImportError(string message, bool? requiresMashBillId = null);
+
+public record BarrelImportSummary(int created, int batchId, bool createdNewBatch);
 public class BarrelsController(IBarrelsService barrelsService, IUsersService usersService) : AuthorizedApiControllerBase
 {
     [HttpGet("company/{companyId}")]
@@ -56,26 +60,21 @@ public class BarrelsController(IBarrelsService barrelsService, IUsersService use
 
         if (request.File is null || request.File.Length == 0)
         {
-            return BadRequest(new { message = "Please select a CSV file to upload." });
+            return BadRequest(new BarrelImportError("Please select a CSV file to upload."));
         }
 
         try
         {
             var result = await barrelsService.ImportBarrelsAsync(companyId, user.Id, request.File, request.BatchId, request.MashBillId);
-            return Ok(new
-            {
-                created = result.CreatedCount,
-                batchId = result.BatchId,
-                createdNewBatch = result.CreatedNewBatch
-            });
+            return Ok(new BarrelImportSummary(result.CreatedCount, result.BatchId, result.CreatedNewBatch));
         }
         catch (BatchRequiredException ex)
         {
-            return BadRequest(new { message = ex.Message, requiresMashBillId = true });
+            return BadRequest(new BarrelImportError(ex.Message, requiresMashBillId: true));
         }
         catch (BarrelImportException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new BarrelImportError(ex.Message));
         }
     }
 
