@@ -1,8 +1,10 @@
 import { Link, Outlet } from 'react-router-dom'
+import LoadingOverlay from './LoadingOverlay'
 
 export default function Layout() {
   return (
     <>
+      <LoadingOverlay />
       <header className='header'>
         <div className='header-content'>
           <Link to='/' className='logo'>

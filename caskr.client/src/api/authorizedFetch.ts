@@ -1,3 +1,5 @@
+import { loadingManager } from '../loadingManager'
+
 export const authorizedFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
   const token = localStorage.getItem('token')
   const headers = new Headers(init.headers ?? {})
@@ -6,5 +8,10 @@ export const authorizedFetch = async (input: RequestInfo | URL, init: RequestIni
     headers.set('Authorization', `Bearer ${token}`)
   }
 
-  return fetch(input, { ...init, headers })
+  loadingManager.beginRequest()
+  try {
+    return await fetch(input, { ...init, headers })
+  } finally {
+    loadingManager.endRequest()
+  }
 }
