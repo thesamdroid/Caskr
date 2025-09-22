@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using Caskr.server.Repos;
 using Caskr.server.Services;
 using Microsoft.AspNetCore.Http;
 using Moq;
+using Xunit;
 
 namespace Caskr.Server.Tests;
 
