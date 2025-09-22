@@ -2,11 +2,15 @@ import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import {
   fetchOrders,
-  fetchOutstandingTasks
+  fetchOutstandingTasks,
+  updateOrder,
+  deleteOrder,
+  type Order
 } from '../features/ordersSlice'
 import { fetchStatuses } from '../features/statusSlice'
 import { fetchBarrels, forecastBarrels } from '../features/barrelsSlice'
 import ForecastingModal from '../components/ForecastingModal'
+import OrderActionsModal from '../components/OrderActionsModal'
 import { formatForecastSummary } from '../utils/forecastSummary'
 
 export default function DashboardPage() {
@@ -16,6 +20,7 @@ export default function DashboardPage() {
   const tasks = useAppSelector(state => state.orders.outstandingTasks)
   const barrels = useAppSelector(state => state.barrels.items)
   const [showForecastModal, setShowForecastModal] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [forecastError, setForecastError] = useState<string | null>(null)
   const [forecastResult, setForecastResult] = useState<
     { date: string; count: number; ageYears: number }
@@ -53,6 +58,30 @@ export default function DashboardPage() {
     return 'pending'
   }
 
+  const handleOrderClick = (order: Order) => {
+    setSelectedOrder(order)
+    dispatch(fetchOutstandingTasks(order.id))
+  }
+
+  const handleCloseOrderModal = () => {
+    setSelectedOrder(null)
+  }
+
+  const handleUpdateOrder = (order: Order) => {
+    dispatch(updateOrder(order))
+      .unwrap()
+      .then(updated => {
+        setSelectedOrder(updated)
+      })
+      .catch(() => {
+        // ignore failure; toast/notification system not available yet
+      })
+  }
+
+  const handleDeleteOrder = (orderId: number) => {
+    dispatch(deleteOrder(orderId))
+  }
+
   return (
     <>
       <section className='content-section'>
@@ -85,7 +114,7 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {orders.map(order => (
-                <tr key={order.id}>
+                <tr key={order.id} onClick={() => handleOrderClick(order)} className='clickable-row'>
                   <td>{order.name}</td>
                   <td>
                     <span className={`status-badge ${getStatusClass(order.statusId)}`}>
@@ -99,6 +128,15 @@ export default function DashboardPage() {
           </table>
         </div>
       </section>
+      <OrderActionsModal
+        isOpen={selectedOrder !== null}
+        order={selectedOrder}
+        statuses={statuses}
+        tasks={selectedOrder ? tasks[selectedOrder.id] : undefined}
+        onClose={handleCloseOrderModal}
+        onUpdate={handleUpdateOrder}
+        onDelete={handleDeleteOrder}
+      />
       <section className='content-section'>
         <div className='section-header'>
           <h2 className='section-title'>Barrel Inventory</h2>
