@@ -46,7 +46,7 @@ public class KeycloakClient(HttpClient httpClient, IConfiguration configuration)
             enabled = true,
             credentials = new[]
             {
-                new { type = "password", value = temporaryPassword, temporary = true }
+                new { type = "password", value = temporaryPassword, temporary = false }
             }
         };
         var request = new HttpRequestMessage(HttpMethod.Post,
