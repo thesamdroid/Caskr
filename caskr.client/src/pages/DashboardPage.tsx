@@ -7,6 +7,7 @@ import {
 import { fetchStatuses } from '../features/statusSlice'
 import { fetchBarrels, forecastBarrels } from '../features/barrelsSlice'
 import ForecastingModal from '../components/ForecastingModal'
+import { formatForecastSummary } from '../utils/forecastSummary'
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
@@ -16,7 +17,9 @@ export default function DashboardPage() {
   const barrels = useAppSelector(state => state.barrels.items)
   const [showForecastModal, setShowForecastModal] = useState(false)
   const [forecastError, setForecastError] = useState<string | null>(null)
-  const [forecastResult, setForecastResult] = useState<{ date: string; count: number } | null>(null)
+  const [forecastResult, setForecastResult] = useState<
+    { date: string; count: number; ageYears: number }
+  | null>(null)
 
   useEffect(() => {
     dispatch(fetchOrders()).then(action => {
@@ -32,7 +35,7 @@ export default function DashboardPage() {
     setForecastError(null)
     try {
       const result = await dispatch(forecastBarrels({ companyId: 1, targetDate, ageYears })).unwrap()
-      setForecastResult({ date: targetDate, count: result.count })
+      setForecastResult({ date: targetDate, count: result.count, ageYears })
       setShowForecastModal(false)
     } catch (error) {
       setForecastError('Unable to forecast barrels right now. Please try again later.')
@@ -58,9 +61,7 @@ export default function DashboardPage() {
           <button onClick={() => setShowForecastModal(true)}>Open Forecasting</button>
         </div>
         {forecastResult && (
-          <p>
-            Barrels available on {new Date(forecastResult.date).toLocaleDateString()}: {forecastResult.count}
-          </p>
+          <p>{formatForecastSummary(forecastResult.date, forecastResult.ageYears, forecastResult.count)}</p>
         )}
         {forecastError && <p className='forecast-error'>{forecastError}</p>}
       </section>
