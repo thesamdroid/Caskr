@@ -36,11 +36,13 @@ const setupOrdersPageRoutes = async (page: Page) => {
 }
 
 test.describe('label document generation', () => {
-  test('downloads the generated TTB PDF', async ({ page }) => {
+  test('downloads the generated TTB PDF after previewing it', async ({ page }) => {
     await setupOrdersPageRoutes(page)
 
     const pdfContent = '%PDF-1.4\n%Mock PDF content\n'
+    let requestCount = 0
     await page.route('**/api/labels/ttb-form', async route => {
+      requestCount += 1
       expect(route.request().method()).toBe('POST')
       await route.fulfill({
         status: 200,
@@ -60,8 +62,15 @@ test.describe('label document generation', () => {
     await page.fill('input[placeholder="Product Name"]', 'Mock Product')
     await page.fill('input[placeholder="Alcohol Content"]', '40%')
 
+    await page.getByRole('button', { name: 'Generate', exact: true }).click()
+
+    await expect.poll(() => requestCount).toBe(1)
+
+    const previewRegion = page.getByRole('region', { name: 'Generated TTB document preview' })
+    await expect(previewRegion).toBeVisible()
+
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: 'Generate' }).click()
+    await page.getByRole('button', { name: 'Download PDF' }).click()
     const download = await downloadPromise
 
     expect(download.suggestedFilename()).toBe('ttb_form_5100_31.pdf')
@@ -109,13 +118,14 @@ test.describe('label document generation', () => {
     await page.fill('input[placeholder="Product Name"]', 'Mock Product')
     await page.fill('input[placeholder="Alcohol Content"]', '40%')
 
-    const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: 'Generate' }).click()
-    await downloadPromise
+    await page.getByRole('button', { name: 'Generate', exact: true }).click()
 
-    expect(capturedContentType).toBe('application/json')
-    expect(capturedAccept).toBe('application/pdf')
-    expect(capturedBody).not.toBeNull()
+    await expect.poll(() => capturedContentType).toBe('application/json')
+    await expect.poll(() => capturedAccept).toBe('application/pdf')
+    await expect.poll(() => capturedBody).not.toBeNull()
+
+    const previewRegion = page.getByRole('region', { name: 'Generated TTB document preview' })
+    await expect(previewRegion).toBeVisible()
 
     const payload = JSON.parse(capturedBody!)
     expect(payload).toMatchObject({
@@ -124,5 +134,46 @@ test.describe('label document generation', () => {
       alcoholContent: '40%'
     })
     expect(typeof payload.companyId).toBe('number')
+  })
+
+  test('allows returning to the label form after previewing the document', async ({ page }) => {
+    await setupOrdersPageRoutes(page)
+
+    let requestCount = 0
+    await page.route('**/api/labels/ttb-form', async route => {
+      requestCount += 1
+      await route.fulfill({
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf'
+        },
+        body: '%PDF-1.4\n%Mock PDF content\n'
+      })
+    })
+
+    await page.goto('/orders')
+
+    await page.getByRole('row', { name: /TTB Filing Order/ }).click()
+    await page.getByRole('button', { name: 'Generate TTB Document' }).click()
+
+    await page.fill('input[placeholder="Brand Name"]', 'Mock Brand')
+    await page.fill('input[placeholder="Product Name"]', 'Mock Product')
+    await page.fill('input[placeholder="Alcohol Content"]', '40%')
+
+    const previewRegion = page.getByRole('region', { name: 'Generated TTB document preview' })
+    const generateButton = page.getByRole('button', { name: 'Generate', exact: true })
+    await generateButton.click()
+    await expect.poll(() => requestCount).toBe(1)
+    await expect(previewRegion).toBeVisible()
+
+    await page.getByRole('button', { name: 'Back to form' }).click()
+    await expect(previewRegion).toHaveCount(0)
+    await expect(page.locator('input[placeholder="Brand Name"]')).toHaveValue('Mock Brand')
+    await expect(page.locator('input[placeholder="Product Name"]')).toHaveValue('Mock Product')
+    await expect(page.locator('input[placeholder="Alcohol Content"]')).toHaveValue('40%')
+
+    await generateButton.click()
+    await expect.poll(() => requestCount).toBe(2)
+    await expect(previewRegion).toBeVisible()
   })
 })

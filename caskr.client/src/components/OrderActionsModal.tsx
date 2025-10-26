@@ -125,7 +125,12 @@ const OrderActionsModal = ({
           )}
         </div>
       </div>
-      <LabelModal isOpen={isLabelModalOpen} onClose={() => setIsLabelModalOpen(false)} orderName={order.name} />
+      <LabelModal
+        isOpen={isLabelModalOpen}
+        onClose={() => setIsLabelModalOpen(false)}
+        orderName={order.name}
+        companyId={order.ownerId}
+      />
     </>
   )
 }
