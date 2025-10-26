@@ -43,7 +43,7 @@ test.describe('dashboard active orders', () => {
     await page.getByRole('row', { name: /Bourbon Order/ }).click()
 
     await expect(page.getByRole('heading', { level: 2, name: 'Bourbon Order' })).toBeVisible()
-    await expect(page.getByText('Outstanding Tasks')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 3, name: 'Outstanding Tasks' })).toBeVisible()
     await expect(page.getByText('Review paperwork')).toBeVisible()
   })
 })
