@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.IO;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging.Abstractions;
 using UserTypeEnum = Caskr.server.UserType;
 
 namespace Caskr.Server.Tests;
@@ -17,7 +18,10 @@ public class BarrelsControllerTests
 
     private BarrelsController CreateController(User user)
     {
-        var controller = new BarrelsController(_barrelsService.Object, _usersService.Object);
+        var controller = new BarrelsController(
+            _barrelsService.Object,
+            _usersService.Object,
+            NullLogger<BarrelsController>.Instance);
 
         var identity = new ClaimsIdentity(new[]
         {

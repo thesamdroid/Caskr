@@ -108,6 +108,22 @@ public class AuthServiceTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => authService.LoginAsync("inactive@b.com", "password"));
     }
 
+    [Fact]
+    public async Task RefreshTokenAsync_ReturnsLoginResponse_WhenRefreshTokenValid()
+    {
+        using var context = CreateDbContext();
+        var authService = CreateAuthService(context, (_, _) => Task.FromResult(CreateTokenResponse()));
+
+        var before = DateTime.UtcNow;
+        var response = await authService.RefreshTokenAsync("refresh");
+        var after = DateTime.UtcNow;
+
+        Assert.Equal("token", response.Token);
+        Assert.Equal("refresh", response.RefreshToken);
+        Assert.InRange(response.ExpiresAt, before.AddSeconds(295), after.AddSeconds(305));
+        Assert.NotNull(response.User);
+    }
+
     private static CaskrDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<CaskrDbContext>()
