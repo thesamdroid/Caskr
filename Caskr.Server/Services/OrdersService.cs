@@ -48,6 +48,7 @@ namespace Caskr.server.Services
             }
 
             var completedTasks = (order.Tasks ?? Enumerable.Empty<TaskItem>())
+                .Where(t => t.CompletedAt != null)
                 .Where(t => !string.IsNullOrWhiteSpace(t.Name))
                 .Select(t => t.Name)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);

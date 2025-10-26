@@ -1,20 +1,47 @@
-import { useState, useEffect, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  type ChangeEvent,
+  type FocusEvent,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react';
 import { Eye, EyeOff, Lock, User, Mail, Building2, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 
-interface Company {
+type Company = {
   id: number;
   name: string;
-}
+};
+
+type FormDataState = {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  companyName: string;
+  existingCompanyId: number | null;
+  userTypeId: number;
+};
+
+type FormField = 'name' | 'email' | 'password' | 'confirmPassword' | 'companyName';
+
+const isFormField = (value: string): value is FormField =>
+  value === 'name' ||
+  value === 'email' ||
+  value === 'password' ||
+  value === 'confirmPassword' ||
+  value === 'companyName';
 
 export default function SignUp() {
   const [step, setStep] = useState<'form' | 'success'>('form');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataState>({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
     companyName: '',
-    existingCompanyId: null as number | null,
+    existingCompanyId: null,
     userTypeId: 1 // Default user type, adjust based on your system
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -25,33 +52,29 @@ export default function SignUp() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isNewCompany, setIsNewCompany] = useState(true);
-  const nameRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
 
   // Focus name field on mount
   useEffect(() => {
     nameRef.current?.focus();
   }, []);
 
-  // Fetch existing companies for selection (if admin is adding user)
+  // Placeholder for fetching available companies when needed
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        // If this is a public sign-up, skip fetching companies
-        // If this is admin adding a user, fetch companies
-        // const response = await fetch('/api/companies');
-        // if (response.ok) {
-        //   const data = await response.json();
-        //   setCompanies(data);
-        // }
+        // Real implementation would retrieve company options for admin flows.
+        setCompanies(prev => prev);
       } catch (error) {
         console.error('Failed to fetch companies:', error);
       }
     };
-    fetchCompanies();
+
+    void fetchCompanies();
   }, []);
 
   // Comprehensive validation rules
-  const validateField = (name: string, value: string) => {
+  const validateField = (name: FormField, value: string) => {
     switch (name) {
       case 'name':
         if (!value.trim()) {
@@ -110,23 +133,23 @@ export default function SignUp() {
   };
 
   // Real-time validation on change
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === 'existingCompanyId') {
-      setFormData(prev => ({ 
-        ...prev, 
-        existingCompanyId: value ? parseInt(value) : null 
+      setFormData(prev => ({
+        ...prev,
+        existingCompanyId: value ? parseInt(value) : null
       }));
-    } else {
+    } else if (isFormField(name)) {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-    
+
     // Clear error for this field when user starts typing
-    if (touched[name]) {
+    if (touched[name] && isFormField(name)) {
       const error = validateField(name, value);
       setErrors(prev => ({ ...prev, [name]: error }));
-      
+
       // Also validate confirmPassword when password changes
       if (name === 'password' && touched.confirmPassword) {
         const confirmError = validateField('confirmPassword', formData.confirmPassword);
@@ -136,11 +159,13 @@ export default function SignUp() {
   };
 
   // Mark field as touched on blur
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleBlur = (e: FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
-    const error = validateField(name, value);
-    setErrors(prev => ({ ...prev, [name]: error }));
+    if (isFormField(name)) {
+      const error = validateField(name, value);
+      setErrors(prev => ({ ...prev, [name]: error }));
+    }
     setFocusedField(null);
   };
 
@@ -148,49 +173,40 @@ export default function SignUp() {
     setFocusedField(fieldName);
   };
 
-  // Robust form submission with full validation
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Mark all fields as touched
-    const fieldsToValidate = ['name', 'email', 'password', 'confirmPassword'];
+  const submitForm = async () => {
+    const fieldsToValidate: FormField[] = ['name', 'email', 'password', 'confirmPassword'];
     if (isNewCompany) {
       fieldsToValidate.push('companyName');
     }
-    
+
     const newTouched: Record<string, boolean> = {};
     fieldsToValidate.forEach(field => {
       newTouched[field] = true;
     });
     setTouched(newTouched);
-    
-    // Validate all fields
+
     const newErrors: Record<string, string> = {};
     fieldsToValidate.forEach(field => {
-      const value = formData[field as keyof typeof formData] as string;
+      const value = formData[field];
       const error = validateField(field, value);
       if (error) {
         newErrors[field] = error;
       }
     });
-    
+
     setErrors(newErrors);
-    
-    // Check if there are any errors
+
     if (Object.keys(newErrors).length > 0) {
-      // Focus first field with error
       const firstErrorField = fieldsToValidate.find(field => newErrors[field]);
       if (firstErrorField === 'name') {
         nameRef.current?.focus();
       }
       return;
     }
-    
-    // Proceed with registration
+
     setIsLoading(true);
-    
+
     try {
-      // Create registration payload
       const registrationData = {
         name: formData.name,
         email: formData.email,
@@ -199,55 +215,58 @@ export default function SignUp() {
         companyId: !isNewCompany ? formData.existingCompanyId : undefined,
         userTypeId: formData.userTypeId
       };
-      
-      // Call registration endpoint
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(registrationData)
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Registration failed');
       }
-      
+
       const data = await response.json();
       console.log('Registration successful:', data);
-      
-      // Show success state
+
       setStep('success');
-      
+
       // Optional: Auto-login after registration
       // const loginResponse = await fetch('/api/auth/login', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ 
-      //     email: formData.email, 
-      //     password: formData.password 
+      //   body: JSON.stringify({
+      //     email: formData.email,
+      //     password: formData.password
       //   })
       // });
-      // 
+      //
       // if (loginResponse.ok) {
       //   const loginData = await loginResponse.json();
       //   localStorage.setItem('token', loginData.token);
       //   window.location.href = '/';
       // }
-      
+
     } catch (error) {
       console.error('Registration error:', error);
-      setErrors({ 
-        email: error instanceof Error ? error.message : 'Registration failed. Please try again.' 
+      setErrors({
+        email: error instanceof Error ? error.message : 'Registration failed. Please try again.'
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await submitForm();
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSubmit(e as any);
+      void submitForm();
     }
   };
 
