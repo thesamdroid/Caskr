@@ -37,6 +37,15 @@ namespace Caskr.server.Controllers
         }
 
         /// <summary>
+        /// Compatibility endpoint for clients requesting tasks via the orders route.
+        /// </summary>
+        [HttpGet("~/api/orders/{orderId}/tasks")]
+        public Task<ActionResult<IEnumerable<OrderTask>>> GetTasksByOrderRouteAlias(int orderId)
+        {
+            return GetTasksByOrder(orderId);
+        }
+
+        /// <summary>
         /// Assign a task to a user
         /// </summary>
         [HttpPut("{taskId}/assign")]

@@ -239,10 +239,10 @@ public class OrdersRepositoryTests
 
         var repo = new OrdersRepository(context);
         await repo.AddTasksForStatusAsync(1, 1);
-        Assert.Equal(1, context.Tasks.Count());
+        Assert.Equal(1, context.OrderTasks.Count());
 
         await repo.AddTasksForStatusAsync(1, 1);
-        Assert.Equal(1, context.Tasks.Count());
+        Assert.Equal(1, context.OrderTasks.Count());
     }
 }
 

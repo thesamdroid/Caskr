@@ -41,7 +41,7 @@ namespace Caskr.server.Models
         /// <summary>
         /// When the task was last updated
         /// </summary>
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// When the task was completed

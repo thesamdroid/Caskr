@@ -47,7 +47,7 @@ namespace Caskr.server.Services
                 return null;
             }
 
-            var completedTasks = (order.Tasks ?? Enumerable.Empty<TaskItem>())
+            var completedTasks = (order.Tasks ?? Enumerable.Empty<OrderTask>())
                 .Where(t => t.CompletedAt != null)
                 .Where(t => !string.IsNullOrWhiteSpace(t.Name))
                 .Select(t => t.Name)

@@ -10,6 +10,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       VITE_USE_HTTPS: 'false',
+      VITE_DISABLE_PROXY: 'true',
     }
   },
   use: {

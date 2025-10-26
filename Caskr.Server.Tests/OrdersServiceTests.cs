@@ -142,16 +142,16 @@ public class OrdersServiceTests
             StatusId = 1,
             SpiritTypeId = 1,
             Status = status,
-            Tasks = new List<TaskItem>
+            Tasks = new List<OrderTask>
             {
-                new TaskItem { Id = 1, OrderId = orderId, Name = "Task1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, CompletedAt = DateTime.UtcNow }
+                new OrderTask { Id = 1, OrderId = orderId, Name = "Task1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, CompletedAt = DateTime.UtcNow }
             }
         };
         _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
 
         var result = await _service.GetOutstandingTasksAsync(orderId);
         Assert.NotNull(result);
-        var task = Assert.Single(result);
+        var task = Assert.Single(result!);
         Assert.Equal(2, task.Id);
         Assert.Equal(1, task.StatusId);
         Assert.Equal("Task2", task.Name);
@@ -175,7 +175,7 @@ public class OrdersServiceTests
             StatusId = 1,
             SpiritTypeId = 1,
             Status = status,
-            Tasks = new List<TaskItem>
+            Tasks = new List<OrderTask>
             {
                 new() { Id = 1, OrderId = orderId, Name = "Task1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, CompletedAt = null }
             }
@@ -183,8 +183,8 @@ public class OrdersServiceTests
         _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
 
         var result = await _service.GetOutstandingTasksAsync(orderId);
-
-        var outstanding = Assert.Single(result);
+        Assert.NotNull(result);
+        var outstanding = Assert.Single(result!);
         Assert.Equal("Task1", outstanding.Name);
     }
 
@@ -207,15 +207,15 @@ public class OrdersServiceTests
             Id = orderId,
             StatusId = 1,
             SpiritTypeId = 1,
-            Status = new Status { Id = 1, StatusTasks = null },
-            Tasks = new List<TaskItem>()
+            Status = new Status { Id = 1, StatusTasks = null! },
+            Tasks = new List<OrderTask>()
         };
         _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
 
         var result = await _service.GetOutstandingTasksAsync(orderId);
 
         Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.Empty(result!);
     }
 
     [Fact]
@@ -235,13 +235,13 @@ public class OrdersServiceTests
                     new() { Id = 1, StatusId = 1, Name = "Task1" }
                 }
             },
-            Tasks = null
+            Tasks = null!
         };
         _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
 
         var result = await _service.GetOutstandingTasksAsync(orderId);
-
-        var outstanding = Assert.Single(result);
+        Assert.NotNull(result);
+        var outstanding = Assert.Single(result!);
         Assert.Equal("Task1", outstanding.Name);
     }
 
@@ -263,16 +263,17 @@ public class OrdersServiceTests
                     new() { Id = 2, StatusId = 1, Name = "TaskTwo" }
                 }
             },
-            Tasks = new List<TaskItem>
+            Tasks = new List<OrderTask>
             {
-                new() { Id = 1, OrderId = orderId, Name = "taskone" }
+                new() { Id = 1, OrderId = orderId, Name = "taskone", CompletedAt = DateTime.UtcNow }
             }
         };
         _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
 
         var result = await _service.GetOutstandingTasksAsync(orderId);
 
-        var outstanding = Assert.Single(result);
+        Assert.NotNull(result);
+        var outstanding = Assert.Single(result!);
         Assert.Equal("TaskTwo", outstanding.Name);
     }
 

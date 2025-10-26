@@ -35,7 +35,7 @@ public partial class Order
 
     public virtual SpiritType SpiritType { get; set; } = null!;
 
-    public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+    public virtual ICollection<OrderTask> Tasks { get; set; } = new List<OrderTask>();
 
     public virtual ICollection<Barrel> Barrels { get; set; } = new List<Barrel>();
 }

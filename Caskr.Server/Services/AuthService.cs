@@ -1,10 +1,10 @@
-using Caskr.server.Controllers;
 using Caskr.server.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Caskr.server.Services
 {
@@ -429,10 +429,19 @@ namespace Caskr.server.Services
 
         private class KeycloakTokenResponse
         {
+            [JsonPropertyName("access_token")]
             public string AccessToken { get; set; } = string.Empty;
+
+            [JsonPropertyName("refresh_token")]
             public string RefreshToken { get; set; } = string.Empty;
+
+            [JsonPropertyName("expires_in")]
             public int ExpiresIn { get; set; }
+
+            [JsonPropertyName("refresh_expires_in")]
             public int RefreshExpiresIn { get; set; }
+
+            [JsonPropertyName("token_type")]
             public string TokenType { get; set; } = "Bearer";
         }
 
