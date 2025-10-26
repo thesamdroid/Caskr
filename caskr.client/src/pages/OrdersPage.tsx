@@ -58,8 +58,8 @@ function OrdersPage() {
       .then(updated => {
         setSelectedOrder(updated)
       })
-      .catch(() => {
-        // ignore failure; toast/notification system not available yet
+      .catch(error => {
+        console.error('[OrdersPage] Failed to update order', { orderId: order.id, error })
       })
   }
 

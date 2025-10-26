@@ -3,16 +3,20 @@ using Caskr.server;
 using Caskr.server.Models;
 using Caskr.server.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Caskr.server.Controllers
 {
-    public class UsersController(IUsersService usersService) : AuthorizedApiControllerBase
+    public class UsersController(IUsersService usersService, ILogger<UsersController> logger) : AuthorizedApiControllerBase
     {
+        private readonly IUsersService _usersService = usersService;
+        private readonly ILogger<UsersController> _logger = logger;
+
         // GET: api/Users
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            var users = (await usersService.GetUsersAsync()).ToList();
+            var users = (await _usersService.GetUsersAsync()).ToList();
             return Ok(users);
         }
 
@@ -20,7 +24,7 @@ namespace Caskr.server.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
-            var user = await usersService.GetUserByIdAsync(id);
+            var user = await _usersService.GetUserByIdAsync(id);
 
             if (user == null)
             {
@@ -40,7 +44,7 @@ namespace Caskr.server.Controllers
                 return BadRequest();
             }
 
-            var updatedUser = await usersService.UpdateUserAsync(user);
+            var updatedUser = await _usersService.UpdateUserAsync(user);
             return Ok(updatedUser);
         }
 
@@ -61,13 +65,24 @@ namespace Caskr.server.Controllers
             }
 
             user.CompanyId = currentUser.CompanyId;
+            _logger.LogInformation("Attempting to create user {Email} for company {CompanyId}", user.Email, user.CompanyId);
             try
             {
-                var createdUser = await usersService.AddUserAsync(user);
+                var createdUser = await _usersService.AddUserAsync(user);
+                _logger.LogInformation(
+                    "Successfully created user {Email} with id {UserId} for company {CompanyId}",
+                    createdUser.Email,
+                    createdUser.Id,
+                    createdUser.CompanyId);
                 return CreatedAtAction("GetUser", new { id = createdUser.Id }, createdUser);
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
+                _logger.LogError(
+                    ex,
+                    "Failed to create user {Email} for company {CompanyId} due to a conflict",
+                    user.Email,
+                    user.CompanyId);
                 return Conflict();
             }
         }
@@ -76,13 +91,13 @@ namespace Caskr.server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = await usersService.GetUserByIdAsync(id);
+            var user = await _usersService.GetUserByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            await usersService.DeleteUserAsync(id);
+            await _usersService.DeleteUserAsync(id);
 
             return NoContent();
         }
@@ -95,7 +110,7 @@ namespace Caskr.server.Controllers
                 return null;
             }
 
-            return await usersService.GetUserByIdAsync(userId);
+            return await _usersService.GetUserByIdAsync(userId);
         }
     }
 }

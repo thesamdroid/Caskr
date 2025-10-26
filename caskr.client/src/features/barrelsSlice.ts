@@ -61,14 +61,24 @@ export const importBarrels = createAsyncThunk(
     })
 
     if (!response.ok) {
+      console.warn('[barrelsSlice] Import barrels request failed', {
+        status: response.status,
+        statusText: response.statusText
+      })
       try {
         const error = await response.json()
+        console.warn('[barrelsSlice] Import barrels error response', error)
         return rejectWithValue(error)
       } catch (err) {
+        console.error('[barrelsSlice] Failed to parse barrel import error response', err)
         return rejectWithValue({ message: 'Failed to import barrels' })
       }
     }
 
+    console.log('[barrelsSlice] Barrel import completed successfully', {
+      status: response.status,
+      statusText: response.statusText
+    })
     return (await response.json()) as { created: number; batchId: number; createdNewBatch: boolean }
   }
 )

@@ -43,11 +43,24 @@ export default function DashboardPage() {
 
   const handleForecastSubmit = async (targetDate: string, ageYears: number) => {
     setForecastError(null)
+    console.log('[DashboardPage] Forecast submission started', { companyId, targetDate, ageYears })
     try {
       const result = await dispatch(forecastBarrels({ companyId: 1, targetDate, ageYears })).unwrap()
+      console.log('[DashboardPage] Forecast submission succeeded', {
+        companyId,
+        targetDate,
+        ageYears,
+        result
+      })
       setForecastResult({ date: targetDate, count: result.count, ageYears })
       setShowForecastModal(false)
     } catch (error) {
+      console.error('[DashboardPage] Forecast submission failed', {
+        companyId,
+        targetDate,
+        ageYears,
+        error
+      })
       setForecastError('Unable to forecast barrels right now. Please try again later.')
       throw error
     }
@@ -60,13 +73,32 @@ export default function DashboardPage() {
   }
 
   const handleImport = async ({ file, batchId, mashBillId }: { file: File; batchId?: number; mashBillId?: number }) => {
+    console.log('[DashboardPage] Barrel import started', {
+      companyId,
+      fileName: file.name,
+      batchId,
+      mashBillId
+    })
     try {
       await dispatch(importBarrels({ companyId, file, batchId, mashBillId })).unwrap()
+      console.log('[DashboardPage] Barrel import succeeded', {
+        companyId,
+        fileName: file.name,
+        batchId,
+        mashBillId
+      })
       setShowImportModal(false)
       setRequireMashBillId(false)
       setImportError(null)
       await dispatch(fetchBarrels(companyId))
     } catch (err) {
+      console.error('[DashboardPage] Barrel import failed', {
+        companyId,
+        fileName: file.name,
+        batchId,
+        mashBillId,
+        error: err
+      })
       if (err && typeof err === 'object') {
         const errorObject = err as { message?: string; requiresMashBillId?: boolean }
         if (errorObject.requiresMashBillId) {
@@ -104,8 +136,8 @@ export default function DashboardPage() {
       .then(updated => {
         setSelectedOrder(updated)
       })
-      .catch(() => {
-        // ignore failure; toast/notification system not available yet
+      .catch(error => {
+        console.error('[DashboardPage] Failed to update order', { orderId: order.id, error })
       })
   }
 
