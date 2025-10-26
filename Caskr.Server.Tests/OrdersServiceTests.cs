@@ -158,6 +158,37 @@ public class OrdersServiceTests
     }
 
     [Fact]
+    public async Task GetOutstandingTasksAsync_TaskCreatedButNotCompleted_ReturnsTask()
+    {
+        var orderId = 15;
+        var status = new Status
+        {
+            Id = 1,
+            StatusTasks = new List<StatusTask>
+            {
+                new() { Id = 1, StatusId = 1, Name = "Task1" }
+            }
+        };
+        var order = new Order
+        {
+            Id = orderId,
+            StatusId = 1,
+            SpiritTypeId = 1,
+            Status = status,
+            Tasks = new List<TaskItem>
+            {
+                new() { Id = 1, OrderId = orderId, Name = "Task1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, CompletedAt = null }
+            }
+        };
+        _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
+
+        var result = await _service.GetOutstandingTasksAsync(orderId);
+
+        var outstanding = Assert.Single(result);
+        Assert.Equal("Task1", outstanding.Name);
+    }
+
+    [Fact]
     public async Task GetOutstandingTasksAsync_OrderNotFound_ReturnsNull()
     {
         _repo.Setup(r => r.GetOrderWithTasksAsync(10)).ReturnsAsync((Order?)null);
