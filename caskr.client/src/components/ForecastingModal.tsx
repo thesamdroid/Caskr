@@ -35,9 +35,15 @@ export default function ForecastingModal({ isOpen, onClose, onSubmit }: Forecast
       return
     }
 
+    console.log('[ForecastingModal] Submitting forecast request', { targetDate, ageYears: parsedAge })
     try {
       await onSubmit(targetDate, parsedAge)
+      console.log('[ForecastingModal] Forecast submission completed successfully', {
+        targetDate,
+        ageYears: parsedAge
+      })
     } catch (e) {
+      console.error('[ForecastingModal] Forecast submission failed', { targetDate, ageYears: parsedAge, error: e })
       setError('Unable to forecast barrels. Please try again.')
     }
   }

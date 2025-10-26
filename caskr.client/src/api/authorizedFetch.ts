@@ -8,9 +8,21 @@ export const authorizedFetch = async (input: RequestInfo | URL, init: RequestIni
     headers.set('Authorization', `Bearer ${token}`)
   }
 
+  const requestUrl = input instanceof Request ? input.url : String(input)
+  const requestMethod = init.method ?? (input instanceof Request ? input.method : 'GET')
+  console.log('[authorizedFetch] Starting request', { url: requestUrl, method: requestMethod })
   loadingManager.beginRequest()
   try {
-    return await fetch(input, { ...init, headers })
+    const response = await fetch(input, { ...init, headers })
+    console.log('[authorizedFetch] Received response', {
+      url: requestUrl,
+      method: requestMethod,
+      status: response.status
+    })
+    return response
+  } catch (error) {
+    console.error('[authorizedFetch] Request failed', { url: requestUrl, method: requestMethod, error })
+    throw error
   } finally {
     loadingManager.endRequest()
   }
