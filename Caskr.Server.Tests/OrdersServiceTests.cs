@@ -5,6 +5,7 @@ using UserTypeEnum = Caskr.server.UserType;
 using Moq;
 using System.Linq;
 using System;
+using System.Collections.Generic;
 
 namespace Caskr.Server.Tests;
 
@@ -157,6 +158,37 @@ public class OrdersServiceTests
     }
 
     [Fact]
+    public async Task GetOutstandingTasksAsync_TaskCreatedButNotCompleted_ReturnsTask()
+    {
+        var orderId = 15;
+        var status = new Status
+        {
+            Id = 1,
+            StatusTasks = new List<StatusTask>
+            {
+                new() { Id = 1, StatusId = 1, Name = "Task1" }
+            }
+        };
+        var order = new Order
+        {
+            Id = orderId,
+            StatusId = 1,
+            SpiritTypeId = 1,
+            Status = status,
+            Tasks = new List<TaskItem>
+            {
+                new() { Id = 1, OrderId = orderId, Name = "Task1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow, CompletedAt = null }
+            }
+        };
+        _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
+
+        var result = await _service.GetOutstandingTasksAsync(orderId);
+
+        var outstanding = Assert.Single(result);
+        Assert.Equal("Task1", outstanding.Name);
+    }
+
+    [Fact]
     public async Task GetOutstandingTasksAsync_OrderNotFound_ReturnsNull()
     {
         _repo.Setup(r => r.GetOrderWithTasksAsync(10)).ReturnsAsync((Order?)null);
@@ -164,6 +196,84 @@ public class OrdersServiceTests
         var result = await _service.GetOutstandingTasksAsync(10);
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetOutstandingTasksAsync_StatusTasksMissing_ReturnsEmpty()
+    {
+        var orderId = 12;
+        var order = new Order
+        {
+            Id = orderId,
+            StatusId = 1,
+            SpiritTypeId = 1,
+            Status = new Status { Id = 1, StatusTasks = null },
+            Tasks = new List<TaskItem>()
+        };
+        _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
+
+        var result = await _service.GetOutstandingTasksAsync(orderId);
+
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetOutstandingTasksAsync_OrderTasksMissing_HandlesGracefully()
+    {
+        var orderId = 13;
+        var order = new Order
+        {
+            Id = orderId,
+            StatusId = 1,
+            SpiritTypeId = 1,
+            Status = new Status
+            {
+                Id = 1,
+                StatusTasks = new List<StatusTask>
+                {
+                    new() { Id = 1, StatusId = 1, Name = "Task1" }
+                }
+            },
+            Tasks = null
+        };
+        _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
+
+        var result = await _service.GetOutstandingTasksAsync(orderId);
+
+        var outstanding = Assert.Single(result);
+        Assert.Equal("Task1", outstanding.Name);
+    }
+
+    [Fact]
+    public async Task GetOutstandingTasksAsync_ComparesTaskNamesCaseInsensitive()
+    {
+        var orderId = 14;
+        var order = new Order
+        {
+            Id = orderId,
+            StatusId = 1,
+            SpiritTypeId = 1,
+            Status = new Status
+            {
+                Id = 1,
+                StatusTasks = new List<StatusTask>
+                {
+                    new() { Id = 1, StatusId = 1, Name = "TaskOne" },
+                    new() { Id = 2, StatusId = 1, Name = "TaskTwo" }
+                }
+            },
+            Tasks = new List<TaskItem>
+            {
+                new() { Id = 1, OrderId = orderId, Name = "taskone" }
+            }
+        };
+        _repo.Setup(r => r.GetOrderWithTasksAsync(orderId)).ReturnsAsync(order);
+
+        var result = await _service.GetOutstandingTasksAsync(orderId);
+
+        var outstanding = Assert.Single(result);
+        Assert.Equal("TaskTwo", outstanding.Name);
     }
 
     [Fact]

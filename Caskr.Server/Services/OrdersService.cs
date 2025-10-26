@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Caskr.server.Models;
 using Caskr.server.Repos;
@@ -45,15 +46,31 @@ namespace Caskr.server.Services
             {
                 return null;
             }
-            var completed = order.Tasks.Select(t => t.Name).ToHashSet();
-            return order.Status.StatusTasks
-                .Where(st => !completed.Contains(st.Name))
+
+            var completedTasks = (order.Tasks ?? Enumerable.Empty<TaskItem>())
+                .Where(t => t.CompletedAt != null)
+                .Where(t => !string.IsNullOrWhiteSpace(t.Name))
+                .Select(t => t.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var statusTasks = (order.Status?.StatusTasks ?? Enumerable.Empty<StatusTask>())
+                .Where(st => !string.IsNullOrWhiteSpace(st.Name))
+                .ToList();
+
+            if (statusTasks.Count == 0)
+            {
+                return Enumerable.Empty<StatusTask>();
+            }
+
+            return statusTasks
+                .Where(st => !completedTasks.Contains(st.Name))
                 .Select(st => new StatusTask
                 {
                     Id = st.Id,
                     StatusId = st.StatusId,
                     Name = st.Name
-                });
+                })
+                .ToList();
         }
 
 
