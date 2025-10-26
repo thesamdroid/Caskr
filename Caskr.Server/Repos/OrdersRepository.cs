@@ -110,7 +110,7 @@ namespace Caskr.server.Repos
         }
         public async Task AddTasksForStatusAsync(int orderId, int statusId)
         {
-            var existingTaskNames = await dbContext.Tasks
+            var existingTaskNames = await dbContext.OrderTasks
                 .Where(t => t.OrderId == orderId)
                 .Select(t => t.Name)
                 .ToListAsync();
@@ -124,7 +124,7 @@ namespace Caskr.server.Repos
                 return;
             }
 
-            var tasks = statusTasks.Select(st => new TaskItem
+            var tasks = statusTasks.Select(st => new OrderTask
             {
                 OrderId = orderId,
                 Name = st.Name,
@@ -132,7 +132,7 @@ namespace Caskr.server.Repos
                 UpdatedAt = DateTime.UtcNow
             });
 
-            await dbContext.Tasks.AddRangeAsync(tasks);
+            await dbContext.OrderTasks.AddRangeAsync(tasks);
             await dbContext.SaveChangesAsync();
         }
         public async Task DeleteOrderAsync(int id)

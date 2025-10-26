@@ -8,6 +8,7 @@ import child_process from 'child_process';
 import { env } from 'process';
 
 const useHttps = env.VITE_USE_HTTPS !== 'false';
+const disableProxy = env.VITE_DISABLE_PROXY === 'true';
 
 const baseFolder =
     env.APPDATA !== undefined && env.APPDATA !== ''
@@ -49,17 +50,26 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
     },
-    server: {
-        proxy: {
-            '^/api/.*': {
-                target,
-                secure: false
-            }
-        },
-        port: 51844,
-        ...(useHttps ? { https: {
-            key: fs.readFileSync(keyFilePath),
-            cert: fs.readFileSync(certFilePath),
-        } } : {})
-    }
+    server: (() => {
+        const serverConfig: Record<string, unknown> = {
+            port: 51844,
+            ...(useHttps ? {
+                https: {
+                    key: fs.readFileSync(keyFilePath),
+                    cert: fs.readFileSync(certFilePath),
+                }
+            } : {})
+        };
+
+        if (!disableProxy) {
+            serverConfig.proxy = {
+                '^/api/.*': {
+                    target,
+                    secure: false
+                }
+            };
+        }
+
+        return serverConfig;
+    })()
 })

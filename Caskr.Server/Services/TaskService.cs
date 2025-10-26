@@ -26,7 +26,7 @@ namespace Caskr.server.Services
 
         public async Task<IEnumerable<OrderTask>> GetTasksByOrderIdAsync(int orderId)
         {
-            return await _dbContext.Tasks
+            return await _dbContext.OrderTasks
                 .Where(t => t.OrderId == orderId)
                 .Include(t => t.Assignee)
                 .OrderBy(t => t.IsComplete)
@@ -37,7 +37,7 @@ namespace Caskr.server.Services
 
         public async Task<OrderTask?> GetTaskByIdAsync(int taskId)
         {
-            return await _dbContext.Tasks
+            return await _dbContext.OrderTasks
                 .Include(t => t.Assignee)
                 .FirstOrDefaultAsync(t => t.Id == taskId);
         }
@@ -72,10 +72,11 @@ namespace Caskr.server.Services
                 AssigneeId = assigneeId,
                 DueDate = dueDate,
                 IsComplete = false,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
-            _dbContext.Tasks.Add(task);
+            _dbContext.OrderTasks.Add(task);
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation(
@@ -88,7 +89,7 @@ namespace Caskr.server.Services
 
         public async Task<OrderTask> AssignTaskAsync(int taskId, int? assigneeId)
         {
-            var task = await _dbContext.Tasks
+            var task = await _dbContext.OrderTasks
                 .Include(t => t.Assignee)
                 .FirstOrDefaultAsync(t => t.Id == taskId);
 
@@ -124,7 +125,7 @@ namespace Caskr.server.Services
 
         public async Task<OrderTask> CompleteTaskAsync(int taskId, bool isComplete)
         {
-            var task = await _dbContext.Tasks
+            var task = await _dbContext.OrderTasks
                 .Include(t => t.Assignee)
                 .FirstOrDefaultAsync(t => t.Id == taskId);
 
@@ -149,14 +150,14 @@ namespace Caskr.server.Services
 
         public async Task DeleteTaskAsync(int taskId)
         {
-            var task = await _dbContext.Tasks.FindAsync(taskId);
+            var task = await _dbContext.OrderTasks.FindAsync(taskId);
 
             if (task == null)
             {
                 throw new ArgumentException($"Task with ID {taskId} not found");
             }
 
-            _dbContext.Tasks.Remove(task);
+            _dbContext.OrderTasks.Remove(task);
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation("Deleted task {TaskId}", taskId);

@@ -13,33 +13,33 @@ public partial class CaskrDbContext : DbContext
     {
     }
 
-    public virtual DbSet<Order?> Orders { get; set; }
+    public virtual DbSet<Order> Orders { get; set; } = null!;
 
-    public virtual DbSet<Product?> Products { get; set; }
+    public virtual DbSet<Product> Products { get; set; } = null!;
 
-    public virtual DbSet<Status?> Statuses { get; set; }
+    public virtual DbSet<Status> Statuses { get; set; } = null!;
 
-    public virtual DbSet<StatusTask?> StatusTasks { get; set; }
+    public virtual DbSet<StatusTask> StatusTasks { get; set; } = null!;
 
-    public virtual DbSet<User?> Users { get; set; }
+    public virtual DbSet<User> Users { get; set; } = null!;
 
-    public virtual DbSet<UserType?> UserTypes { get; set; }
+    public virtual DbSet<UserType> UserTypes { get; set; } = null!;
 
-    public virtual DbSet<TaskItem?> Tasks { get; set; }
+    public virtual DbSet<OrderTask> OrderTasks { get; set; } = null!;
 
-    public virtual DbSet<Company?> Companies { get; set; }
+    public virtual DbSet<Company> Companies { get; set; } = null!;
 
-    public virtual DbSet<SpiritType?> SpiritTypes { get; set; }
+    public virtual DbSet<SpiritType> SpiritTypes { get; set; } = null!;
 
-    public virtual DbSet<Batch?> Batches { get; set; }
+    public virtual DbSet<Batch> Batches { get; set; } = null!;
 
-    public virtual DbSet<MashBill?> MashBills { get; set; }
+    public virtual DbSet<MashBill> MashBills { get; set; } = null!;
 
-    public virtual DbSet<Component?> Components { get; set; }
+    public virtual DbSet<Component> Components { get; set; } = null!;
 
-    public virtual DbSet<Rickhouse?> Rickhouses { get; set; }
+    public virtual DbSet<Rickhouse> Rickhouses { get; set; } = null!;
 
-    public virtual DbSet<Barrel?> Barrels { get; set; }
+    public virtual DbSet<Barrel> Barrels { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,7 +94,7 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => new { d.BatchId, d.CompanyId });
         });
 
-        modelBuilder.Entity<TaskItem>(entity =>
+        modelBuilder.Entity<OrderTask>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Tasks_pkey");
 
@@ -105,6 +105,11 @@ public partial class CaskrDbContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.AssigneeId).HasColumnName("assignee_id");
+            entity.Property(e => e.IsComplete)
+                .HasDefaultValue(false)
+                .HasColumnName("is_complete");
+            entity.Property(e => e.DueDate).HasColumnName("due_date");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .ValueGeneratedOnAdd()
@@ -119,6 +124,10 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_tasks_orderid");
+
+            entity.HasOne(d => d.Assignee).WithMany()
+                .HasForeignKey(d => d.AssigneeId)
+                .HasConstraintName("fk_tasks_assigneeid");
         });
 
         modelBuilder.Entity<Product>(entity =>
