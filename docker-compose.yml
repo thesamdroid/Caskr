@@ -23,3 +23,27 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - "8080:8080"
+
+  server-cli:
+    build:
+      context: .
+      dockerfile: cli/Dockerfile
+      args:
+        NODE_VERSION: 20
+        PLAYWRIGHT_VERSION: 1.48.2
+    image: caskr-server-cli
+    container_name: caskr-server-cli
+    profiles:
+      - cli
+
+  client-cli:
+    build:
+      context: .
+      dockerfile: cli/Dockerfile
+      args:
+        NODE_VERSION: 20
+        PLAYWRIGHT_VERSION: 1.48.2
+    image: caskr-client-cli
+    container_name: caskr-client-cli
+    profiles:
+      - cli
