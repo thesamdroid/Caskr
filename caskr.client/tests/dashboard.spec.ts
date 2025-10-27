@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('dashboard active orders', () => {
-  test('opens order actions modal when clicking an active order', async ({ page }) => {
+  test('shows outstanding tasks when expanding an order card', async ({ page }) => {
     await page.route('**/api/status', async route => {
       await route.fulfill({
         status: 200,
@@ -10,6 +10,10 @@ test.describe('dashboard active orders', () => {
           { id: 1, name: 'In Progress', statusTasks: [{ id: 10, name: 'Review paperwork' }] }
         ])
       })
+    })
+
+    await page.route('**/api/users', async route => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
     })
 
     await page.route('**/api/orders', async route => {
@@ -26,24 +30,23 @@ test.describe('dashboard active orders', () => {
       }
     })
 
-    await page.route('**/api/orders/1/outstanding-tasks', async route => {
+    await page.route('**/api/orders/1/tasks', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([{ id: 10, name: 'Review paperwork' }])
+        body: JSON.stringify([{ id: 10, name: 'Review paperwork', orderId: 1, assigneeId: null, isComplete: false }])
       })
-    })
-
-    await page.route('**/api/barrels/company/1', async route => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
     })
 
     await page.goto('/')
 
-    await page.getByRole('row', { name: /Bourbon Order/ }).click()
+    const orderCard = page.locator('.order-card').filter({
+      has: page.getByRole('heading', { level: 3, name: 'Bourbon Order' })
+    })
 
-    await expect(page.getByRole('heading', { level: 2, name: 'Bourbon Order' })).toBeVisible()
-    await expect(page.getByRole('heading', { level: 3, name: 'Outstanding Tasks' })).toBeVisible()
-    await expect(page.getByText('Review paperwork')).toBeVisible()
+    await expect(orderCard).toBeVisible()
+    await orderCard.getByRole('button', { name: 'Expand' }).click()
+    await expect(orderCard.getByRole('heading', { level: 4, name: 'Tasks' })).toBeVisible()
+    await expect(orderCard.getByText('Review paperwork')).toBeVisible()
   })
 })

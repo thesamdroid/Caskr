@@ -19,8 +19,8 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome', launchOptions: { args: ['--no-sandbox'] } },
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], channel: 'chromium', launchOptions: { args: ['--no-sandbox'] } },
     },
   ],
 });

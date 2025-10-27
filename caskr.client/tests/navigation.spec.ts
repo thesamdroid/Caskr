@@ -18,7 +18,7 @@ test.describe('navigation links', () => {
   });
 
   const pages = [
-    { link: 'Dashboard', heading: 'Forecasting', path: '/' },
+    { link: 'Dashboard', heading: 'Dashboard', path: '/' },
     { link: 'Orders', heading: 'Orders', path: '/orders' },
     { link: 'Barrels', heading: 'Barrels', path: '/barrels' },
     { link: 'Products', heading: 'Products', path: '/products' },
