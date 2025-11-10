@@ -363,3 +363,8 @@ MigrationBackup/
 FodyWeavers.xsd
 # Local database data
 Database/postgres/
+
+# Secrets and environment files
+.env
+*.secrets.json
+appsettings.secrets.json

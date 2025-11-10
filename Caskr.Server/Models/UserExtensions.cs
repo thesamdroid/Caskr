@@ -10,7 +10,7 @@ public partial class User
 
     public bool IsActive { get; set; } = true;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
 
     public DateTime? LastLoginAt { get; set; }
 }
