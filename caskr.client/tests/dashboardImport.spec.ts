@@ -1,15 +1,20 @@
 import { test, expect } from '@playwright/test';
 
-test('dashboard shows import barrells button and removes it from barrels page', async ({ page }) => {
-  await page.goto('/');
-  const importButton = page.getByRole('button', { name: 'Import Barrells' });
-  await expect(importButton).toBeVisible();
+test('barrels forecasting modal is only available on barrels page', async ({ page }) => {
+  await page.route('**/api/barrels/company/1', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
 
-  await importButton.click();
-  await expect(page.getByRole('heading', { name: 'Import Barrels' })).toBeVisible();
-  await page.getByRole('button', { name: 'Cancel' }).click();
-  await expect(page.getByRole('heading', { name: 'Import Barrels' })).toHaveCount(0);
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Forecasting' })).toHaveCount(0);
 
   await page.goto('/barrels');
-  await expect(page.getByRole('button', { name: 'Import Barrells' })).toHaveCount(0);
+  const forecastingButton = page.getByRole('button', { name: 'Forecasting' });
+  await expect(forecastingButton).toBeVisible();
+
+  await forecastingButton.click();
+  await expect(page.getByRole('heading', { name: 'Forecast Barrels' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('heading', { name: 'Forecast Barrels' })).toHaveCount(0);
 });

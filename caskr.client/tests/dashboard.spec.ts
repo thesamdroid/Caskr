@@ -26,11 +26,13 @@ test.describe('dashboard active orders', () => {
       }
     })
 
-    await page.route('**/api/orders/1/outstanding-tasks', async route => {
+    await page.route('**/api/orders/1/tasks', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([{ id: 10, name: 'Review paperwork' }])
+        body: JSON.stringify([
+          { id: 10, name: 'Review paperwork', orderId: 1, assigneeId: null, isComplete: false }
+        ])
       })
     })
 
@@ -40,10 +42,11 @@ test.describe('dashboard active orders', () => {
 
     await page.goto('/')
 
-    await page.getByRole('row', { name: /Bourbon Order/ }).click()
+    await expect(page.getByRole('heading', { level: 3, name: 'Bourbon Order' })).toBeVisible()
 
-    await expect(page.getByRole('heading', { level: 2, name: 'Bourbon Order' })).toBeVisible()
-    await expect(page.getByRole('heading', { level: 3, name: 'Outstanding Tasks' })).toBeVisible()
+    await page.getByRole('button', { name: 'Expand' }).click()
+
+    await expect(page.getByRole('heading', { level: 4, name: 'Tasks' })).toBeVisible()
     await expect(page.getByText('Review paperwork')).toBeVisible()
   })
 })
