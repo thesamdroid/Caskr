@@ -168,6 +168,19 @@ public partial class CaskrDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_date");
             entity.Property(e => e.RenewalDate).HasColumnName("renewal_date");
+            entity.Property(e => e.AddressLine1).HasColumnName("address_line1");
+            entity.Property(e => e.AddressLine2).HasColumnName("address_line2");
+            entity.Property(e => e.City).HasColumnName("city");
+            entity.Property(e => e.State).HasColumnName("state");
+            entity.Property(e => e.PostalCode).HasColumnName("postal_code");
+            entity.Property(e => e.Country).HasColumnName("country");
+            entity.Property(e => e.PhoneNumber).HasColumnName("phone_number");
+            entity.Property(e => e.Website).HasColumnName("website");
+            entity.Property(e => e.TtbPermitNumber).HasColumnName("ttb_permit_number");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
         });
 
         modelBuilder.Entity<Status>(entity =>
@@ -226,6 +239,15 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.UserTypeId).HasColumnName("user_type_id");
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
             entity.Property(e => e.IsPrimaryContact).HasColumnName("is_primary_contact");
+            entity.Property(e => e.KeycloakUserId).HasColumnName("keycloak_user_id");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .ValueGeneratedOnAdd()
+                .HasColumnName("created_at");
+            entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
 
             entity.HasOne(d => d.UserType).WithMany(p => p.Users)
                 .HasForeignKey(d => d.UserTypeId)
@@ -247,6 +269,7 @@ public partial class CaskrDbContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.Description).HasColumnName("description");
         });
 
         modelBuilder.Entity<MashBill>(entity =>
