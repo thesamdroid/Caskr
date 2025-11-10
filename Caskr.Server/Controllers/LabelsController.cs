@@ -4,12 +4,67 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Caskr.server.Controllers;
 
-public class LabelsController(ILabelsService labelsService) : AuthorizedApiControllerBase
+/// <summary>
+/// Controller for generating TTB label documents
+/// </summary>
+public class LabelsController(
+    ILabelsService labelsService,
+    ILogger<LabelsController> logger) : AuthorizedApiControllerBase
 {
+    /// <summary>
+    /// Generate TTB Label Application Form 5100.31
+    /// </summary>
+    /// <param name="request">Label request with company and product information</param>
+    /// <returns>PDF file for download</returns>
     [HttpPost("ttb-form")]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GenerateTtbForm([FromBody] LabelRequest request)
     {
-        var pdf = await labelsService.GenerateTtbFormAsync(request);
-        return File(pdf, "application/pdf", "ttb_form_5100_31.pdf");
+        try
+        {
+            // Model validation is automatic with [Required] attributes
+            if (!ModelState.IsValid)
+            {
+                logger.LogWarning("Invalid label request: {Errors}", ModelState.Values.SelectMany(v => v.Errors));
+                return BadRequest(new { error = "Invalid request data", details = ModelState });
+            }
+
+            logger.LogInformation("Generating TTB label form for CompanyId: {CompanyId}", request.CompanyId);
+
+            var pdf = await labelsService.GenerateTtbFormAsync(request);
+
+            return File(pdf, "application/pdf", "ttb_form_5100_31.pdf");
+        }
+        catch (ArgumentNullException ex)
+        {
+            logger.LogWarning(ex, "Null argument in label generation request");
+            return BadRequest(new { error = "Invalid request", message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Invalid argument in label generation request");
+            return BadRequest(new { error = "Invalid request data", message = ex.Message });
+        }
+        catch (FileNotFoundException ex)
+        {
+            logger.LogError(ex, "PDF template file not found");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { error = "Template not found", message = "PDF template file is missing. Please contact support." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogError(ex, "Error generating PDF");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { error = "PDF generation failed", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error generating TTB label form");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { error = "Internal server error", message = "An unexpected error occurred. Please try again later." });
+        }
     }
 }

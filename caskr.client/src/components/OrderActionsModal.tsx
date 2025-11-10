@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Order } from '../features/ordersSlice'
 import type { Status, StatusTask } from '../features/statusSlice'
 import LabelModal from './LabelModal'
+import TransferModal from './TransferModal'
 import './CreateOrderModal.css'
 
 type Props = {
@@ -27,6 +28,7 @@ const OrderActionsModal = ({
   const [editName, setEditName] = useState('')
   const [editStatusId, setEditStatusId] = useState<number | null>(null)
   const [isLabelModalOpen, setIsLabelModalOpen] = useState(false)
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
 
   useEffect(() => {
     if (isOpen && order) {
@@ -34,6 +36,7 @@ const OrderActionsModal = ({
       setEditStatusId(order.statusId)
       setIsEditing(false)
       setIsLabelModalOpen(false)
+      setIsTransferModalOpen(false)
     }
   }, [isOpen, order])
 
@@ -115,9 +118,12 @@ const OrderActionsModal = ({
               </button>
               {isTtbStatus && (
                 <button type='button' onClick={() => setIsLabelModalOpen(true)}>
-                  Generate TTB Document
+                  Generate TTB Label
                 </button>
               )}
+              <button type='button' onClick={() => setIsTransferModalOpen(true)}>
+                Generate Transfer Document
+              </button>
               <button type='button' onClick={onClose}>
                 Close
               </button>
@@ -130,6 +136,12 @@ const OrderActionsModal = ({
         onClose={() => setIsLabelModalOpen(false)}
         orderName={order.name}
         companyId={order.ownerId}
+      />
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        orderId={order.id}
+        orderName={order.name}
       />
     </>
   )

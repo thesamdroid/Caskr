@@ -30,7 +30,7 @@ const setupOrdersPageRoutes = async (page: Page) => {
     }
   })
 
-  await page.route('**/api/orders/1/outstanding-tasks', async route => {
+  await page.route('**/api/orders/1/tasks', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
   })
 }
@@ -56,13 +56,13 @@ test.describe('label document generation', () => {
     await page.goto('/orders')
 
     await page.getByRole('row', { name: /TTB Filing Order/ }).click()
-    await page.getByRole('button', { name: 'Generate TTB Document' }).click()
+    await page.getByRole('button', { name: 'Generate TTB Label' }).click()
 
-    await page.fill('input[placeholder="Brand Name"]', 'Mock Brand')
-    await page.fill('input[placeholder="Product Name"]', 'Mock Product')
-    await page.fill('input[placeholder="Alcohol Content"]', '40%')
+    await page.getByLabel('Brand Name').fill('Mock Brand')
+    await page.getByLabel('Product Name').fill('Mock Product')
+    await page.getByLabel('Alcohol Content').fill('40%')
 
-    await page.getByRole('button', { name: 'Generate', exact: true }).click()
+    await page.getByRole('button', { name: 'Generate Label' }).click()
 
     await expect.poll(() => requestCount).toBe(1)
 
@@ -112,13 +112,13 @@ test.describe('label document generation', () => {
     await page.goto('/orders')
 
     await page.getByRole('row', { name: /TTB Filing Order/ }).click()
-    await page.getByRole('button', { name: 'Generate TTB Document' }).click()
+    await page.getByRole('button', { name: 'Generate TTB Label' }).click()
 
-    await page.fill('input[placeholder="Brand Name"]', 'Mock Brand')
-    await page.fill('input[placeholder="Product Name"]', 'Mock Product')
-    await page.fill('input[placeholder="Alcohol Content"]', '40%')
+    await page.getByLabel('Brand Name').fill('Mock Brand')
+    await page.getByLabel('Product Name').fill('Mock Product')
+    await page.getByLabel('Alcohol Content').fill('40%')
 
-    await page.getByRole('button', { name: 'Generate', exact: true }).click()
+    await page.getByRole('button', { name: 'Generate Label' }).click()
 
     await expect.poll(() => capturedContentType).toBe('application/json')
     await expect.poll(() => capturedAccept).toBe('application/pdf')
@@ -154,23 +154,23 @@ test.describe('label document generation', () => {
     await page.goto('/orders')
 
     await page.getByRole('row', { name: /TTB Filing Order/ }).click()
-    await page.getByRole('button', { name: 'Generate TTB Document' }).click()
+    await page.getByRole('button', { name: 'Generate TTB Label' }).click()
 
-    await page.fill('input[placeholder="Brand Name"]', 'Mock Brand')
-    await page.fill('input[placeholder="Product Name"]', 'Mock Product')
-    await page.fill('input[placeholder="Alcohol Content"]', '40%')
+    await page.getByLabel('Brand Name').fill('Mock Brand')
+    await page.getByLabel('Product Name').fill('Mock Product')
+    await page.getByLabel('Alcohol Content').fill('40%')
 
     const previewRegion = page.getByRole('region', { name: 'Generated TTB document preview' })
-    const generateButton = page.getByRole('button', { name: 'Generate', exact: true })
+    const generateButton = page.getByRole('button', { name: 'Generate Label' })
     await generateButton.click()
     await expect.poll(() => requestCount).toBe(1)
     await expect(previewRegion).toBeVisible()
 
     await page.getByRole('button', { name: 'Back to form' }).click()
     await expect(previewRegion).toHaveCount(0)
-    await expect(page.locator('input[placeholder="Brand Name"]')).toHaveValue('Mock Brand')
-    await expect(page.locator('input[placeholder="Product Name"]')).toHaveValue('Mock Product')
-    await expect(page.locator('input[placeholder="Alcohol Content"]')).toHaveValue('40%')
+    await expect(page.getByLabel('Brand Name')).toHaveValue('Mock Brand')
+    await expect(page.getByLabel('Product Name')).toHaveValue('Mock Product')
+    await expect(page.getByLabel('Alcohol Content')).toHaveValue('40%')
 
     await generateButton.click()
     await expect.poll(() => requestCount).toBe(2)

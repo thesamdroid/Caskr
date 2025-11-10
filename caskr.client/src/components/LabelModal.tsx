@@ -18,16 +18,19 @@ const LabelModal = ({ isOpen, onClose, orderName, companyId: fallbackCompanyId }
   const [alcoholContent, setAlcoholContent] = useState('')
   const [preview, setPreview] = useState<{ blob: Blob; url: string } | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen) {
       setProductName(orderName ?? '')
+      setError(null)
     } else {
       setBrandName('')
       setProductName('')
       setAlcoholContent('')
       setPreview(null)
       setIsGenerating(false)
+      setError(null)
     }
   }, [isOpen, orderName])
 
@@ -42,11 +45,28 @@ const LabelModal = ({ isOpen, onClose, orderName, companyId: fallbackCompanyId }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isGenerating) return
-    const companyId = user?.companyId ?? fallbackCompanyId
-    if (companyId == null) {
-      console.error('No company ID available for label generation')
+
+    // Validate required fields
+    if (!brandName.trim()) {
+      setError('Brand name is required')
       return
     }
+    if (!productName.trim()) {
+      setError('Product name is required')
+      return
+    }
+    if (!alcoholContent.trim()) {
+      setError('Alcohol content is required')
+      return
+    }
+
+    const companyId = user?.companyId ?? fallbackCompanyId
+    if (companyId == null) {
+      setError('No company ID available. Please try logging in again.')
+      return
+    }
+
+    setError(null)
     setIsGenerating(true)
     try {
       const response = await authorizedFetch('/api/labels/ttb-form', {
@@ -60,11 +80,14 @@ const LabelModal = ({ isOpen, onClose, orderName, companyId: fallbackCompanyId }
         })
       })
       if (!response.ok) {
-        throw new Error('Failed to generate label document')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Failed to generate label document')
       }
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       setPreview({ blob, url })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
       setIsGenerating(false)
     }
@@ -103,14 +126,42 @@ const LabelModal = ({ isOpen, onClose, orderName, companyId: fallbackCompanyId }
           </>
         ) : (
           <form onSubmit={handleSubmit} aria-busy={isGenerating}>
-            <input value={brandName} onChange={e => setBrandName(e.target.value)} placeholder='Brand Name' />
-            <input value={productName} onChange={e => setProductName(e.target.value)} placeholder='Product Name' />
-            <input value={alcoholContent} onChange={e => setAlcoholContent(e.target.value)} placeholder='Alcohol Content' />
+            {error && <p className='error-message' style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
+            <label>
+              Brand Name <span style={{ color: 'red' }}>*</span>
+              <input
+                value={brandName}
+                onChange={e => { setBrandName(e.target.value); setError(null); }}
+                placeholder='e.g., Kentucky Reserve'
+                required
+                disabled={isGenerating}
+              />
+            </label>
+            <label>
+              Product Name <span style={{ color: 'red' }}>*</span>
+              <input
+                value={productName}
+                onChange={e => { setProductName(e.target.value); setError(null); }}
+                placeholder='e.g., Straight Bourbon Whiskey'
+                required
+                disabled={isGenerating}
+              />
+            </label>
+            <label>
+              Alcohol Content <span style={{ color: 'red' }}>*</span>
+              <input
+                value={alcoholContent}
+                onChange={e => { setAlcoholContent(e.target.value); setError(null); }}
+                placeholder='e.g., 45% ABV'
+                required
+                disabled={isGenerating}
+              />
+            </label>
             <div className='modal-actions'>
               <button type='submit' disabled={isGenerating}>
-                Generate
+                {isGenerating ? 'Generating...' : 'Generate Label'}
               </button>
-              <button type='button' onClick={handleClose}>
+              <button type='button' onClick={handleClose} disabled={isGenerating}>
                 Cancel
               </button>
             </div>
