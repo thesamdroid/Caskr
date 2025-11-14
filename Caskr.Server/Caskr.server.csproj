@@ -31,6 +31,8 @@
     <PackageReference Include="itext7" Version="8.0.5" />
     <PackageReference Include="itext7.bouncy-castle-adapter" Version="8.0.5" />
     <PackageReference Include="System.Text.Json" Version="9.0.1" />
+    <!-- QuickBooks Online integration via Intuit SDK (v14.7.0.3) -->
+    <PackageReference Include="IppDotNetSdkForQuickBooksApiV3" Version="14.7.0.3" />
   </ItemGroup>
 
   <ItemGroup>
