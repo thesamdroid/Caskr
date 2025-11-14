@@ -1,8 +1,11 @@
 ﻿using System.Reflection;
 using Caskr.server.Models;
 using Caskr.server.Services;
+using Caskr.Server.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Caskr.server
 {
@@ -15,10 +18,12 @@ public static void BindServices(this IServiceCollection services, IConfiguration
             var connectionString = configuration.GetConnectionString("CaskrDatabaseConnectionString");
             
             services.AddSingleton(configuration);
+            services.AddDataProtection();
             services.AddDbContext<CaskrDbContext>(options =>
                 options.UseNpgsql(connectionString));
 
             services.AddHttpClient<IKeycloakClient, KeycloakClient>();
+            services.AddSingleton<IQuickBooksOAuthClientFactory, QuickBooksOAuthClientFactory>();
 
             var bindableTypes = GetAutoBindedTypes(Assembly.GetAssembly(typeof(Binder))!);
 
