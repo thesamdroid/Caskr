@@ -86,6 +86,8 @@ public partial class CaskrDbContext : DbContext
 
             entity.Property(e => e.Quantity).HasColumnName("quantity");
 
+            entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
+
             entity.HasOne(d => d.Owner).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.OwnerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -104,6 +106,11 @@ public partial class CaskrDbContext : DbContext
             entity.HasOne(d => d.Batch)
                 .WithMany()
                 .HasForeignKey(d => new { d.BatchId, d.CompanyId });
+
+            entity.HasOne(d => d.Invoice)
+                .WithMany()
+                .HasForeignKey(d => d.InvoiceId)
+                .HasConstraintName("fk_orders_invoice");
         });
 
         modelBuilder.Entity<OrderTask>(entity =>
