@@ -2,6 +2,11 @@
 
 All changes must ensure the .NET solution builds and **all tests run and pass**.
 
+Run this branch through the testing protocol. Make sure all objects are loaded
+into the execution environments to appropriately run the tasks. If any tests
+fail, make sure they get fixed. If they fail because of missing elements in the
+environment, bring those elements into the environment.
+
 Each pull request must include at least one new automated test that exercises the
 behaviour introduced or modified by the change.
 
