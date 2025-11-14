@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(dotnet restore:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(cat:*)",
+      "Bash(\"c:\\Users\\shaws\\source\\repos\\Caskr\\PRODUCT_ROADMAP_FULL.csv\")"
     ],
     "deny": [],
     "ask": []
