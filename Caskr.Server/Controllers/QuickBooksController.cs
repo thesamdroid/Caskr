@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using Caskr.Server.Models;
 using Caskr.Server.Services;
 using Caskr.server;
 using Caskr.server.Models;
@@ -248,6 +249,148 @@ public class QuickBooksController(
         }
     }
 
+    /// <summary>
+    ///     Saves the QuickBooks chart of accounts mappings for a company.
+    /// </summary>
+    /// <param name="request">The mapping payload.</param>
+    [HttpPost("mappings")]
+    [ProducesResponseType(typeof(List<QuickBooksAccountMappingResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<List<QuickBooksAccountMappingResponse>>> SaveMappings(
+        [FromBody] QuickBooksMappingRequest? request)
+    {
+        if (request is null)
+        {
+            return BadRequest(new QuickBooksErrorResponse("Request body is required."));
+        }
+
+        var authorizationResult = await AuthorizeCompanyAsync(request.CompanyId);
+        if (authorizationResult.errorResult is { } error)
+        {
+            return ConvertToActionResult<List<QuickBooksAccountMappingResponse>>(error);
+        }
+
+        if (request.Mappings is null || request.Mappings.Count == 0)
+        {
+            return BadRequest(new QuickBooksErrorResponse("At least one mapping is required."));
+        }
+
+        var parsedMappings = new List<(CaskrAccountType Type, string QboAccountId, string? QboAccountName)>();
+        var mappedTypes = new HashSet<CaskrAccountType>();
+
+        foreach (var mapping in request.Mappings)
+        {
+            if (mapping is null)
+            {
+                return BadRequest(new QuickBooksErrorResponse("Each mapping entry is required."));
+            }
+
+            if (string.IsNullOrWhiteSpace(mapping.CaskrAccountType))
+            {
+                return BadRequest(new QuickBooksErrorResponse("Caskr account type is required for each mapping."));
+            }
+
+            if (!Enum.TryParse(mapping.CaskrAccountType, true, out CaskrAccountType caskrAccountType))
+            {
+                return BadRequest(new QuickBooksErrorResponse($"Invalid Caskr account type '{mapping.CaskrAccountType}'."));
+            }
+
+            if (!mappedTypes.Add(caskrAccountType))
+            {
+                return BadRequest(new QuickBooksErrorResponse($"{FormatAccountType(caskrAccountType)} account may only be mapped once."));
+            }
+
+            if (string.IsNullOrWhiteSpace(mapping.QboAccountId))
+            {
+                return BadRequest(new QuickBooksErrorResponse($"{FormatAccountType(caskrAccountType)} account must include a QuickBooks account ID."));
+            }
+
+            parsedMappings.Add((caskrAccountType, mapping.QboAccountId, mapping.QboAccountName));
+        }
+
+        var requiredTypes = Enum.GetValues<CaskrAccountType>();
+        var missingType = requiredTypes.FirstOrDefault(type => !mappedTypes.Contains(type));
+        if (!mappedTypes.SetEquals(requiredTypes))
+        {
+            return BadRequest(new QuickBooksErrorResponse($"{FormatAccountType(missingType)} account must be mapped."));
+        }
+
+        var isConnected = await _dbContext.AccountingIntegrations
+            .AsNoTracking()
+            .AnyAsync(ai => ai.CompanyId == request.CompanyId && ai.Provider == AccountingProvider.QuickBooks && ai.IsActive);
+
+        if (!isConnected)
+        {
+            return NotFound(new QuickBooksErrorResponse("QuickBooks not connected for this company"));
+        }
+
+        List<QBOAccount> accounts;
+        try
+        {
+            accounts = await _quickBooksDataService.GetChartOfAccountsAsync(request.CompanyId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load QuickBooks accounts for company {CompanyId}", request.CompanyId);
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new QuickBooksErrorResponse("Unable to load QuickBooks accounts. Please try again."));
+        }
+
+        var availableAccounts = accounts.Select(a => a.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var mapping in parsedMappings)
+        {
+            if (!availableAccounts.Contains(mapping.QboAccountId))
+            {
+                return BadRequest(new QuickBooksErrorResponse($"QuickBooks account '{mapping.QboAccountId}' was not found."));
+            }
+        }
+
+        var existingMappings = await _dbContext.ChartOfAccountsMappings
+            .Where(m => m.CompanyId == request.CompanyId)
+            .ToListAsync();
+
+        if (existingMappings.Count > 0)
+        {
+            _dbContext.ChartOfAccountsMappings.RemoveRange(existingMappings);
+        }
+
+        var now = DateTime.UtcNow;
+        var entities = parsedMappings
+            .Select(mapping => new ChartOfAccountsMapping
+            {
+                CompanyId = request.CompanyId,
+                CaskrAccountType = mapping.Type,
+                QboAccountId = mapping.QboAccountId,
+                QboAccountName = mapping.QboAccountName,
+                CreatedAt = now,
+                UpdatedAt = now
+            })
+            .ToList();
+
+        _dbContext.ChartOfAccountsMappings.AddRange(entities);
+        await _dbContext.SaveChangesAsync();
+
+        var response = entities
+            .Select(e => new QuickBooksAccountMappingResponse(e.CaskrAccountType.ToString(), e.QboAccountId, e.QboAccountName))
+            .ToList();
+
+        if (authorizationResult.user is { } user)
+        {
+            _logger.LogInformation(
+                "User {UserId} updated QuickBooks mappings for company {CompanyId}: {@Mappings}",
+                user.Id,
+                request.CompanyId,
+                response);
+        }
+
+        return Ok(response);
+    }
+
     private async Task<(User? user, IActionResult? errorResult)> AuthorizeCompanyAsync(int companyId)
     {
         if (companyId <= 0)
@@ -334,6 +477,22 @@ public class QuickBooksController(
         };
 
         return QueryHelpers.AddQueryString(baseUrl, parameters);
+    }
+
+    private static string FormatAccountType(CaskrAccountType accountType)
+    {
+        return accountType switch
+        {
+            CaskrAccountType.Cogs => "COGS",
+            CaskrAccountType.WorkInProgress => "Work in Progress",
+            CaskrAccountType.FinishedGoods => "Finished Goods",
+            CaskrAccountType.RawMaterials => "Raw Materials",
+            CaskrAccountType.Barrels => "Barrels",
+            CaskrAccountType.Ingredients => "Ingredients",
+            CaskrAccountType.Labor => "Labor",
+            CaskrAccountType.Overhead => "Overhead",
+            _ => accountType.ToString()
+        };
     }
 }
 
@@ -472,3 +631,53 @@ public sealed record QuickBooksAccountResponse
     [JsonPropertyName("active")]
     public bool Active { get; }
 }
+
+/// <summary>
+///     Request payload for saving QuickBooks account mappings.
+/// </summary>
+public sealed class QuickBooksMappingRequest
+{
+    /// <summary>
+    ///     Gets or sets the company identifier.
+    /// </summary>
+    [JsonPropertyName("companyId")]
+    public int CompanyId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the mappings payload.
+    /// </summary>
+    [JsonPropertyName("mappings")]
+    public List<QuickBooksAccountMappingDto> Mappings { get; set; } = new();
+}
+
+/// <summary>
+///     Represents a mapping between a Caskr account and a QuickBooks account.
+/// </summary>
+public sealed class QuickBooksAccountMappingDto
+{
+    /// <summary>
+    ///     Gets or sets the Caskr account type.
+    /// </summary>
+    [JsonPropertyName("caskrAccountType")]
+    public string? CaskrAccountType { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the QuickBooks account identifier.
+    /// </summary>
+    [JsonPropertyName("qboAccountId")]
+    public string? QboAccountId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the QuickBooks account name.
+    /// </summary>
+    [JsonPropertyName("qboAccountName")]
+    public string? QboAccountName { get; set; }
+}
+
+/// <summary>
+///     Response payload returned after saving QuickBooks account mappings.
+/// </summary>
+public sealed record QuickBooksAccountMappingResponse(
+    [property: JsonPropertyName("caskrAccountType")] string CaskrAccountType,
+    [property: JsonPropertyName("qboAccountId")] string QboAccountId,
+    [property: JsonPropertyName("qboAccountName")] string? QboAccountName);

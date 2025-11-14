@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using Caskr.server.Controllers;
 using Caskr.server.Models;
@@ -145,6 +146,105 @@ public class QuickBooksControllerTests : IDisposable
         await controller.GetAccounts(user.CompanyId, true);
 
         _quickBooksDataService.Verify(s => s.GetChartOfAccountsAsync(user.CompanyId, true), Times.Once);
+    }
+
+    [Fact]
+    public async Task SaveMappings_WithValidPayload_ReplacesExistingMappings()
+    {
+        var user = new User { Id = 700, CompanyId = 66, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+        _context!.AccountingIntegrations.Add(new AccountingIntegration
+        {
+            CompanyId = user.CompanyId,
+            Provider = AccountingProvider.QuickBooks,
+            RealmId = "realm",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.ChartOfAccountsMappings.Add(new ChartOfAccountsMapping
+        {
+            CompanyId = user.CompanyId,
+            CaskrAccountType = CaskrAccountType.Cogs,
+            QboAccountId = "old",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        var chartOfAccounts = Enum.GetValues<CaskrAccountType>()
+            .Select((type, index) => new QBOAccount(index.ToString(), type.ToString(), "Expense", type.ToString(), true))
+            .ToList();
+
+        _quickBooksDataService
+            .Setup(s => s.GetChartOfAccountsAsync(user.CompanyId, false))
+            .ReturnsAsync(chartOfAccounts);
+
+        var request = new QuickBooksMappingRequest
+        {
+            CompanyId = user.CompanyId,
+            Mappings = Enum.GetValues<CaskrAccountType>()
+                .Select((type, index) => new QuickBooksAccountMappingDto
+                {
+                    CaskrAccountType = type.ToString(),
+                    QboAccountId = index.ToString(),
+                    QboAccountName = $"{type} Account"
+                })
+                .ToList()
+        };
+
+        var result = await controller.SaveMappings(request);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var payload = Assert.IsType<List<QuickBooksAccountMappingResponse>>(ok.Value);
+        Assert.Equal(chartOfAccounts.Count, payload.Count);
+
+        var savedMappings = _context.ChartOfAccountsMappings
+            .Where(m => m.CompanyId == user.CompanyId)
+            .ToList();
+        Assert.Equal(chartOfAccounts.Count, savedMappings.Count);
+        Assert.DoesNotContain(savedMappings, m => m.QboAccountId == "old");
+        _quickBooksDataService.Verify(s => s.GetChartOfAccountsAsync(user.CompanyId, false), Times.Once);
+    }
+
+    [Fact]
+    public async Task SaveMappings_WhenMissingAccountType_ReturnsBadRequest()
+    {
+        var user = new User { Id = 701, CompanyId = 44, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+        _context!.AccountingIntegrations.Add(new AccountingIntegration
+        {
+            CompanyId = user.CompanyId,
+            Provider = AccountingProvider.QuickBooks,
+            RealmId = "realm",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        var mappings = Enum.GetValues<CaskrAccountType>()
+            .Where(type => type != CaskrAccountType.Overhead)
+            .Select((type, index) => new QuickBooksAccountMappingDto
+            {
+                CaskrAccountType = type.ToString(),
+                QboAccountId = index.ToString(),
+                QboAccountName = $"{type} Account"
+            })
+            .ToList();
+
+        var request = new QuickBooksMappingRequest
+        {
+            CompanyId = user.CompanyId,
+            Mappings = mappings
+        };
+
+        var result = await controller.SaveMappings(request);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var payload = Assert.IsType<QuickBooksErrorResponse>(badRequest.Value);
+        Assert.Contains("Overhead", payload.Message);
+        _quickBooksDataService.Verify(s => s.GetChartOfAccountsAsync(It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
     }
 
     private QuickBooksController CreateController(User user)
