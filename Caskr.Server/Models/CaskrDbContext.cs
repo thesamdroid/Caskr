@@ -47,6 +47,12 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<ChartOfAccountsMapping> ChartOfAccountsMappings { get; set; } = null!;
 
+    public virtual DbSet<Invoice> Invoices { get; set; } = null!;
+
+    public virtual DbSet<InvoiceLineItem> InvoiceLineItems { get; set; } = null!;
+
+    public virtual DbSet<InvoiceTax> InvoiceTaxes { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -417,10 +423,14 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
             entity.Property(e => e.EntityType).HasColumnName("entity_type");
             entity.Property(e => e.EntityId).HasColumnName("entity_id");
+            entity.Property(e => e.ExternalEntityId).HasColumnName("external_entity_id");
             entity.Property(e => e.SyncStatus)
                 .HasConversion<string>()
                 .HasColumnName("sync_status");
             entity.Property(e => e.ErrorMessage).HasColumnName("error_message");
+            entity.Property(e => e.RetryCount)
+                .HasDefaultValue(0)
+                .HasColumnName("retry_count");
             entity.Property(e => e.SyncedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("synced_at");
@@ -463,6 +473,89 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.CompanyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_chart_of_accounts_mapping_company");
+        });
+
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("invoices_pkey");
+
+            entity.ToTable("invoices");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_invoices_company_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.InvoiceNumber).HasColumnName("invoice_number");
+            entity.Property(e => e.CustomerName).HasColumnName("customer_name");
+            entity.Property(e => e.CustomerEmail).HasColumnName("customer_email");
+            entity.Property(e => e.CustomerPhone).HasColumnName("customer_phone");
+            entity.Property(e => e.CustomerAddressLine1).HasColumnName("customer_address_line1");
+            entity.Property(e => e.CustomerAddressLine2).HasColumnName("customer_address_line2");
+            entity.Property(e => e.CustomerCity).HasColumnName("customer_city");
+            entity.Property(e => e.CustomerState).HasColumnName("customer_state");
+            entity.Property(e => e.CustomerPostalCode).HasColumnName("customer_postal_code");
+            entity.Property(e => e.CustomerCountry).HasColumnName("customer_country");
+            entity.Property(e => e.CurrencyCode).HasColumnName("currency_code");
+            entity.Property(e => e.InvoiceDate).HasColumnName("invoice_date");
+            entity.Property(e => e.DueDate).HasColumnName("due_date");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.SubtotalAmount).HasColumnName("subtotal_amount");
+            entity.Property(e => e.TotalAmount).HasColumnName("total_amount");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_invoices_company");
+        });
+
+        modelBuilder.Entity<InvoiceLineItem>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("invoice_line_items_pkey");
+
+            entity.ToTable("invoice_line_items");
+
+            entity.HasIndex(e => e.InvoiceId).HasDatabaseName("idx_invoice_line_items_invoice_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Quantity).HasColumnName("quantity");
+            entity.Property(e => e.UnitPrice).HasColumnName("unit_price");
+            entity.Property(e => e.IsTaxable).HasColumnName("is_taxable");
+            entity.Property(e => e.AccountType)
+                .HasConversion<string>()
+                .HasColumnName("account_type");
+            entity.Property(e => e.ProductCode).HasColumnName("product_code");
+            entity.Property(e => e.ProductName).HasColumnName("product_name");
+            entity.Property(e => e.DiscountAmount).HasColumnName("discount_amount");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.LineItems)
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_invoice_line_items_invoice");
+        });
+
+        modelBuilder.Entity<InvoiceTax>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("invoice_taxes_pkey");
+
+            entity.ToTable("invoice_taxes");
+
+            entity.HasIndex(e => e.InvoiceId).HasDatabaseName("idx_invoice_taxes_invoice_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
+            entity.Property(e => e.TaxName).HasColumnName("tax_name");
+            entity.Property(e => e.TaxCode).HasColumnName("tax_code");
+            entity.Property(e => e.Rate).HasColumnName("rate");
+            entity.Property(e => e.Amount).HasColumnName("amount");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.Taxes)
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_invoice_taxes_invoice");
         });
 
         OnModelCreatingPartial(modelBuilder);
