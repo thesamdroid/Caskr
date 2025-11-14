@@ -336,3 +336,141 @@ button:hover {
   color: var(--secondary-orange);
   font-weight: 600;
 }
+
+.section-subtitle {
+  color: var(--gray-600);
+  margin-top: 0.25rem;
+}
+
+.accounting-settings {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.accounting-header {
+  align-items: flex-start;
+}
+
+.status-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  text-align: right;
+}
+
+.status-meta {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--gray-600);
+}
+
+.status-pill {
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--white);
+  text-transform: uppercase;
+}
+
+.status-pill.connected {
+  background: var(--success-green);
+}
+
+.status-pill.disconnected {
+  background: var(--secondary-orange);
+}
+
+.connection-card,
+.mapping-section {
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  background: var(--gray-50);
+}
+
+.connection-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.button-secondary {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.button-secondary:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.helper-text {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+}
+
+.helper-text.warning {
+  color: var(--secondary-orange);
+}
+
+.helper-text.info {
+  color: var(--primary-blue);
+}
+
+.accounting-table th:first-child,
+.accounting-table td:first-child {
+  width: 28%;
+}
+
+.account-type p {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.account-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.account-selector input,
+.account-selector select {
+  padding: 0.5rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+}
+
+.mapping-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.toast-container {
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.toast {
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  color: var(--white);
+  font-weight: 600;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2);
+}
+
+.toast-success {
+  background: var(--success-green);
+}
+
+.toast-error {
+  background: var(--secondary-orange);
+}

@@ -22,6 +22,7 @@ test.describe('navigation links', () => {
     { link: 'Orders', heading: 'Orders', path: '/orders' },
     { link: 'Barrels', heading: 'Barrels', path: '/barrels' },
     { link: 'Products', heading: 'Products', path: '/products' },
+    { link: 'Accounting', heading: 'Accounting Settings', path: '/accounting' },
     { link: 'Login', heading: 'Login', path: '/login' }
   ];
 
