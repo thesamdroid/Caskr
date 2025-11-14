@@ -86,6 +86,64 @@ public class QuickBooksDataServiceTests : IDisposable
     }
 
     [Fact]
+    public async System.Threading.Tasks.Task GetChartOfAccountsAsync_BypassesCacheWhenRequested()
+    {
+        _authService
+            .Setup(s => s.RefreshTokenAsync(100))
+            .ReturnsAsync(new OAuthTokenResponse
+            {
+                AccessToken = "token",
+                RefreshToken = "refresh",
+                RealmId = "12345",
+                ExpiresIn = 3600
+            });
+
+        _queryClient
+            .SetupSequence(c => c.ExecuteActiveAccountQuery(It.IsAny<ServiceContext>()))
+            .Returns(new List<Account>
+            {
+                new()
+                {
+                    Id = "77",
+                    Name = "Cash",
+                    AccountSubType = "CashOnHand",
+                    AccountType = AccountTypeEnum.Bank,
+                    AccountTypeSpecified = true,
+                    Active = true,
+                    ActiveSpecified = true
+                }
+            })
+            .Returns(new List<Account>
+            {
+                new()
+                {
+                    Id = "78",
+                    Name = "Revenue",
+                    AccountSubType = "SalesOfProductIncome",
+                    AccountType = AccountTypeEnum.Income,
+                    AccountTypeSpecified = true,
+                    Active = true,
+                    ActiveSpecified = true
+                }
+            });
+
+        var service = new QuickBooksDataService(
+            _memoryCache,
+            _context,
+            _authService.Object,
+            _queryClient.Object,
+            NullLogger<QuickBooksDataService>.Instance);
+
+        var first = await service.GetChartOfAccountsAsync(100);
+        var refreshed = await service.GetChartOfAccountsAsync(100, true);
+
+        Assert.Equal("Cash", first[0].Name);
+        Assert.Equal("Revenue", refreshed[0].Name);
+        _authService.Verify(s => s.RefreshTokenAsync(100), Times.Exactly(2));
+        _queryClient.Verify(c => c.ExecuteActiveAccountQuery(It.IsAny<ServiceContext>()), Times.Exactly(2));
+    }
+
+    [Fact]
     public async System.Threading.Tasks.Task GetChartOfAccountsAsync_NoIntegration_Throws()
     {
         var service = new QuickBooksDataService(

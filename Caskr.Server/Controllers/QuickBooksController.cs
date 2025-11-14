@@ -8,6 +8,7 @@ using Caskr.server;
 using Caskr.server.Models;
 using Caskr.server.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -19,10 +20,12 @@ namespace Caskr.server.Controllers;
 /// <summary>
 ///     API endpoints that orchestrate the OAuth 2.0 flow between Caskr and QuickBooks Online.
 /// </summary>
+[Authorize]
 [Route("api/accounting/quickbooks")]
 public class QuickBooksController(
     IQuickBooksAuthService quickBooksAuthService,
     IUsersService usersService,
+    IQuickBooksDataService quickBooksDataService,
     CaskrDbContext dbContext,
     ILogger<QuickBooksController> logger,
     IConfiguration configuration)
@@ -30,6 +33,7 @@ public class QuickBooksController(
 {
     private readonly IQuickBooksAuthService _quickBooksAuthService = quickBooksAuthService;
     private readonly IUsersService _usersService = usersService;
+    private readonly IQuickBooksDataService _quickBooksDataService = quickBooksDataService;
     private readonly CaskrDbContext _dbContext = dbContext;
     private readonly ILogger<QuickBooksController> _logger = logger;
     private readonly IConfiguration _configuration = configuration;
@@ -188,6 +192,59 @@ public class QuickBooksController(
         {
             _logger.LogError(ex, "Failed to load QuickBooks status for company {CompanyId}", companyId);
             return StatusCode(StatusCodes.Status500InternalServerError, new QuickBooksErrorResponse("Unable to load QuickBooks status."));
+        }
+    }
+
+    /// <summary>
+    ///     Returns the QuickBooks chart of accounts for the supplied company so the front-end can map Caskr accounts to QuickBooks accounts.
+    /// </summary>
+    /// <param name="companyId">The identifier of the company whose accounts should be loaded.</param>
+    /// <param name="refresh">If true, bypasses the cached chart of accounts and fetches the latest data from QuickBooks.</param>
+    [HttpGet("accounts")]
+    [ProducesResponseType(typeof(List<QuickBooksAccountResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<List<QuickBooksAccountResponse>>> GetAccounts(
+        [FromQuery(Name = "companyId")] int? companyId,
+        [FromQuery(Name = "refresh")] bool refresh = false)
+    {
+        if (companyId is null || companyId <= 0)
+        {
+            return BadRequest(new QuickBooksErrorResponse("A valid companyId query parameter is required."));
+        }
+
+        var authorizationResult = await AuthorizeCompanyAsync(companyId.Value);
+        if (authorizationResult.errorResult is { } error)
+        {
+            return ConvertToActionResult<List<QuickBooksAccountResponse>>(error);
+        }
+
+        var isConnected = await _dbContext.AccountingIntegrations
+            .AsNoTracking()
+            .AnyAsync(ai => ai.CompanyId == companyId.Value && ai.Provider == AccountingProvider.QuickBooks && ai.IsActive);
+
+        if (!isConnected)
+        {
+            return NotFound(new QuickBooksErrorResponse("QuickBooks not connected for this company"));
+        }
+
+        try
+        {
+            var accounts = await _quickBooksDataService.GetChartOfAccountsAsync(companyId.Value, refresh);
+            var response = accounts
+                .Select(account => new QuickBooksAccountResponse(account.Id, account.Name, account.AccountType, account.Active))
+                .ToList();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load QuickBooks accounts for company {CompanyId}", companyId.Value);
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new QuickBooksErrorResponse("Unable to load QuickBooks accounts. Please try again."));
         }
     }
 
@@ -369,4 +426,49 @@ public sealed record QuickBooksErrorResponse
     /// </summary>
     [JsonPropertyName("message")]
     public string Message { get; }
+}
+
+/// <summary>
+///     Represents a simplified QuickBooks account payload exposed to the client.
+/// </summary>
+public sealed record QuickBooksAccountResponse
+{
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="QuickBooksAccountResponse"/> class.
+    /// </summary>
+    /// <param name="id">The QuickBooks account identifier.</param>
+    /// <param name="name">The QuickBooks account name.</param>
+    /// <param name="accountType">The QuickBooks account type.</param>
+    /// <param name="active">Indicates whether the account is active.</param>
+    public QuickBooksAccountResponse(string id, string name, string accountType, bool active)
+    {
+        Id = id;
+        Name = name;
+        AccountType = accountType;
+        Active = active;
+    }
+
+    /// <summary>
+    ///     Gets the QuickBooks account identifier.
+    /// </summary>
+    [JsonPropertyName("id")]
+    public string Id { get; }
+
+    /// <summary>
+    ///     Gets the QuickBooks account name.
+    /// </summary>
+    [JsonPropertyName("name")]
+    public string Name { get; }
+
+    /// <summary>
+    ///     Gets the QuickBooks account type.
+    /// </summary>
+    [JsonPropertyName("accountType")]
+    public string AccountType { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether the QuickBooks account is active.
+    /// </summary>
+    [JsonPropertyName("active")]
+    public bool Active { get; }
 }

@@ -15,6 +15,7 @@ public interface IQuickBooksDataService
     ///     QuickBooks responds with a failure.
     /// </summary>
     /// <param name="companyId">The company whose chart of accounts should be loaded.</param>
+    /// <param name="bypassCache">When set to true, skips the cached data and forces a new QuickBooks API request.</param>
     /// <returns>A list of QuickBooks accounts available to the company.</returns>
-    Task<List<QBOAccount>> GetChartOfAccountsAsync(int companyId);
+    Task<List<QBOAccount>> GetChartOfAccountsAsync(int companyId, bool bypassCache = false);
 }

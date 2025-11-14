@@ -6,6 +6,7 @@ using Caskr.server.Models;
 using Caskr.server.Services;
 using Caskr.server;
 using Caskr.Server.Services;
+using Caskr.Server.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ public class QuickBooksControllerTests : IDisposable
 {
     private readonly Mock<IQuickBooksAuthService> _authService = new();
     private readonly Mock<IUsersService> _usersService = new();
+    private readonly Mock<IQuickBooksDataService> _quickBooksDataService = new();
     private readonly IConfiguration _configuration;
     private CaskrDbContext? _context;
 
@@ -76,6 +78,75 @@ public class QuickBooksControllerTests : IDisposable
         Assert.Null(payload.ConnectedAt);
     }
 
+    [Fact]
+    public async Task GetAccounts_NoIntegration_ReturnsNotFound()
+    {
+        var user = new User { Id = 400, CompanyId = 55, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+
+        var result = await controller.GetAccounts(user.CompanyId, false);
+
+        var notFound = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var payload = Assert.IsType<QuickBooksErrorResponse>(notFound.Value);
+        Assert.Equal("QuickBooks not connected for this company", payload.Message);
+    }
+
+    [Fact]
+    public async Task GetAccounts_WithIntegration_ReturnsAccounts()
+    {
+        var user = new User { Id = 500, CompanyId = 88, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+        _context!.AccountingIntegrations.Add(new AccountingIntegration
+        {
+            CompanyId = user.CompanyId,
+            Provider = AccountingProvider.QuickBooks,
+            RealmId = "123",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        _quickBooksDataService
+            .Setup(s => s.GetChartOfAccountsAsync(user.CompanyId, false))
+            .ReturnsAsync(new List<QBOAccount>
+            {
+                new("77", "Cash", "Bank", "CashOnHand", true)
+            });
+
+        var result = await controller.GetAccounts(user.CompanyId, false);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var accounts = Assert.IsType<List<QuickBooksAccountResponse>>(ok.Value);
+        Assert.Single(accounts);
+        Assert.Equal("Cash", accounts[0].Name);
+    }
+
+    [Fact]
+    public async Task GetAccounts_WithRefreshFlag_BypassesCache()
+    {
+        var user = new User { Id = 600, CompanyId = 99, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+        _context!.AccountingIntegrations.Add(new AccountingIntegration
+        {
+            CompanyId = user.CompanyId,
+            Provider = AccountingProvider.QuickBooks,
+            RealmId = "123",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        _quickBooksDataService
+            .Setup(s => s.GetChartOfAccountsAsync(user.CompanyId, true))
+            .ReturnsAsync(new List<QBOAccount>());
+
+        await controller.GetAccounts(user.CompanyId, true);
+
+        _quickBooksDataService.Verify(s => s.GetChartOfAccountsAsync(user.CompanyId, true), Times.Once);
+    }
+
     private QuickBooksController CreateController(User user)
     {
         _context = new CaskrDbContext(new DbContextOptionsBuilder<CaskrDbContext>()
@@ -85,6 +156,7 @@ public class QuickBooksControllerTests : IDisposable
         var controller = new QuickBooksController(
             _authService.Object,
             _usersService.Object,
+            _quickBooksDataService.Object,
             _context,
             NullLogger<QuickBooksController>.Instance,
             _configuration);
