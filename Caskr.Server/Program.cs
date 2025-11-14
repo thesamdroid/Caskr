@@ -15,6 +15,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
+builder.Services.AddMemoryCache();
 var rawSigningKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(rawSigningKey))
 {
