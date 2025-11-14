@@ -42,7 +42,7 @@ public class QuickBooksDataService : IQuickBooksDataService
         _logger = logger;
     }
 
-    public async Task<List<QBOAccount>> GetChartOfAccountsAsync(int companyId)
+    public async Task<List<QBOAccount>> GetChartOfAccountsAsync(int companyId, bool bypassCache = false)
     {
         if (companyId <= 0)
         {
@@ -50,7 +50,11 @@ public class QuickBooksDataService : IQuickBooksDataService
         }
 
         var cacheKey = GetCacheKey(companyId);
-        if (_cache.TryGetValue(cacheKey, out List<QBOAccount>? cachedAccounts) && cachedAccounts is not null)
+        if (bypassCache)
+        {
+            _cache.Remove(cacheKey);
+        }
+        else if (_cache.TryGetValue(cacheKey, out List<QBOAccount>? cachedAccounts) && cachedAccounts is not null)
         {
             _logger.LogInformation("Returning cached QuickBooks accounts for company {CompanyId}", companyId);
             return cachedAccounts;
