@@ -1,11 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using Caskr.Server.Events;
 using Caskr.server.Models;
 using Caskr.server.Repos;
 using Caskr.server.Services;
-using UserTypeEnum = Caskr.server.UserType;
+using MediatR;
 using Moq;
-using System.Linq;
-using System;
-using System.Collections.Generic;
+using UserTypeEnum = Caskr.server.UserType;
 
 namespace Caskr.Server.Tests;
 
@@ -14,12 +17,13 @@ public class OrdersServiceTests
     private readonly Mock<IOrdersRepository> _repo = new();
     private readonly Mock<IUsersRepository> _usersRepo = new();
     private readonly Mock<IEmailService> _email = new();
+    private readonly Mock<IMediator> _mediator = new();
     private readonly IOrdersService _service;
 
     public OrdersServiceTests()
     {
         _repo.Setup(r => r.AddTasksForStatusAsync(It.IsAny<int>(), It.IsAny<int>())).Returns(Task.CompletedTask);
-        _service = new OrdersService(_repo.Object, _usersRepo.Object, _email.Object);
+        _service = new OrdersService(_repo.Object, _usersRepo.Object, _email.Object, _mediator.Object);
     }
 
     [Fact]
@@ -93,6 +97,67 @@ public class OrdersServiceTests
         Assert.Equal(order, result);
         _repo.Verify(r => r.AddTasksForStatusAsync(order.Id, order.StatusId), Times.Once);
         _email.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateOrderAsync_StatusTransitionsToCompleted_PublishesEvent()
+    {
+        var existing = new Order
+        {
+            Id = 9,
+            OwnerId = 1,
+            CompanyId = 5,
+            StatusId = 4,
+            SpiritTypeId = 1,
+            Status = new Status { Id = 4, Name = "In Progress" }
+        };
+        var updated = new Order
+        {
+            Id = 9,
+            OwnerId = 1,
+            CompanyId = 5,
+            StatusId = 6,
+            SpiritTypeId = 1,
+            InvoiceId = 100,
+            Status = new Status { Id = 6, Name = "Completed" }
+        };
+        _repo.Setup(r => r.GetOrderAsync(updated.Id)).ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateOrderAsync(updated)).ReturnsAsync(updated);
+
+        await _service.UpdateOrderAsync(updated);
+
+        _mediator.Verify(m => m.Publish(
+            It.Is<OrderCompletedEvent>(evt => evt.OrderId == updated.Id && evt.CompanyId == updated.CompanyId && evt.InvoiceId == updated.InvoiceId),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateOrderAsync_CompletedWithoutInvoice_DoesNotPublishEvent()
+    {
+        var existing = new Order
+        {
+            Id = 11,
+            OwnerId = 1,
+            CompanyId = 7,
+            StatusId = 4,
+            SpiritTypeId = 1,
+            Status = new Status { Id = 4, Name = "In Progress" }
+        };
+        var updated = new Order
+        {
+            Id = 11,
+            OwnerId = 1,
+            CompanyId = 7,
+            StatusId = 6,
+            SpiritTypeId = 1,
+            Status = new Status { Id = 6, Name = "Completed" }
+        };
+        _repo.Setup(r => r.GetOrderAsync(updated.Id)).ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateOrderAsync(updated)).ReturnsAsync(updated);
+
+        await _service.UpdateOrderAsync(updated);
+
+        _mediator.Verify(m => m.Publish(It.IsAny<OrderCompletedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

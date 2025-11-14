@@ -24,6 +24,8 @@ public partial class Order
 
     public int Quantity { get; set; }
 
+    public int? InvoiceId { get; set; }
+
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public int MashBillId { get; set; }
 
@@ -34,6 +36,8 @@ public partial class Order
     public virtual Status Status { get; set; } = null!;
 
     public virtual SpiritType SpiritType { get; set; } = null!;
+
+    public virtual Invoice? Invoice { get; set; }
 
     public virtual ICollection<OrderTask> Tasks { get; set; } = new List<OrderTask>();
 

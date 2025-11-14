@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
+using System.Threading;
 using Caskr.server.Models;
 using Caskr.server.Repos;
 using Caskr.server;
+using Caskr.Server.Events;
+using MediatR;
 
 namespace Caskr.server.Services
 {
@@ -17,7 +20,11 @@ namespace Caskr.server.Services
         Task<IEnumerable<StatusTask>?> GetOutstandingTasksAsync(int orderId);
     }
 
-    public class OrdersService(IOrdersRepository ordersRepository, IUsersRepository usersRepository, IEmailService emailService) : IOrdersService
+    public class OrdersService(
+        IOrdersRepository ordersRepository,
+        IUsersRepository usersRepository,
+        IEmailService emailService,
+        IMediator mediator) : IOrdersService
     {
         public async Task<IEnumerable<Order>> GetOrdersAsync()
         {
@@ -95,6 +102,18 @@ namespace Caskr.server.Services
                     await emailService.SendEmailAsync(user.Email, "Order requires TTB approval", $"Order '{updated.Name}' has moved to TTB Approval.");
                 }
             }
+
+            if (!IsCompletedStatus(existing) && IsCompletedStatus(updated) && updated.InvoiceId.HasValue)
+            {
+                var companyId = updated.CompanyId != 0
+                    ? updated.CompanyId
+                    : existing?.CompanyId ?? 0;
+
+                if (companyId != 0)
+                {
+                    await mediator.Publish(new OrderCompletedEvent(updated.Id, companyId, updated.InvoiceId), CancellationToken.None);
+                }
+            }
             return updated;
         }
 
@@ -102,5 +121,14 @@ namespace Caskr.server.Services
         {
             await ordersRepository.DeleteOrderAsync(id);
         }   
+        private static bool IsCompletedStatus(Order? order)
+        {
+            if (order?.Status?.Name == null)
+            {
+                return false;
+            }
+
+            return order.Status.Name.Contains("complete", StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
