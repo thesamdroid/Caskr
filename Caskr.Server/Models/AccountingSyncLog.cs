@@ -17,10 +17,15 @@ public class AccountingSyncLog
     [MaxLength(256)]
     public string? EntityId { get; set; }
 
+    [MaxLength(256)]
+    public string? ExternalEntityId { get; set; }
+
     [Required]
     public SyncStatus SyncStatus { get; set; }
 
     public string? ErrorMessage { get; set; }
+
+    public int RetryCount { get; set; }
 
     [Required]
     public DateTime SyncedAt { get; set; }

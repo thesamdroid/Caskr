@@ -21,4 +21,6 @@ public partial class Company
     public virtual ICollection<AccountingSyncLog> AccountingSyncLogs { get; set; } = new List<AccountingSyncLog>();
 
     public virtual ICollection<ChartOfAccountsMapping> ChartOfAccountsMappings { get; set; } = new List<ChartOfAccountsMapping>();
+
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }
