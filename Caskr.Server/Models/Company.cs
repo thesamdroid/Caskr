@@ -15,4 +15,10 @@ public partial class Company
     public virtual ICollection<Rickhouse> Rickhouses { get; set; } = new List<Rickhouse>();
 
     public virtual ICollection<Barrel> Barrels { get; set; } = new List<Barrel>();
+
+    public virtual ICollection<AccountingIntegration> AccountingIntegrations { get; set; } = new List<AccountingIntegration>();
+
+    public virtual ICollection<AccountingSyncLog> AccountingSyncLogs { get; set; } = new List<AccountingSyncLog>();
+
+    public virtual ICollection<ChartOfAccountsMapping> ChartOfAccountsMappings { get; set; } = new List<ChartOfAccountsMapping>();
 }

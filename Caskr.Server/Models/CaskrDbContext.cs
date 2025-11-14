@@ -41,6 +41,12 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<Barrel> Barrels { get; set; } = null!;
 
+    public virtual DbSet<AccountingIntegration> AccountingIntegrations { get; set; } = null!;
+
+    public virtual DbSet<AccountingSyncLog> AccountingSyncLogs { get; set; } = null!;
+
+    public virtual DbSet<ChartOfAccountsMapping> ChartOfAccountsMappings { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -363,6 +369,100 @@ public partial class CaskrDbContext : DbContext
             entity.HasOne(d => d.Batch).WithMany()
                 .HasForeignKey(d => new { d.BatchId, d.CompanyId })
                 .HasConstraintName("fk_barrel_batch");
+        });
+
+        modelBuilder.Entity<AccountingIntegration>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("accounting_integrations_pkey");
+
+            entity.ToTable("accounting_integrations");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_accounting_integrations_company_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Provider)
+                .HasConversion<string>()
+                .HasColumnName("provider");
+            entity.Property(e => e.AccessTokenEncrypted).HasColumnName("access_token_encrypted");
+            entity.Property(e => e.RefreshTokenEncrypted).HasColumnName("refresh_token_encrypted");
+            entity.Property(e => e.RealmId).HasColumnName("realm_id");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company).WithMany(p => p.AccountingIntegrations)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_accounting_integrations_company");
+        });
+
+        modelBuilder.Entity<AccountingSyncLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("accounting_sync_logs_pkey");
+
+            entity.ToTable("accounting_sync_logs");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_accounting_sync_logs_company_id");
+            entity.HasIndex(e => e.SyncStatus).HasDatabaseName("idx_accounting_sync_logs_sync_status");
+            entity.HasIndex(e => e.SyncedAt).HasDatabaseName("idx_accounting_sync_logs_synced_at");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.EntityType).HasColumnName("entity_type");
+            entity.Property(e => e.EntityId).HasColumnName("entity_id");
+            entity.Property(e => e.SyncStatus)
+                .HasConversion<string>()
+                .HasColumnName("sync_status");
+            entity.Property(e => e.ErrorMessage).HasColumnName("error_message");
+            entity.Property(e => e.SyncedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("synced_at");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company).WithMany(p => p.AccountingSyncLogs)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_accounting_sync_logs_company");
+        });
+
+        modelBuilder.Entity<ChartOfAccountsMapping>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("chart_of_accounts_mapping_pkey");
+
+            entity.ToTable("chart_of_accounts_mapping");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_chart_of_accounts_mapping_company_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.CaskrAccountType)
+                .HasConversion<string>()
+                .HasColumnName("caskr_account_type");
+            entity.Property(e => e.QboAccountId).HasColumnName("qbo_account_id");
+            entity.Property(e => e.QboAccountName).HasColumnName("qbo_account_name");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company).WithMany(p => p.ChartOfAccountsMappings)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_chart_of_accounts_mapping_company");
         });
 
         OnModelCreatingPartial(modelBuilder);
