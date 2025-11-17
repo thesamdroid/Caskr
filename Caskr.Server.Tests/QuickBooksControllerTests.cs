@@ -336,6 +336,55 @@ public class QuickBooksControllerTests : IDisposable
         _invoiceSyncService.Verify(s => s.SyncInvoiceToQBOAsync(invoice.Id), Times.Once);
     }
 
+    [Fact]
+    public async Task SyncInvoice_WhenRecentInProgressLogExists_ReturnsConflict()
+    {
+        var user = new User { Id = 712, CompanyId = 47, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+
+        var invoice = new Invoice
+        {
+            Id = 902,
+            CompanyId = user.CompanyId,
+            InvoiceNumber = "INV-902",
+            CustomerName = "Test",
+            CurrencyCode = "USD",
+            InvoiceDate = DateTime.UtcNow,
+            SubtotalAmount = 0,
+            TotalAmount = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _context!.Invoices.Add(invoice);
+        _context.AccountingIntegrations.Add(new AccountingIntegration
+        {
+            CompanyId = user.CompanyId,
+            Provider = AccountingProvider.QuickBooks,
+            RealmId = "realm",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.AccountingSyncLogs.Add(new AccountingSyncLog
+        {
+            CompanyId = user.CompanyId,
+            EntityType = "Invoice",
+            EntityId = invoice.Id.ToString(),
+            SyncStatus = SyncStatus.InProgress,
+            SyncedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        var result = await controller.SyncInvoice(new QuickBooksInvoiceSyncRequest { InvoiceId = invoice.Id });
+
+        var conflict = Assert.IsType<ConflictObjectResult>(result.Result);
+        var payload = Assert.IsType<QuickBooksErrorResponse>(conflict.Value);
+        Assert.Equal("Sync already in progress", payload.Message);
+        _invoiceSyncService.Verify(s => s.SyncInvoiceToQBOAsync(It.IsAny<int>()), Times.Never);
+    }
+
     private QuickBooksController CreateController(User user)
     {
         _context = new CaskrDbContext(new DbContextOptionsBuilder<CaskrDbContext>()
