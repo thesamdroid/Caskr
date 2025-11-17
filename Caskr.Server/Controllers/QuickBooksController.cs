@@ -496,18 +496,20 @@ public class QuickBooksController(
                 new QuickBooksErrorResponse("Too many QuickBooks sync requests. Please wait a moment and try again."));
         }
 
+        var now = DateTime.UtcNow;
+        var inProgressCutoff = now - InProgressWindow;
         var recentInProgress = await _dbContext.AccountingSyncLogs
             .AsNoTracking()
             .Where(log => log.CompanyId == invoice.CompanyId
                           && log.EntityType == InvoiceEntityType
                           && log.EntityId == invoice.Id.ToString(CultureInfo.InvariantCulture)
                           && log.SyncStatus == SyncStatus.InProgress
-                          && log.UpdatedAt >= DateTime.UtcNow - InProgressWindow)
+                          && log.SyncedAt >= inProgressCutoff)
             .FirstOrDefaultAsync();
 
         if (recentInProgress is not null)
         {
-            return Conflict(new QuickBooksErrorResponse("Sync already in progress."));
+            return Conflict(new QuickBooksErrorResponse("Sync already in progress"));
         }
 
         try
