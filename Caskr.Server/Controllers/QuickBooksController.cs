@@ -8,11 +8,12 @@ using Caskr.Server.Services;
 using Caskr.server;
 using Caskr.server.Models;
 using Caskr.server.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -29,15 +30,25 @@ public class QuickBooksController(
     IQuickBooksDataService quickBooksDataService,
     CaskrDbContext dbContext,
     ILogger<QuickBooksController> logger,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    IMemoryCache memoryCache,
+    IQuickBooksInvoiceSyncService quickBooksInvoiceSyncService)
     : AuthorizedApiControllerBase
 {
+    private const string InvoiceEntityType = "Invoice";
+    private const string RateLimitCacheKeyPrefix = "quickbooks:sync-rate:";
+    private const int RateLimitRequestsPerWindow = 10;
+    private static readonly TimeSpan RateLimitWindow = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan InProgressWindow = TimeSpan.FromMinutes(5);
+
     private readonly IQuickBooksAuthService _quickBooksAuthService = quickBooksAuthService;
     private readonly IUsersService _usersService = usersService;
     private readonly IQuickBooksDataService _quickBooksDataService = quickBooksDataService;
     private readonly CaskrDbContext _dbContext = dbContext;
     private readonly ILogger<QuickBooksController> _logger = logger;
     private readonly IConfiguration _configuration = configuration;
+    private readonly IMemoryCache _memoryCache = memoryCache;
+    private readonly IQuickBooksInvoiceSyncService _invoiceSyncService = quickBooksInvoiceSyncService;
 
     /// <summary>
     ///     Initiates the QuickBooks OAuth flow by returning the authorization URL for the specified company.
@@ -193,6 +204,60 @@ public class QuickBooksController(
         {
             _logger.LogError(ex, "Failed to load QuickBooks status for company {CompanyId}", companyId);
             return StatusCode(StatusCodes.Status500InternalServerError, new QuickBooksErrorResponse("Unable to load QuickBooks status."));
+        }
+    }
+
+    /// <summary>
+    ///     Returns the most recent sync status for an invoice.
+    /// </summary>
+    /// <param name="invoiceId">The invoice identifier.</param>
+    [HttpGet("invoice-status")]
+    [ProducesResponseType(typeof(QuickBooksInvoiceSyncStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<QuickBooksInvoiceSyncStatusResponse>> GetInvoiceSyncStatus([FromQuery(Name = "invoiceId")] int? invoiceId)
+    {
+        if (invoiceId is null || invoiceId <= 0)
+        {
+            return BadRequest(new QuickBooksErrorResponse("A valid invoiceId query parameter is required."));
+        }
+
+        var authorizationResult = await AuthorizeInvoiceAsync(invoiceId.Value);
+        if (authorizationResult.errorResult is { } error)
+        {
+            return ConvertToActionResult<QuickBooksInvoiceSyncStatusResponse>(error);
+        }
+
+        try
+        {
+            var latestLog = await _dbContext.AccountingSyncLogs
+                .AsNoTracking()
+                .Where(log => log.CompanyId == authorizationResult.invoice!.CompanyId
+                              && log.EntityType == InvoiceEntityType
+                              && log.EntityId == invoiceId.Value.ToString(CultureInfo.InvariantCulture))
+                .OrderByDescending(log => log.UpdatedAt)
+                .FirstOrDefaultAsync();
+
+            var response = latestLog is null
+                ? new QuickBooksInvoiceSyncStatusResponse(invoiceId.Value, null, null, null, null)
+                : new QuickBooksInvoiceSyncStatusResponse(
+                    invoiceId.Value,
+                    latestLog.SyncStatus,
+                    latestLog.ExternalEntityId,
+                    latestLog.ErrorMessage,
+                    latestLog.SyncedAt);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load QuickBooks sync status for invoice {InvoiceId}", invoiceId.Value);
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new QuickBooksErrorResponse("Unable to load QuickBooks sync status."));
         }
     }
 
@@ -391,6 +456,98 @@ public class QuickBooksController(
         return Ok(response);
     }
 
+    /// <summary>
+    ///     Manually synchronizes a specific invoice with QuickBooks Online.
+    /// </summary>
+    /// <param name="request">The invoice sync payload.</param>
+    [HttpPost("sync-invoice")]
+    [ProducesResponseType(typeof(QuickBooksInvoiceSyncResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(QuickBooksInvoiceSyncResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<QuickBooksInvoiceSyncResponse>> SyncInvoice([FromBody] QuickBooksInvoiceSyncRequest? request)
+    {
+        if (request is null)
+        {
+            return BadRequest(new QuickBooksErrorResponse("Request body is required."));
+        }
+
+        var authorizationResult = await AuthorizeInvoiceAsync(request.InvoiceId);
+        if (authorizationResult.errorResult is { } error)
+        {
+            return ConvertToActionResult<QuickBooksInvoiceSyncResponse>(error);
+        }
+
+        var invoice = authorizationResult.invoice!;
+        var hasIntegration = await CompanyHasQuickBooksIntegrationAsync(invoice.CompanyId);
+        if (!hasIntegration)
+        {
+            return BadRequest(new QuickBooksErrorResponse("QuickBooks is not connected for this company."));
+        }
+
+        if (IsRateLimited(invoice.CompanyId))
+        {
+            return StatusCode(
+                StatusCodes.Status429TooManyRequests,
+                new QuickBooksErrorResponse("Too many QuickBooks sync requests. Please wait a moment and try again."));
+        }
+
+        var recentInProgress = await _dbContext.AccountingSyncLogs
+            .AsNoTracking()
+            .Where(log => log.CompanyId == invoice.CompanyId
+                          && log.EntityType == InvoiceEntityType
+                          && log.EntityId == invoice.Id.ToString(CultureInfo.InvariantCulture)
+                          && log.SyncStatus == SyncStatus.InProgress
+                          && log.UpdatedAt >= DateTime.UtcNow - InProgressWindow)
+            .FirstOrDefaultAsync();
+
+        if (recentInProgress is not null)
+        {
+            return Conflict(new QuickBooksErrorResponse("Sync already in progress."));
+        }
+
+        try
+        {
+            var result = await _invoiceSyncService.SyncInvoiceToQBOAsync(invoice.Id);
+            if (result.Success)
+            {
+                var successResponse = new QuickBooksInvoiceSyncResponse(
+                    invoice.Id,
+                    true,
+                    result.QboInvoiceId,
+                    null,
+                    SyncStatus.Success,
+                    DateTime.UtcNow);
+                return Ok(successResponse);
+            }
+
+            var failureResponse = new QuickBooksInvoiceSyncResponse(
+                invoice.Id,
+                false,
+                result.QboInvoiceId,
+                result.ErrorMessage ?? "QuickBooks sync failed.",
+                SyncStatus.Failed,
+                DateTime.UtcNow);
+            return StatusCode(StatusCodes.Status500InternalServerError, failureResponse);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "QuickBooks invoice sync failed for invoice {InvoiceId}", invoice.Id);
+            var errorResponse = new QuickBooksInvoiceSyncResponse(
+                invoice.Id,
+                false,
+                null,
+                "QuickBooks sync failed.",
+                SyncStatus.Failed,
+                DateTime.UtcNow);
+            return StatusCode(StatusCodes.Status500InternalServerError, errorResponse);
+        }
+    }
+
     private async Task<(User? user, IActionResult? errorResult)> AuthorizeCompanyAsync(int companyId)
     {
         if (companyId <= 0)
@@ -493,6 +650,65 @@ public class QuickBooksController(
             CaskrAccountType.Overhead => "Overhead",
             _ => accountType.ToString()
         };
+    }
+
+    private async Task<(Invoice? invoice, IActionResult? errorResult)> AuthorizeInvoiceAsync(int invoiceId)
+    {
+        if (invoiceId <= 0)
+        {
+            return (null, BadRequest(new QuickBooksErrorResponse("A valid invoiceId is required.")));
+        }
+
+        var invoice = await _dbContext.Invoices
+            .AsNoTracking()
+            .SingleOrDefaultAsync(i => i.Id == invoiceId);
+
+        if (invoice is null)
+        {
+            return (null, NotFound(new QuickBooksErrorResponse($"Invoice {invoiceId} was not found.")));
+        }
+
+        var authorizationResult = await AuthorizeCompanyAsync(invoice.CompanyId);
+        if (authorizationResult.errorResult is { } error)
+        {
+            return (null, error);
+        }
+
+        return (invoice, null);
+    }
+
+    private async Task<bool> CompanyHasQuickBooksIntegrationAsync(int companyId)
+    {
+        return await _dbContext.AccountingIntegrations
+            .AsNoTracking()
+            .AnyAsync(ai => ai.CompanyId == companyId && ai.Provider == AccountingProvider.QuickBooks && ai.IsActive);
+    }
+
+    private bool IsRateLimited(int companyId)
+    {
+        var cacheKey = $"{RateLimitCacheKeyPrefix}{companyId}";
+        var now = DateTime.UtcNow;
+        var windowStart = now - RateLimitWindow;
+
+        var timestamps = _memoryCache.GetOrCreate(cacheKey, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = RateLimitWindow;
+            return new List<DateTime>();
+        })!;
+
+        timestamps.RemoveAll(timestamp => timestamp < windowStart);
+        if (timestamps.Count >= RateLimitRequestsPerWindow)
+        {
+            return true;
+        }
+
+        timestamps.Add(now);
+        _memoryCache.Set(cacheKey, timestamps, new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = RateLimitWindow
+        });
+
+        return false;
     }
 }
 
@@ -681,3 +897,36 @@ public sealed record QuickBooksAccountMappingResponse(
     [property: JsonPropertyName("caskrAccountType")] string CaskrAccountType,
     [property: JsonPropertyName("qboAccountId")] string QboAccountId,
     [property: JsonPropertyName("qboAccountName")] string? QboAccountName);
+
+/// <summary>
+///     Represents the QuickBooks sync status for a specific invoice.
+/// </summary>
+public sealed record QuickBooksInvoiceSyncStatusResponse(
+    [property: JsonPropertyName("invoiceId")] int InvoiceId,
+    [property: JsonPropertyName("status")] SyncStatus? Status,
+    [property: JsonPropertyName("qboInvoiceId")] string? QboInvoiceId,
+    [property: JsonPropertyName("errorMessage")] string? ErrorMessage,
+    [property: JsonPropertyName("lastSyncedAt")] DateTime? LastSyncedAt);
+
+/// <summary>
+///     Request payload describing which invoice should be synchronized with QuickBooks.
+/// </summary>
+public sealed class QuickBooksInvoiceSyncRequest
+{
+    /// <summary>
+    ///     Gets or sets the invoice identifier to sync.
+    /// </summary>
+    [JsonPropertyName("invoiceId")]
+    public int InvoiceId { get; set; }
+}
+
+/// <summary>
+///     Response payload returned after attempting to sync an invoice with QuickBooks.
+/// </summary>
+public sealed record QuickBooksInvoiceSyncResponse(
+    [property: JsonPropertyName("invoiceId")] int InvoiceId,
+    [property: JsonPropertyName("success")] bool Success,
+    [property: JsonPropertyName("qboInvoiceId")] string? QboInvoiceId,
+    [property: JsonPropertyName("errorMessage")] string? ErrorMessage,
+    [property: JsonPropertyName("status")] SyncStatus? Status,
+    [property: JsonPropertyName("lastSyncedAt")] DateTime? LastSyncedAt);

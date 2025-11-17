@@ -11,6 +11,7 @@ using Caskr.Server.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -23,7 +24,9 @@ public class QuickBooksControllerTests : IDisposable
     private readonly Mock<IQuickBooksAuthService> _authService = new();
     private readonly Mock<IUsersService> _usersService = new();
     private readonly Mock<IQuickBooksDataService> _quickBooksDataService = new();
+    private readonly Mock<IQuickBooksInvoiceSyncService> _invoiceSyncService = new();
     private readonly IConfiguration _configuration;
+    private IMemoryCache? _memoryCache;
     private CaskrDbContext? _context;
 
     public QuickBooksControllerTests()
@@ -247,11 +250,99 @@ public class QuickBooksControllerTests : IDisposable
         _quickBooksDataService.Verify(s => s.GetChartOfAccountsAsync(It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
     }
 
+    [Fact]
+    public async Task GetInvoiceSyncStatus_WithExistingLog_ReturnsLatestEntry()
+    {
+        var user = new User { Id = 710, CompanyId = 45, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+
+        var invoice = new Invoice
+        {
+            Id = 900,
+            CompanyId = user.CompanyId,
+            InvoiceNumber = "INV-900",
+            CustomerName = "Test",
+            CurrencyCode = "USD",
+            InvoiceDate = DateTime.UtcNow,
+            SubtotalAmount = 0,
+            TotalAmount = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _context!.Invoices.Add(invoice);
+        _context.AccountingSyncLogs.Add(new AccountingSyncLog
+        {
+            CompanyId = user.CompanyId,
+            EntityType = "Invoice",
+            EntityId = invoice.Id.ToString(),
+            SyncStatus = SyncStatus.Success,
+            ExternalEntityId = "QB-900",
+            SyncedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        var result = await controller.GetInvoiceSyncStatus(invoice.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var payload = Assert.IsType<QuickBooksInvoiceSyncStatusResponse>(ok.Value);
+        Assert.Equal(invoice.Id, payload.InvoiceId);
+        Assert.Equal(SyncStatus.Success, payload.Status);
+        Assert.Equal("QB-900", payload.QboInvoiceId);
+    }
+
+    [Fact]
+    public async Task SyncInvoice_WithActiveIntegration_ReturnsSuccessResponse()
+    {
+        var user = new User { Id = 711, CompanyId = 46, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+
+        var invoice = new Invoice
+        {
+            Id = 901,
+            CompanyId = user.CompanyId,
+            InvoiceNumber = "INV-901",
+            CustomerName = "Test",
+            CurrencyCode = "USD",
+            InvoiceDate = DateTime.UtcNow,
+            SubtotalAmount = 0,
+            TotalAmount = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _context!.Invoices.Add(invoice);
+        _context.AccountingIntegrations.Add(new AccountingIntegration
+        {
+            CompanyId = user.CompanyId,
+            Provider = AccountingProvider.QuickBooks,
+            RealmId = "realm",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        _invoiceSyncService
+            .Setup(s => s.SyncInvoiceToQBOAsync(invoice.Id))
+            .ReturnsAsync(new InvoiceSyncResult(true, "QB-901", null));
+
+        var result = await controller.SyncInvoice(new QuickBooksInvoiceSyncRequest { InvoiceId = invoice.Id });
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var payload = Assert.IsType<QuickBooksInvoiceSyncResponse>(ok.Value);
+        Assert.True(payload.Success);
+        Assert.Equal("QB-901", payload.QboInvoiceId);
+        _invoiceSyncService.Verify(s => s.SyncInvoiceToQBOAsync(invoice.Id), Times.Once);
+    }
+
     private QuickBooksController CreateController(User user)
     {
         _context = new CaskrDbContext(new DbContextOptionsBuilder<CaskrDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
+
+        _memoryCache = new MemoryCache(new MemoryCacheOptions());
 
         var controller = new QuickBooksController(
             _authService.Object,
@@ -259,7 +350,9 @@ public class QuickBooksControllerTests : IDisposable
             _quickBooksDataService.Object,
             _context,
             NullLogger<QuickBooksController>.Instance,
-            _configuration);
+            _configuration,
+            _memoryCache,
+            _invoiceSyncService.Object);
 
         var httpContext = new DefaultHttpContext
         {
@@ -283,5 +376,6 @@ public class QuickBooksControllerTests : IDisposable
     public void Dispose()
     {
         _context?.Dispose();
+        _memoryCache?.Dispose();
     }
 }

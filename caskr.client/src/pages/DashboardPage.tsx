@@ -4,20 +4,10 @@ import {
   fetchOrders,
   fetchOutstandingTasks,
   assignTask,
-  completeTask,
-  type Order
+  completeTask
 } from '../features/ordersSlice';
 import { fetchStatuses } from '../features/statusSlice';
 import { fetchUsers } from '../features/usersSlice';
-
-interface Task {
-  id: number;
-  name: string;
-  orderId: number;
-  assigneeId: number | null;
-  isComplete: boolean;
-  dueDate?: string;
-}
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
