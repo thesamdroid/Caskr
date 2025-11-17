@@ -20,6 +20,20 @@ export interface QuickBooksAccountMapping {
   qboAccountName: string
 }
 
+export type QuickBooksSyncStatus = 'Pending' | 'InProgress' | 'Success' | 'Failed'
+
+export interface QuickBooksInvoiceSyncStatus {
+  invoiceId: number
+  status: QuickBooksSyncStatus | null
+  qboInvoiceId?: string | null
+  errorMessage?: string | null
+  lastSyncedAt?: string | null
+}
+
+export interface QuickBooksInvoiceSyncResponse extends QuickBooksInvoiceSyncStatus {
+  success: boolean
+}
+
 export interface SaveMappingsPayload {
   companyId: number
   mappings: QuickBooksAccountMapping[]
@@ -120,8 +134,48 @@ export const saveAccountMappings = createAsyncThunk(
   }
 )
 
+export const fetchInvoiceSyncStatus = createAsyncThunk(
+  'accounting/fetchInvoiceSyncStatus',
+  async (invoiceId: number) => {
+    const response = await authorizedFetch(`api/accounting/quickbooks/invoice-status?invoiceId=${invoiceId}`)
+    if (!response.ok) {
+      throw new Error('Failed to load invoice sync status')
+    }
+
+    const payload = (await response.json()) as QuickBooksInvoiceSyncStatus
+    return payload
+  }
+)
+
+export const syncInvoice = createAsyncThunk(
+  'accounting/syncInvoice',
+  async (invoiceId: number, { rejectWithValue }) => {
+    const response = await authorizedFetch('api/accounting/quickbooks/sync-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invoiceId })
+    })
+
+    const payload = (await response.json().catch(() => ({}))) as Partial<QuickBooksInvoiceSyncResponse> & { message?: string }
+    if (!response.ok) {
+      const message = payload?.message ?? payload?.errorMessage ?? 'Failed to sync invoice'
+      return rejectWithValue(message)
+    }
+
+    return {
+      invoiceId,
+      success: payload.success ?? true,
+      status: payload.status ?? 'Success',
+      qboInvoiceId: payload.qboInvoiceId ?? null,
+      errorMessage: payload.errorMessage ?? null,
+      lastSyncedAt: payload.lastSyncedAt ?? new Date().toISOString()
+    } satisfies QuickBooksInvoiceSyncResponse
+  }
+)
+
 interface AccountingState {
   status: QuickBooksConnectionStatus | null
+  statusCompanyId: number | null
   statusLoading: boolean
   accounts: QuickBooksAccount[]
   accountsLoading: boolean
@@ -131,10 +185,15 @@ interface AccountingState {
   connecting: boolean
   disconnecting: boolean
   error: string | null
+  invoiceStatuses: Record<number, QuickBooksInvoiceSyncStatus>
+  invoiceStatusLoading: Record<number, boolean>
+  invoiceSyncing: Record<number, boolean>
+  invoiceSyncErrors: Record<number, string | null>
 }
 
 const initialState: AccountingState = {
   status: null,
+  statusCompanyId: null,
   statusLoading: false,
   accounts: [],
   accountsLoading: false,
@@ -143,7 +202,11 @@ const initialState: AccountingState = {
   savingMappings: false,
   connecting: false,
   disconnecting: false,
-  error: null
+  error: null,
+  invoiceStatuses: {},
+  invoiceStatusLoading: {},
+  invoiceSyncing: {},
+  invoiceSyncErrors: {}
 }
 
 const accountingSlice = createSlice({
@@ -159,14 +222,17 @@ const accountingSlice = createSlice({
       .addCase(fetchQuickBooksStatus.pending, state => {
         state.statusLoading = true
         state.error = null
+        state.statusCompanyId = null
       })
       .addCase(fetchQuickBooksStatus.fulfilled, (state, action) => {
         state.status = action.payload
         state.statusLoading = false
+        state.statusCompanyId = action.meta.arg
       })
       .addCase(fetchQuickBooksStatus.rejected, (state, action) => {
         state.statusLoading = false
         state.status = null
+        state.statusCompanyId = null
         state.error = action.error.message ?? 'Unable to load QuickBooks status'
       })
 
@@ -191,6 +257,7 @@ const accountingSlice = createSlice({
       .addCase(disconnectQuickBooks.fulfilled, state => {
         state.disconnecting = false
         state.status = { connected: false }
+        state.statusCompanyId = null
         state.mappings = []
       })
       .addCase(disconnectQuickBooks.rejected, (state, action) => {
@@ -240,6 +307,50 @@ const accountingSlice = createSlice({
       .addCase(saveAccountMappings.rejected, (state, action) => {
         state.savingMappings = false
         state.error = action.error.message ?? 'Unable to save mappings'
+      })
+
+    builder
+      .addCase(fetchInvoiceSyncStatus.pending, (state, action) => {
+        const invoiceId = action.meta.arg
+        state.invoiceStatusLoading[invoiceId] = true
+        state.error = null
+      })
+      .addCase(fetchInvoiceSyncStatus.fulfilled, (state, action) => {
+        const invoiceId = action.payload.invoiceId
+        state.invoiceStatuses[invoiceId] = action.payload
+        state.invoiceStatusLoading[invoiceId] = false
+      })
+      .addCase(fetchInvoiceSyncStatus.rejected, (state, action) => {
+        const invoiceId = action.meta.arg
+        state.invoiceStatusLoading[invoiceId] = false
+        state.error = action.error.message ?? 'Unable to load invoice sync status'
+      })
+
+    builder
+      .addCase(syncInvoice.pending, (state, action) => {
+        const invoiceId = action.meta.arg
+        state.invoiceSyncing[invoiceId] = true
+        state.invoiceSyncErrors[invoiceId] = null
+        state.error = null
+      })
+      .addCase(syncInvoice.fulfilled, (state, action) => {
+        const invoiceId = action.payload.invoiceId
+        state.invoiceSyncing[invoiceId] = false
+        state.invoiceStatuses[invoiceId] = {
+          invoiceId,
+          status: action.payload.status ?? (action.payload.success ? 'Success' : null),
+          qboInvoiceId: action.payload.qboInvoiceId ?? null,
+          errorMessage: action.payload.errorMessage ?? null,
+          lastSyncedAt: action.payload.lastSyncedAt
+        }
+        state.invoiceSyncErrors[invoiceId] = null
+      })
+      .addCase(syncInvoice.rejected, (state, action) => {
+        const invoiceId = action.meta.arg
+        state.invoiceSyncing[invoiceId] = false
+        const message = (action.payload as string) ?? action.error.message ?? 'Unable to sync invoice'
+        state.invoiceSyncErrors[invoiceId] = message
+        state.error = message
       })
   }
 })

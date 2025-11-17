@@ -101,3 +101,69 @@
 .modal-form select {
   margin-top: 4px;
 }
+
+.quickbooks-sync-section {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.quickbooks-sync-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sync-status-badge {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.sync-status-badge.not-synced {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.sync-status-badge.syncing {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.sync-status-badge.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.sync-status-badge.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.quickbooks-sync-details {
+  font-size: 0.9rem;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.quickbooks-sync-details a {
+  margin-left: 4px;
+  color: #2563eb;
+}
+
+.quickbooks-sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 8px;
+}
+
+.quickbooks-sync-error {
+  color: #b91c1c;
+  margin: 4px 0;
+}

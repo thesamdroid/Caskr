@@ -5,10 +5,12 @@ export interface Order {
   id: number;
   name: string;
   statusId: number;
+  companyId: number;
   ownerId: number;
   spiritTypeId: number;
   quantity: number;
   mashBillId: number;
+  invoiceId?: number | null;
 }
 
 export interface Task {
