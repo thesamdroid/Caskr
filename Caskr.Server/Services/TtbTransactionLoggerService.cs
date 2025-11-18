@@ -28,21 +28,6 @@ public class TtbTransactionLoggerService(
 {
     private const decimal GallonsPerBarrel = 53m;
 
-    private static readonly IReadOnlyDictionary<string, SpiritTypeMetadata> SpiritTypeLookups =
-        new Dictionary<string, SpiritTypeMetadata>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Bourbon"] = new(TtbSpiritsType.Under190Proof, 62.5m),
-            ["Whiskey"] = new(TtbSpiritsType.Under190Proof, 62.5m),
-            ["Rye"] = new(TtbSpiritsType.Under190Proof, 62.5m),
-            ["Gin"] = new(TtbSpiritsType.Under190Proof, 70m),
-            ["Vodka"] = new(TtbSpiritsType.Neutral190OrMore, 95m),
-            ["Neutral"] = new(TtbSpiritsType.Neutral190OrMore, 95m),
-            ["Tequila"] = new(TtbSpiritsType.Under190Proof, 80m),
-            ["Rum"] = new(TtbSpiritsType.Under190Proof, 80m),
-            ["Brandy"] = new(TtbSpiritsType.Wine, 40m),
-            ["Wine"] = new(TtbSpiritsType.Wine, 20m)
-        };
-
     public async Task LogProductionAsync(int batchId, DateTime productionDate)
     {
         logger.LogInformation("Creating production transaction for batch {BatchId}", batchId);
@@ -60,7 +45,7 @@ public class TtbTransactionLoggerService(
         }
 
         var metrics = await BuildBatchMetricsAsync(batch);
-        var proofGallons = CalculateProofGallons(metrics.VolumeGallons, metrics.Metadata.Abv);
+        var proofGallons = TtbVolumeCalculator.CalculateProofGallons(metrics.VolumeGallons, metrics.Metadata.Abv);
 
         await PersistTransactionAsync(
             batch.CompanyId,
@@ -103,7 +88,7 @@ public class TtbTransactionLoggerService(
             throw new InvalidOperationException($"Barrel {barrelId} is not associated with an order – cannot determine spirit type.");
         }
 
-        var metadata = ResolveProductMetadata(barrel.Batch, barrel.Order, barrel);
+        var metadata = TtbProductMetadataCatalog.Resolve(barrel.Batch, barrel.Order, barrel);
         var normalizedProof = Math.Round(Math.Max(0, proofGallons), 2, MidpointRounding.AwayFromZero);
         var productProof = metadata.Abv * 2m;
         var wineGallons = productProof <= 0
@@ -146,7 +131,7 @@ public class TtbTransactionLoggerService(
         }
 
         var metrics = ResolveOrderMetrics(order);
-        var proofGallons = CalculateProofGallons(metrics.VolumeGallons, metrics.Metadata.Abv);
+        var proofGallons = TtbVolumeCalculator.CalculateProofGallons(metrics.VolumeGallons, metrics.Metadata.Abv);
 
         await PersistTransactionAsync(
             order.CompanyId,
@@ -180,7 +165,7 @@ public class TtbTransactionLoggerService(
         }
 
         var metrics = ResolveOrderMetrics(order);
-        var proofGallons = CalculateProofGallons(metrics.VolumeGallons, metrics.Metadata.Abv);
+        var proofGallons = TtbVolumeCalculator.CalculateProofGallons(metrics.VolumeGallons, metrics.Metadata.Abv);
         var direction = transactionType == TtbTransactionType.TransferIn ? "received" : "sent";
 
         await PersistTransactionAsync(
@@ -194,17 +179,6 @@ public class TtbTransactionLoggerService(
             "Transfer",
             transferId,
             $"Transfer {direction} using order {order.Id}");
-    }
-
-    protected virtual decimal CalculateProofGallons(decimal volumeGallons, decimal abv)
-    {
-        if (volumeGallons <= 0 || abv <= 0)
-        {
-            return 0m;
-        }
-
-        var proof = abv * 2m;
-        return Math.Round(volumeGallons * (proof / 100m), 2, MidpointRounding.AwayFromZero);
     }
 
     private async Task<bool> TransactionExistsAsync(TtbTransactionType transactionType, string sourceEntityType, int sourceEntityId)
@@ -265,7 +239,7 @@ public class TtbTransactionLoggerService(
         }
 
         var referenceOrder = relatedOrders.FirstOrDefault(o => o.SpiritType != null) ?? relatedOrders.First();
-        var metadata = ResolveProductMetadata(batch, referenceOrder, null);
+        var metadata = TtbProductMetadataCatalog.Resolve(batch, referenceOrder, null);
 
         var totalBarrels = relatedOrders.Sum(o => (decimal)o.Quantity);
         if (totalBarrels <= 0)
@@ -279,7 +253,7 @@ public class TtbTransactionLoggerService(
 
     private OrderMetrics ResolveOrderMetrics(Order order)
     {
-        var metadata = ResolveProductMetadata(order.Batch, order, null);
+        var metadata = TtbProductMetadataCatalog.Resolve(order.Batch, order, null);
         if (order.Quantity <= 0)
         {
             throw new InvalidOperationException($"Order {order.Id} does not have a positive quantity and cannot be translated into gallons.");
@@ -288,43 +262,6 @@ public class TtbTransactionLoggerService(
         var volume = order.Quantity * GallonsPerBarrel;
         return new OrderMetrics(metadata, volume);
     }
-
-    private ProductMetadata ResolveProductMetadata(Batch? batch, Order? order, Barrel? barrel)
-    {
-        var productType = DetermineProductType(batch, order, barrel);
-        var spiritKey = order?.SpiritType?.Name ?? productType;
-        var spiritMetadata = ResolveSpiritsMetadata(spiritKey);
-        return new ProductMetadata(productType, spiritMetadata.SpiritsType, spiritMetadata.Abv);
-    }
-
-    private static string DetermineProductType(Batch? batch, Order? order, Barrel? barrel)
-    {
-        if (!string.IsNullOrWhiteSpace(order?.SpiritType?.Name))
-        {
-            return order.SpiritType!.Name;
-        }
-
-        if (!string.IsNullOrWhiteSpace(batch?.MashBill?.Name))
-        {
-            return batch.MashBill!.Name;
-        }
-
-        return barrel?.Sku ?? $"Batch {batch?.Id ?? 0}";
-    }
-
-    private static SpiritTypeMetadata ResolveSpiritsMetadata(string? spiritName)
-    {
-        if (!string.IsNullOrWhiteSpace(spiritName) && SpiritTypeLookups.TryGetValue(spiritName, out var metadata))
-        {
-            return metadata;
-        }
-
-        return new SpiritTypeMetadata(TtbSpiritsType.Under190Proof, 80m);
-    }
-
-    private sealed record SpiritTypeMetadata(TtbSpiritsType SpiritsType, decimal Abv);
-
-    private sealed record ProductMetadata(string ProductType, TtbSpiritsType SpiritsType, decimal Abv);
 
     private sealed record BatchMetrics(ProductMetadata Metadata, decimal VolumeGallons);
 

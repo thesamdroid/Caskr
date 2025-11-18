@@ -22,6 +22,10 @@ builder.Services.AddMediatR(typeof(Program));
 builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 builder.Services.AddHostedService<BackgroundWorkerService>();
 builder.Services.AddHostedService<QuickBooksSyncHostedService>();
+builder.Services.AddScoped<ITtbInventorySnapshotCalculator, TtbInventorySnapshotCalculator>();
+builder.Services.AddSingleton<TtbInventorySnapshotService>();
+builder.Services.AddSingleton<ITtbInventorySnapshotBackfillService>(sp => sp.GetRequiredService<TtbInventorySnapshotService>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<TtbInventorySnapshotService>());
 var rawSigningKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(rawSigningKey))
 {
