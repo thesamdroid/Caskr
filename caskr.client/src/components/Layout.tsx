@@ -28,6 +28,9 @@ export default function Layout() {
             <Link to='/accounting'>Accounting</Link>
           </li>
           <li className='nav-item'>
+            <Link to='/accounting/sync-history'>Sync History</Link>
+          </li>
+          <li className='nav-item'>
             <Link to='/login'>Login</Link>
           </li>
         </ul>

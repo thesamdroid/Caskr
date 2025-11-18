@@ -410,6 +410,37 @@ button:hover {
   color: var(--gray-900);
 }
 
+.button-tertiary {
+  background: transparent;
+  color: var(--primary-blue);
+  border: 1px solid transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.button-tertiary:hover {
+  color: var(--primary-blue-light);
+  background: transparent;
+}
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--primary-blue);
+  color: var(--primary-blue);
+  background: transparent;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.button-link:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
 .helper-text {
   font-size: 0.9rem;
   color: var(--gray-600);
@@ -538,4 +569,114 @@ button:hover {
 
 .toast-error {
   background: var(--secondary-orange);
+}
+
+.accounting-sync-history {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.accounting-sync-header {
+  align-items: flex-start;
+}
+
+.filter-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.filter-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.filter-panel select,
+.filter-panel input {
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+}
+
+.accounting-sync-table th,
+.accounting-sync-table td {
+  white-space: nowrap;
+}
+
+.accounting-sync-table td:nth-child(6) {
+  white-space: normal;
+  max-width: 280px;
+}
+
+.entity-link {
+  color: var(--primary-blue);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.entity-link:hover {
+  text-decoration: underline;
+}
+
+.sync-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--white);
+  text-transform: capitalize;
+}
+
+.sync-status-badge.pending {
+  background: var(--gray-600);
+}
+
+.sync-status-badge.inprogress {
+  background: #fbbf24;
+  color: #3f3f46;
+}
+
+.sync-status-badge.success {
+  background: var(--success-green);
+}
+
+.sync-status-badge.failed {
+  background: #dc2626;
+}
+
+.sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-page {
+  font-weight: 600;
+  color: var(--gray-700);
 }

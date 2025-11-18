@@ -147,3 +147,64 @@ export const stubQuickBooksAccountingData = async (
     })
   })
 }
+
+interface SyncLogStubOptions {
+  logs?: Array<Record<string, unknown>>
+  total?: number
+}
+
+export const stubQuickBooksSyncLogs = async (page: Page, options: SyncLogStubOptions = {}) => {
+  const logs =
+    options.logs ??
+    [
+      {
+        id: '1',
+        syncedAt: new Date('2024-05-05T12:00:00Z').toISOString(),
+        entityType: 'Invoice',
+        entityId: 101,
+        status: 'Failed',
+        qboId: null,
+        errorMessage: 'Customer missing in QuickBooks.'
+      },
+      {
+        id: '2',
+        syncedAt: new Date('2024-05-06T15:30:00Z').toISOString(),
+        entityType: 'Batch',
+        entityId: 45,
+        status: 'Success',
+        qboId: 'QB-67890',
+        errorMessage: null
+      }
+    ]
+
+  const total = options.total ?? logs.length
+
+  await page.route('**/api/accounting/quickbooks/sync-logs**', async route => {
+    const url = new URL(route.request().url())
+    const requestedPage = Number(url.searchParams.get('page') ?? '1')
+    const limit = Number(url.searchParams.get('limit') ?? '25')
+    const start = (requestedPage - 1) * limit
+    const pageData = logs.slice(start, start + limit)
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: pageData, total, page: requestedPage, limit })
+    })
+  })
+
+  await page.route('**/api/accounting/quickbooks/sync-invoice', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true })
+    })
+  })
+
+  await page.route('**/api/accounting/quickbooks/sync-batch', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true })
+    })
+  })
+}
