@@ -23,4 +23,10 @@ public partial class Company
     public virtual ICollection<ChartOfAccountsMapping> ChartOfAccountsMappings { get; set; } = new List<ChartOfAccountsMapping>();
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
+    public virtual ICollection<TtbMonthlyReport> TtbMonthlyReports { get; set; } = new List<TtbMonthlyReport>();
+
+    public virtual ICollection<TtbInventorySnapshot> TtbInventorySnapshots { get; set; } = new List<TtbInventorySnapshot>();
+
+    public virtual ICollection<TtbTransaction> TtbTransactions { get; set; } = new List<TtbTransaction>();
 }

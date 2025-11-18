@@ -21,6 +21,8 @@ public partial class User
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 
+    public virtual ICollection<TtbMonthlyReport> CreatedTtbMonthlyReports { get; set; } = new List<TtbMonthlyReport>();
+
     public virtual Company Company { get; set; } = null!;
 
     public virtual UserType UserType { get; set; } = null!;
