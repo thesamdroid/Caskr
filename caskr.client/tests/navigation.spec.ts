@@ -23,6 +23,7 @@ test.describe('navigation links', () => {
     { link: 'Barrels', heading: 'Barrels', path: '/barrels' },
     { link: 'Products', heading: 'Products', path: '/products' },
     { link: 'Accounting', heading: 'Accounting Settings', path: '/accounting' },
+    { link: 'Sync History', heading: 'Accounting Sync History', path: '/accounting/sync-history' },
     { link: 'Login', heading: 'Login', path: '/login' }
   ];
 
