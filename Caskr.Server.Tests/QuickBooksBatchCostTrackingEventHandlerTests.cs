@@ -45,7 +45,7 @@ public class QuickBooksBatchCostTrackingEventHandlerTests
             .ReturnsAsync(new JournalEntrySyncResult(true, "J-1", null));
         var scopeFactory = CreateScopeFactory(costService);
         var logger = Mock.Of<ILogger<QuickBooksBatchCostTrackingEventHandler>>();
-        var handler = new QuickBooksBatchCostTrackingEventHandler(context, queue.Object, scopeFactory.Object, logger);
+        var handler = new QuickBooksBatchCostTrackingEventHandler(context, queue.Object, scopeFactory, logger);
 
         await handler.Handle(new BatchCompletedEvent(55, 9), CancellationToken.None);
 
@@ -60,24 +60,19 @@ public class QuickBooksBatchCostTrackingEventHandlerTests
         var costService = new Mock<IQuickBooksCostTrackingService>();
         var scopeFactory = CreateScopeFactory(costService);
         var logger = Mock.Of<ILogger<QuickBooksBatchCostTrackingEventHandler>>();
-        var handler = new QuickBooksBatchCostTrackingEventHandler(context, queue.Object, scopeFactory.Object, logger);
+        var handler = new QuickBooksBatchCostTrackingEventHandler(context, queue.Object, scopeFactory, logger);
 
         await handler.Handle(new BatchCompletedEvent(10, 2), CancellationToken.None);
 
         queue.Verify(q => q.QueueBackgroundWorkItemAsync(It.IsAny<Func<CancellationToken, Task>>()), Times.Never);
     }
 
-    private static Mock<IServiceScopeFactory> CreateScopeFactory(Mock<IQuickBooksCostTrackingService> costService)
+    private static IServiceScopeFactory CreateScopeFactory(Mock<IQuickBooksCostTrackingService> costService)
     {
-        var provider = new Mock<IServiceProvider>();
-        provider.Setup(p => p.GetService(typeof(IQuickBooksCostTrackingService)))
-            .Returns(costService.Object);
-
-        var scope = new Mock<IAsyncServiceScope>();
-        scope.SetupGet(s => s.ServiceProvider).Returns(provider.Object);
-
-        var scopeFactory = new Mock<IServiceScopeFactory>();
-        scopeFactory.Setup(f => f.CreateAsyncScope()).Returns(scope.Object);
-        return scopeFactory;
+        var services = new ServiceCollection();
+        services.AddScoped<IQuickBooksCostTrackingService>(_ => costService.Object);
+        services.AddLogging();
+        var provider = services.BuildServiceProvider();
+        return provider.GetRequiredService<IServiceScopeFactory>();
     }
 }
