@@ -92,6 +92,43 @@ public class BatchCompletedTtbLoggingEventHandlerTests
         ttbLogger.Verify(l => l.LogProductionAsync(99, It.IsAny<DateTime>()), Times.Once);
     }
 
+    [Fact]
+    public async Task Handle_WhenLoggerDoesNotPersist_SavesChangesToContext()
+    {
+        const int companyId = 21;
+        const int batchId = 77;
+
+        await using var context = CreateContext(nameof(Handle_WhenLoggerDoesNotPersist_SavesChangesToContext));
+        context.Users.Add(new User
+        {
+            Id = 33,
+            CompanyId = companyId,
+            Email = "user@example.com",
+            Name = "Test User",
+            UserTypeId = 1
+        });
+        context.TtbMonthlyReports.Add(new TtbMonthlyReport
+        {
+            CompanyId = companyId,
+            ReportMonth = 3,
+            ReportYear = 2024,
+            Status = TtbReportStatus.Draft,
+            CreatedByUserId = 33
+        });
+        await context.SaveChangesAsync();
+
+        var ttbLogger = new NonPersistingTtbTransactionLogger(context, companyId);
+        var logger = Mock.Of<ILogger<BatchCompletedTtbLoggingEventHandler>>();
+        var handler = new BatchCompletedTtbLoggingEventHandler(context, ttbLogger, logger);
+
+        await handler.Handle(new BatchCompletedEvent(batchId, companyId), CancellationToken.None);
+
+        var transaction = await context.TtbTransactions.SingleOrDefaultAsync(t => t.SourceEntityId == batchId);
+        Assert.NotNull(transaction);
+        Assert.Equal(companyId, transaction!.CompanyId);
+        Assert.Equal(TtbTransactionType.Production, transaction.TransactionType);
+    }
+
     private static CaskrDbContext CreateContext(string databaseName)
     {
         var options = new DbContextOptionsBuilder<CaskrDbContext>()
@@ -99,5 +136,32 @@ public class BatchCompletedTtbLoggingEventHandlerTests
             .Options;
 
         return new CaskrDbContext(options);
+    }
+
+    private sealed class NonPersistingTtbTransactionLogger(CaskrDbContext context, int companyId) : ITtbTransactionLogger
+    {
+        public Task LogProductionAsync(int batchId, DateTime productionDate)
+        {
+            context.TtbTransactions.Add(new TtbTransaction
+            {
+                CompanyId = companyId,
+                TransactionDate = productionDate,
+                TransactionType = TtbTransactionType.Production,
+                ProductType = "Test Product",
+                SpiritsType = TtbSpiritsType.Under190Proof,
+                SourceEntityType = nameof(Batch),
+                SourceEntityId = batchId
+            });
+
+            return Task.CompletedTask;
+        }
+
+        public Task LogTransferInAsync(int transferId) => throw new NotSupportedException();
+
+        public Task LogTransferOutAsync(int transferId) => throw new NotSupportedException();
+
+        public Task LogLossAsync(int barrelId, decimal proofGallons, string reason) => throw new NotSupportedException();
+
+        public Task LogTaxDeterminationAsync(int orderId) => throw new NotSupportedException();
     }
 }

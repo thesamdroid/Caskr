@@ -31,6 +31,7 @@ public sealed class BatchCompletedTtbLoggingEventHandler(
         try
         {
             await ttbTransactionLogger.LogProductionAsync(notification.BatchId, DateTime.UtcNow);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
