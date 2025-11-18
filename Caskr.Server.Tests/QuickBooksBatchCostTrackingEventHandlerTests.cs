@@ -70,7 +70,8 @@ public class QuickBooksBatchCostTrackingEventHandlerTests
     private static IServiceScopeFactory CreateScopeFactory(Mock<IQuickBooksCostTrackingService> costService)
     {
         var services = new ServiceCollection();
-        services.AddSingleton(costService.Object);
+        services.AddScoped<IQuickBooksCostTrackingService>(_ => costService.Object);
+        services.AddLogging();
         var provider = services.BuildServiceProvider();
         return provider.GetRequiredService<IServiceScopeFactory>();
     }
