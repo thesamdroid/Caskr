@@ -82,7 +82,7 @@ public sealed class QuickBooksIntegrationContextFactory : IQuickBooksIntegration
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to refresh QuickBooks tokens for company {CompanyId}", companyId);
-            throw new InvalidOperationException("Unable to refresh QuickBooks tokens.", ex);
+            throw;
         }
 
         if (string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
