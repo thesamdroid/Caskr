@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS public.ttb_transactions (
     CONSTRAINT chk_ttb_transactions_spirits_type
         CHECK (spirits_type IN ('Under190Proof', 'Neutral', 'Wine')),
     CONSTRAINT chk_ttb_transactions_source_entity_type
-        CHECK (source_entity_type IS NULL OR source_entity_type IN ('Batch', 'Barrel', 'Transfer'))
+        CHECK (source_entity_type IS NULL OR source_entity_type IN ('Batch', 'Barrel', 'Transfer', 'Order'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_ttb_transactions_company_date
