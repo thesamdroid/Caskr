@@ -132,6 +132,40 @@ public class OrdersServiceTests
     }
 
     [Fact]
+    public async Task UpdateOrderAsync_StatusTransitionsToCompleted_WithBatch_PublishesBatchEvent()
+    {
+        var existing = new Order
+        {
+            Id = 21,
+            OwnerId = 2,
+            CompanyId = 3,
+            StatusId = 4,
+            SpiritTypeId = 1,
+            BatchId = 42,
+            Status = new Status { Id = 4, Name = "In Progress" }
+        };
+        var updated = new Order
+        {
+            Id = 21,
+            OwnerId = 2,
+            CompanyId = 3,
+            StatusId = 6,
+            SpiritTypeId = 1,
+            BatchId = 42,
+            Status = new Status { Id = 6, Name = "Completed" }
+        };
+        _repo.Setup(r => r.GetOrderAsync(updated.Id)).ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateOrderAsync(updated)).ReturnsAsync(updated);
+
+        await _service.UpdateOrderAsync(updated);
+
+        _mediator.Verify(m => m.Publish(
+            It.Is<BatchCompletedEvent>(evt => evt.BatchId == updated.BatchId && evt.CompanyId == updated.CompanyId),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mediator.Verify(m => m.Publish(It.IsAny<OrderCompletedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task UpdateOrderAsync_CompletedWithoutInvoice_DoesNotPublishEvent()
     {
         var existing = new Order

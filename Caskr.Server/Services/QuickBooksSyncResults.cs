@@ -59,6 +59,34 @@ public sealed record PaymentSyncResult
 }
 
 /// <summary>
+///     Represents the result of syncing a batch cost of goods sold journal entry to QuickBooks.
+/// </summary>
+public sealed record JournalEntrySyncResult
+{
+    public JournalEntrySyncResult(bool success, string? qboJournalEntryId, string? errorMessage)
+    {
+        Success = success;
+        QboJournalEntryId = qboJournalEntryId;
+        ErrorMessage = errorMessage;
+    }
+
+    /// <summary>
+    ///     Indicates whether the journal entry was recorded successfully.
+    /// </summary>
+    public bool Success { get; }
+
+    /// <summary>
+    ///     Identifier of the QuickBooks journal entry that was created, when successful.
+    /// </summary>
+    public string? QboJournalEntryId { get; }
+
+    /// <summary>
+    ///     Error description when the sync failed.
+    /// </summary>
+    public string? ErrorMessage { get; }
+}
+
+/// <summary>
 ///     Aggregates the results of a batch synchronization run, typically executed by the nightly job.
 /// </summary>
 public sealed record BatchSyncResult
