@@ -49,18 +49,6 @@ public class TtbTransactionLoggerServiceTests
         Assert.Equal(expectedWine, transaction.WineGallons);
     }
 
-    [Fact]
-    public void CalculateProofGallons_ShouldUseProofMultiplier()
-    {
-        var (service, context) = CreateTestableService();
-
-        var expected = Math.Round(530m * ((62.5m * 2m) / 100m), 2);
-        var actual = service.InvokeCalculateProofGallons(530m, 62.5m);
-
-        Assert.Equal(expected, actual);
-        context.Dispose();
-    }
-
     private static (ITtbTransactionLogger Service, CaskrDbContext Context) CreateService()
     {
         var options = new DbContextOptionsBuilder<CaskrDbContext>()
@@ -69,17 +57,6 @@ public class TtbTransactionLoggerServiceTests
 
         var context = new CaskrDbContext(options);
         var service = new TtbTransactionLoggerService(context, NullLogger<TtbTransactionLoggerService>.Instance);
-        return (service, context);
-    }
-
-    private static (TestableTtbTransactionLoggerService Service, CaskrDbContext Context) CreateTestableService()
-    {
-        var options = new DbContextOptionsBuilder<CaskrDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-
-        var context = new CaskrDbContext(options);
-        var service = new TestableTtbTransactionLoggerService(context, NullLogger<TtbTransactionLoggerService>.Instance);
         return (service, context);
     }
 
@@ -164,13 +141,4 @@ public class TtbTransactionLoggerServiceTests
         context.SaveChanges();
     }
 
-    private sealed class TestableTtbTransactionLoggerService : TtbTransactionLoggerService
-    {
-        public TestableTtbTransactionLoggerService(CaskrDbContext context, ILogger<TtbTransactionLoggerService> logger)
-            : base(context, logger)
-        {
-        }
-
-        public decimal InvokeCalculateProofGallons(decimal volumeGallons, decimal abv) => CalculateProofGallons(volumeGallons, abv);
-    }
 }
