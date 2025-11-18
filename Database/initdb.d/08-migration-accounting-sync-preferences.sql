@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.accounting_sync_preferences (
     auto_sync_invoices BOOLEAN NOT NULL DEFAULT FALSE,
     auto_sync_cogs BOOLEAN NOT NULL DEFAULT FALSE,
     sync_frequency TEXT NOT NULL DEFAULT 'Manual',
+    last_sync_at TIMESTAMPTZ NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_accounting_sync_preferences_company
