@@ -105,9 +105,10 @@ public class TtbTransactionLoggerService(
 
         var metadata = ResolveProductMetadata(barrel.Batch, barrel.Order, barrel);
         var normalizedProof = Math.Round(Math.Max(0, proofGallons), 2, MidpointRounding.AwayFromZero);
-        var wineGallons = metadata.Abv <= 0
+        var productProof = metadata.Abv * 2m;
+        var wineGallons = productProof <= 0
             ? 0m
-            : Math.Round(Math.Max(0, normalizedProof / (metadata.Abv / 100m)), 2, MidpointRounding.AwayFromZero);
+            : Math.Round(Math.Max(0, normalizedProof / (productProof / 100m)), 2, MidpointRounding.AwayFromZero);
 
         var lossNotes = string.IsNullOrWhiteSpace(reason)
             ? $"Loss recorded for barrel {barrel.Sku}"
@@ -202,7 +203,8 @@ public class TtbTransactionLoggerService(
             return 0m;
         }
 
-        return Math.Round(volumeGallons * (abv / 100m), 2, MidpointRounding.AwayFromZero);
+        var proof = abv * 2m;
+        return Math.Round(volumeGallons * (proof / 100m), 2, MidpointRounding.AwayFromZero);
     }
 
     private async Task<bool> TransactionExistsAsync(TtbTransactionType transactionType, string sourceEntityType, int sourceEntityId)
