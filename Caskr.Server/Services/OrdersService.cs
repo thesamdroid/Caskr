@@ -103,7 +103,8 @@ namespace Caskr.server.Services
                 }
             }
 
-            if (!IsCompletedStatus(existing) && IsCompletedStatus(updated) && updated.InvoiceId.HasValue)
+            var transitionedToCompleted = !IsCompletedStatus(existing) && IsCompletedStatus(updated);
+            if (transitionedToCompleted)
             {
                 var companyId = updated.CompanyId != 0
                     ? updated.CompanyId
@@ -111,7 +112,15 @@ namespace Caskr.server.Services
 
                 if (companyId != 0)
                 {
-                    await mediator.Publish(new OrderCompletedEvent(updated.Id, companyId, updated.InvoiceId), CancellationToken.None);
+                    if (updated.InvoiceId.HasValue)
+                    {
+                        await mediator.Publish(new OrderCompletedEvent(updated.Id, companyId, updated.InvoiceId), CancellationToken.None);
+                    }
+
+                    if (updated.BatchId > 0)
+                    {
+                        await mediator.Publish(new BatchCompletedEvent(updated.BatchId, companyId), CancellationToken.None);
+                    }
                 }
             }
             return updated;
