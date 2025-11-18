@@ -24,6 +24,8 @@ public class AccountingSyncPreference
     [MaxLength(32)]
     public string SyncFrequency { get; set; } = "Manual";
 
+    public DateTime? LastSyncAt { get; set; }
+
     [Required]
     public DateTime CreatedAt { get; set; }
 
