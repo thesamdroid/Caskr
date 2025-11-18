@@ -1,5 +1,6 @@
 using Caskr.server.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Caskr.Server.Tests;
 
