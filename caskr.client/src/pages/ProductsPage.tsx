@@ -41,55 +41,134 @@ function ProductsPage() {
   }
 
   return (
-    <section className='content-section'>
-      <div className='section-header'>
-        <h2 className='section-title'>Products</h2>
+    <section className="content-section" aria-labelledby="products-title">
+      <div className="section-header">
+        <div>
+          <h1 id="products-title" className="section-title">Products</h1>
+          <p className="section-subtitle">Manage your product catalog</p>
+        </div>
       </div>
-      <form onSubmit={handleAdd}>
-        <input type='number' value={newOwner} onChange={e => setNewOwner(Number(e.target.value))} placeholder='Owner ID' />
-        <input value={newNotes} onChange={e => setNewNotes(e.target.value)} placeholder='Notes' />
-        <button type='submit'>Add</button>
+
+      <form onSubmit={handleAdd} className="inline-form" aria-label="Add new product">
+        <label htmlFor="product-owner" className="visually-hidden">Owner ID</label>
+        <input
+          id="product-owner"
+          type="number"
+          value={newOwner || ''}
+          onChange={e => setNewOwner(Number(e.target.value))}
+          placeholder="Owner ID"
+          required
+          aria-required="true"
+        />
+
+        <label htmlFor="product-notes" className="visually-hidden">Notes</label>
+        <input
+          id="product-notes"
+          value={newNotes}
+          onChange={e => setNewNotes(e.target.value)}
+          placeholder="Product notes"
+        />
+
+        <button type="submit" className="button-primary">
+          Add Product
+        </button>
       </form>
-      <div className='table-container'>
-        <table className='table'>
-          <thead>
-            <tr><th>OwnerId</th><th>Notes</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {products.map(p => (
-              <tr key={p.id}>
-                <td>
-                  {editing === p.id ? (
-                    <input type='number' value={editOwner} onChange={e => setEditOwner(Number(e.target.value))} />
-                  ) : (
-                    p.ownerId
-                  )}
-                </td>
-                <td>
-                  {editing === p.id ? (
-                    <input value={editNotes} onChange={e => setEditNotes(e.target.value)} />
-                  ) : (
-                    p.notes
-                  )}
-                </td>
-                <td>
-                  {editing === p.id ? (
-                    <>
-                      <button onClick={() => handleUpdate(p.id)}>Save</button>
-                      <button onClick={() => setEditing(null)}>Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => startEdit(p)}>Edit</button>
-                      <button onClick={() => dispatch(deleteProduct(p.id))}>Delete</button>
-                    </>
-                  )}
-                </td>
+
+      {products.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">🏷️</div>
+          <h3 className="empty-state-title">No products yet</h3>
+          <p className="empty-state-text">Add your first product using the form above</p>
+        </div>
+      ) : (
+        <div className="table-container">
+          <table className="table" role="table" aria-label="Products list">
+            <thead>
+              <tr>
+                <th scope="col">Owner ID</th>
+                <th scope="col">Notes</th>
+                <th scope="col">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {products.map(p => (
+                <tr key={p.id}>
+                  <td>
+                    {editing === p.id ? (
+                      <>
+                        <label htmlFor={`edit-owner-${p.id}`} className="visually-hidden">Owner ID</label>
+                        <input
+                          id={`edit-owner-${p.id}`}
+                          type="number"
+                          value={editOwner}
+                          onChange={e => setEditOwner(Number(e.target.value))}
+                          aria-label="Edit owner ID"
+                        />
+                      </>
+                    ) : (
+                      p.ownerId
+                    )}
+                  </td>
+                  <td>
+                    {editing === p.id ? (
+                      <>
+                        <label htmlFor={`edit-notes-${p.id}`} className="visually-hidden">Notes</label>
+                        <input
+                          id={`edit-notes-${p.id}`}
+                          value={editNotes}
+                          onChange={e => setEditNotes(e.target.value)}
+                          aria-label="Edit product notes"
+                        />
+                      </>
+                    ) : (
+                      <span className="text-secondary">{p.notes || <span className="text-muted">No notes</span>}</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="flex gap-2">
+                      {editing === p.id ? (
+                        <>
+                          <button
+                            onClick={() => handleUpdate(p.id)}
+                            className="button-primary button-sm"
+                            aria-label={`Save changes to product ${p.id}`}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditing(null)}
+                            className="button-secondary button-sm"
+                            aria-label="Cancel editing"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => startEdit(p)}
+                            className="button-secondary button-sm"
+                            aria-label={`Edit product ${p.id}`}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => dispatch(deleteProduct(p.id))}
+                            className="button-danger button-sm"
+                            aria-label={`Delete product ${p.id}`}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   )
 }

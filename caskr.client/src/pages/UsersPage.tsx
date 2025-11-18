@@ -60,68 +60,176 @@ function UsersPage() {
   const typeName = (id: number) => userTypes.find(t => t.id === id)?.name || id
 
   return (
-    <section className='content-section'>
-      <div className='section-header'>
-        <h2 className='section-title'>Users</h2>
+    <section className="content-section" aria-labelledby="users-title">
+      <div className="section-header">
+        <div>
+          <h1 id="users-title" className="section-title">Users</h1>
+          <p className="section-subtitle">Manage user accounts and permissions</p>
+        </div>
       </div>
-      <form onSubmit={handleAdd}>
-        <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name'/>
-        <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder='Email'/>
-        <input value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder='Temporary Password'/>
-        <select value={newType} onChange={e => setNewType(Number(e.target.value))}>
+
+      <form onSubmit={handleAdd} className="inline-form" aria-label="Add new user">
+        <label htmlFor="user-name" className="visually-hidden">User Name</label>
+        <input
+          id="user-name"
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
+          placeholder="Name"
+          required
+          aria-required="true"
+        />
+
+        <label htmlFor="user-email" className="visually-hidden">Email</label>
+        <input
+          id="user-email"
+          type="email"
+          value={newEmail}
+          onChange={e => setNewEmail(e.target.value)}
+          placeholder="Email"
+          required
+          aria-required="true"
+        />
+
+        <label htmlFor="user-password" className="visually-hidden">Temporary Password</label>
+        <input
+          id="user-password"
+          type="password"
+          value={newPassword}
+          onChange={e => setNewPassword(e.target.value)}
+          placeholder="Temporary password"
+          required
+          aria-required="true"
+        />
+
+        <label htmlFor="user-type" className="visually-hidden">User Type</label>
+        <select
+          id="user-type"
+          value={newType}
+          onChange={e => setNewType(Number(e.target.value))}
+          required
+          aria-required="true"
+        >
           {userTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        <button type='submit'>Create User</button>
+
+        <button type="submit" className="button-primary">
+          Create User
+        </button>
       </form>
-      <div className='table-container'>
-        <table className='table'>
-          <thead>
-            <tr><th>Name</th><th>Email</th><th>Type</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {users.map(u => (
-              <tr key={u.id}>
-                <td>
-                  {editing === u.id ? (
-                    <input value={editName} onChange={e => setEditName(e.target.value)} />
-                  ) : (
-                    u.name
-                  )}
-                </td>
-                <td>
-                  {editing === u.id ? (
-                    <input value={editEmail} onChange={e => setEditEmail(e.target.value)} />
-                  ) : (
-                    u.email
-                  )}
-                </td>
-                <td>
-                  {editing === u.id ? (
-                    <select value={editType} onChange={e => setEditType(Number(e.target.value))}>
-                      {userTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                    </select>
-                  ) : (
-                    typeName(u.userTypeId)
-                  )}
-                </td>
-                <td>
-                  {editing === u.id ? (
-                    <>
-                      <button onClick={() => handleUpdate(u.id)}>Save</button>
-                      <button onClick={() => setEditing(null)}>Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => startEdit(u)}>Edit</button>
-                      <button onClick={() => dispatch(deleteUser(u.id))}>Delete</button>
-                    </>
-                  )}
-                </td>
+
+      {users.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">👤</div>
+          <h3 className="empty-state-title">No users yet</h3>
+          <p className="empty-state-text">Create your first user using the form above</p>
+        </div>
+      ) : (
+        <div className="table-container">
+          <table className="table" role="table" aria-label="Users list">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Type</th>
+                <th scope="col">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id}>
+                  <td>
+                    {editing === u.id ? (
+                      <>
+                        <label htmlFor={`edit-name-${u.id}`} className="visually-hidden">Name</label>
+                        <input
+                          id={`edit-name-${u.id}`}
+                          value={editName}
+                          onChange={e => setEditName(e.target.value)}
+                          aria-label="Edit user name"
+                        />
+                      </>
+                    ) : (
+                      <span className="text-primary">{u.name}</span>
+                    )}
+                  </td>
+                  <td>
+                    {editing === u.id ? (
+                      <>
+                        <label htmlFor={`edit-email-${u.id}`} className="visually-hidden">Email</label>
+                        <input
+                          id={`edit-email-${u.id}`}
+                          type="email"
+                          value={editEmail}
+                          onChange={e => setEditEmail(e.target.value)}
+                          aria-label="Edit user email"
+                        />
+                      </>
+                    ) : (
+                      <span className="text-secondary">{u.email}</span>
+                    )}
+                  </td>
+                  <td>
+                    {editing === u.id ? (
+                      <>
+                        <label htmlFor={`edit-type-${u.id}`} className="visually-hidden">User Type</label>
+                        <select
+                          id={`edit-type-${u.id}`}
+                          value={editType}
+                          onChange={e => setEditType(Number(e.target.value))}
+                          aria-label="Edit user type"
+                        >
+                          {userTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                      </>
+                    ) : (
+                      <span className="status-badge default">{typeName(u.userTypeId)}</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="flex gap-2">
+                      {editing === u.id ? (
+                        <>
+                          <button
+                            onClick={() => handleUpdate(u.id)}
+                            className="button-primary button-sm"
+                            aria-label={`Save changes to user ${u.name}`}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditing(null)}
+                            className="button-secondary button-sm"
+                            aria-label="Cancel editing"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => startEdit(u)}
+                            className="button-secondary button-sm"
+                            aria-label={`Edit user ${u.name}`}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => dispatch(deleteUser(u.id))}
+                            className="button-danger button-sm"
+                            aria-label={`Delete user ${u.name}`}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   )
 }

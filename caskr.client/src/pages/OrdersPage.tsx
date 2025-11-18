@@ -68,39 +68,95 @@ function OrdersPage() {
   }
 
   return (
-    <section className='content-section'>
-      <div className='section-header'>
-        <h2 className='section-title'>Orders</h2>
+    <section className="content-section" aria-labelledby="orders-title">
+      <div className="section-header">
+        <div>
+          <h1 id="orders-title" className="section-title">Orders</h1>
+          <p className="section-subtitle">Manage and track all your orders</p>
+        </div>
       </div>
-      <form onSubmit={handleAdd} className='inline-form'>
-        <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name' />
-        <select value={newStatus} onChange={e => setNewStatus(Number(e.target.value))}>
+
+      <form onSubmit={handleAdd} className="inline-form" aria-label="Add new order">
+        <label htmlFor="order-name" className="visually-hidden">Order Name</label>
+        <input
+          id="order-name"
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
+          placeholder="Order name"
+          required
+          aria-required="true"
+        />
+
+        <label htmlFor="order-status" className="visually-hidden">Order Status</label>
+        <select
+          id="order-status"
+          value={newStatus}
+          onChange={e => setNewStatus(Number(e.target.value))}
+          required
+          aria-required="true"
+        >
           {statuses.map(s => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
-        <button type='submit'>Add</button>
+
+        <button type="submit" className="button-primary">
+          Add Order
+        </button>
       </form>
-      <div className='table-container'>
-        <table className='table'>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Outstanding Tasks</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map(order => (
-              <tr key={order.id} onClick={() => handleOpenActions(order)} className='clickable-row'>
-                <td>{order.name}</td>
-                <td>{statusNames[order.statusId] ?? order.statusId}</td>
-                <td>{outstandingTasks[order.id]?.length ?? '-'}</td>
+
+      {orders.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📦</div>
+          <h3 className="empty-state-title">No orders yet</h3>
+          <p className="empty-state-text">Create your first order using the form above</p>
+        </div>
+      ) : (
+        <div className="table-container">
+          <table className="table" role="table" aria-label="Orders list">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Status</th>
+                <th scope="col">Outstanding Tasks</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {orders.map(order => (
+                <tr
+                  key={order.id}
+                  onClick={() => handleOpenActions(order)}
+                  className="clickable-row"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleOpenActions(order)
+                    }
+                  }}
+                  aria-label={`View details for order ${order.name}`}
+                >
+                  <td>{order.name}</td>
+                  <td>
+                    <span className={`status-badge ${statusNames[order.statusId]?.toLowerCase().replace(/\s+/g, '-') || 'default'}`}>
+                      {statusNames[order.statusId] ?? order.statusId}
+                    </span>
+                  </td>
+                  <td>
+                    {outstandingTasks[order.id]?.length > 0 ? (
+                      <span className="text-gold">{outstandingTasks[order.id].length}</span>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <OrderActionsModal
         isOpen={selectedOrder !== null}
         order={selectedOrder}
