@@ -53,6 +53,12 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<InvoiceTax> InvoiceTaxes { get; set; } = null!;
 
+    public virtual DbSet<TtbMonthlyReport> TtbMonthlyReports { get; set; } = null!;
+
+    public virtual DbSet<TtbInventorySnapshot> TtbInventorySnapshots { get; set; } = null!;
+
+    public virtual DbSet<TtbTransaction> TtbTransactions { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -563,6 +569,97 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.InvoiceId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_invoice_taxes_invoice");
+        });
+
+        modelBuilder.Entity<TtbMonthlyReport>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ttb_monthly_reports_pkey");
+
+            entity.ToTable("ttb_monthly_reports");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.ReportMonth).HasColumnName("report_month");
+            entity.Property(e => e.ReportYear).HasColumnName("report_year");
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasColumnName("status");
+            entity.Property(e => e.GeneratedAt).HasColumnName("generated_at");
+            entity.Property(e => e.SubmittedAt).HasColumnName("submitted_at");
+            entity.Property(e => e.TtbConfirmationNumber).HasColumnName("ttb_confirmation_number");
+            entity.Property(e => e.PdfPath).HasColumnName("pdf_path");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+
+            entity.HasOne(d => d.Company)
+                .WithMany(p => p.TtbMonthlyReports)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_ttb_monthly_reports_company");
+
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany(p => p.CreatedTtbMonthlyReports)
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_ttb_monthly_reports_created_by");
+        });
+
+        modelBuilder.Entity<TtbInventorySnapshot>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ttb_inventory_snapshots_pkey");
+
+            entity.ToTable("ttb_inventory_snapshots");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.SnapshotDate).HasColumnName("snapshot_date");
+            entity.Property(e => e.ProductType).HasColumnName("product_type");
+            entity.Property(e => e.SpiritsType)
+                .HasConversion<string>()
+                .HasColumnName("spirits_type");
+            entity.Property(e => e.ProofGallons)
+                .HasColumnName("proof_gallons");
+            entity.Property(e => e.WineGallons)
+                .HasColumnName("wine_gallons");
+            entity.Property(e => e.TaxStatus)
+                .HasConversion<string>()
+                .HasColumnName("tax_status");
+
+            entity.HasOne(d => d.Company)
+                .WithMany(p => p.TtbInventorySnapshots)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_ttb_inventory_snapshots_company");
+        });
+
+        modelBuilder.Entity<TtbTransaction>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ttb_transactions_pkey");
+
+            entity.ToTable("ttb_transactions");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.TransactionDate).HasColumnName("transaction_date");
+            entity.Property(e => e.TransactionType)
+                .HasConversion<string>()
+                .HasColumnName("transaction_type");
+            entity.Property(e => e.ProductType).HasColumnName("product_type");
+            entity.Property(e => e.SpiritsType)
+                .HasConversion<string>()
+                .HasColumnName("spirits_type");
+            entity.Property(e => e.ProofGallons)
+                .HasColumnName("proof_gallons");
+            entity.Property(e => e.WineGallons)
+                .HasColumnName("wine_gallons");
+            entity.Property(e => e.SourceEntityType).HasColumnName("source_entity_type");
+            entity.Property(e => e.SourceEntityId).HasColumnName("source_entity_id");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+
+            entity.HasOne(d => d.Company)
+                .WithMany(p => p.TtbTransactions)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_ttb_transactions_company");
         });
 
         OnModelCreatingPartial(modelBuilder);
