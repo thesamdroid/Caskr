@@ -110,10 +110,14 @@ public class QuickBooksIntegrationTests
                 new() { Id = "2", Name = "COGS", AccountType = AccountTypeEnum.CostofGoodsSold, AccountTypeSpecified = true, Active = true, ActiveSpecified = true }
             });
 
-        var service = new QuickBooksDataService(
-            cache,
+        var contextFactory = new QuickBooksIntegrationContextFactory(
             context,
             authServiceMock.Object,
+            NullLogger<QuickBooksIntegrationContextFactory>.Instance);
+
+        var service = new QuickBooksDataService(
+            cache,
+            contextFactory,
             accountClientMock.Object,
             NullLogger<QuickBooksDataService>.Instance);
 
@@ -139,9 +143,10 @@ public class QuickBooksIntegrationTests
         clientMock.Setup(c => c.CreateInvoiceAsync(It.IsAny<ServiceContext>(), It.IsAny<QuickBooksInvoice>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new QuickBooksInvoice { Id = "INV-300" });
 
+        var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
         var service = new QuickBooksInvoiceSyncService(
             context,
-            authServiceMock.Object,
+            contextFactory,
             clientMock.Object,
             NullLogger<QuickBooksInvoiceSyncService>.Instance);
 
@@ -170,9 +175,10 @@ public class QuickBooksIntegrationTests
         clientMock.Setup(c => c.CreateInvoiceAsync(It.IsAny<ServiceContext>(), It.IsAny<QuickBooksInvoice>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("invalid customer"));
 
+        var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
         var service = new QuickBooksInvoiceSyncService(
             context,
-            authServiceMock.Object,
+            contextFactory,
             clientMock.Object,
             NullLogger<QuickBooksInvoiceSyncService>.Instance);
 
@@ -207,9 +213,10 @@ public class QuickBooksIntegrationTests
                 return Task.FromResult(entry);
             });
 
+        var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
         var service = new QuickBooksCostTrackingService(
             context,
-            authServiceMock.Object,
+            contextFactory,
             journalClientMock.Object,
             NullLogger<QuickBooksCostTrackingService>.Instance);
 
@@ -261,9 +268,10 @@ public class QuickBooksIntegrationTests
                 return Task.FromResult(new QuickBooksInvoice { Id = "INV-555" });
             });
 
+        var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
         var service = new QuickBooksInvoiceSyncService(
             context,
-            authServiceMock.Object,
+            contextFactory,
             clientMock.Object,
             NullLogger<QuickBooksInvoiceSyncService>.Instance);
 
@@ -292,9 +300,10 @@ public class QuickBooksIntegrationTests
         clientMock.Setup(c => c.CreateInvoiceAsync(It.IsAny<ServiceContext>(), It.IsAny<QuickBooksInvoice>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new QuickBooksInvoice { Id = "INV-867" });
 
+        var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
         var service = new QuickBooksInvoiceSyncService(
             context,
-            authServiceMock.Object,
+            contextFactory,
             clientMock.Object,
             NullLogger<QuickBooksInvoiceSyncService>.Instance);
 
@@ -332,6 +341,16 @@ public class QuickBooksIntegrationTests
                 ExpiresIn = 3600
             });
         return mock;
+    }
+
+    private static QuickBooksIntegrationContextFactory BuildIntegrationContextFactory(
+        CaskrDbContext context,
+        Mock<IQuickBooksAuthService> authServiceMock)
+    {
+        return new QuickBooksIntegrationContextFactory(
+            context,
+            authServiceMock.Object,
+            NullLogger<QuickBooksIntegrationContextFactory>.Instance);
     }
 
     private static Mock<IQuickBooksInvoiceClient> BuildInvoiceClientMock(InvoiceModel invoice, out Intuit.Ipp.Data.Customer existingCustomer)

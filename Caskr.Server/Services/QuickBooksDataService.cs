@@ -2,13 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Caskr.server.Models;
 using Caskr.Server.Models;
-using Intuit.Ipp.Core;
 using Intuit.Ipp.Data;
 using Intuit.Ipp.Exception;
-using Intuit.Ipp.Security;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -23,21 +19,18 @@ public class QuickBooksDataService : IQuickBooksDataService
     private const string CacheKeyPrefix = "QuickBooksDataService.ChartOfAccounts";
 
     private readonly IMemoryCache _cache;
-    private readonly CaskrDbContext _dbContext;
-    private readonly IQuickBooksAuthService _authService;
+    private readonly IQuickBooksIntegrationContextFactory _contextFactory;
     private readonly IQuickBooksAccountQueryClient _accountQueryClient;
     private readonly ILogger<QuickBooksDataService> _logger;
 
     public QuickBooksDataService(
         IMemoryCache cache,
-        CaskrDbContext dbContext,
-        IQuickBooksAuthService authService,
+        IQuickBooksIntegrationContextFactory contextFactory,
         IQuickBooksAccountQueryClient accountQueryClient,
         ILogger<QuickBooksDataService> logger)
     {
         _cache = cache;
-        _dbContext = dbContext;
-        _authService = authService;
+        _contextFactory = contextFactory;
         _accountQueryClient = accountQueryClient;
         _logger = logger;
     }
@@ -60,29 +53,13 @@ public class QuickBooksDataService : IQuickBooksDataService
             return cachedAccounts;
         }
 
-        var integration = await _dbContext.AccountingIntegrations
-            .AsNoTracking()
-            .SingleOrDefaultAsync(ai => ai.CompanyId == companyId && ai.Provider == AccountingProvider.QuickBooks && ai.IsActive);
-        if (integration is null)
+        var integrationContext = await _contextFactory.CreateAsync(companyId);
+        if (integrationContext is null)
         {
-            throw new InvalidOperationException($"No active QuickBooks integration found for company {companyId}.");
+            throw new InvalidOperationException($"QuickBooks integration context could not be created for company {companyId}.");
         }
-
-        var tokenResponse = await _authService.RefreshTokenAsync(companyId);
-        if (string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
-        {
-            throw new InvalidOperationException("QuickBooks access token is missing.");
-        }
-
-        var realmId = !string.IsNullOrWhiteSpace(tokenResponse.RealmId)
-            ? tokenResponse.RealmId
-            : integration.RealmId;
-        if (string.IsNullOrWhiteSpace(realmId))
-        {
-            throw new InvalidOperationException("QuickBooks realm ID is missing.");
-        }
-
-        var serviceContext = CreateServiceContext(realmId, tokenResponse.AccessToken);
+        var serviceContext = integrationContext.ServiceContext;
+        var realmId = integrationContext.RealmId;
 
         try
         {
@@ -102,12 +79,6 @@ public class QuickBooksDataService : IQuickBooksDataService
             _logger.LogError(ex, "Unexpected failure when loading QuickBooks accounts for company {CompanyId}", companyId);
             throw new InvalidOperationException("Unable to load QuickBooks chart of accounts.", ex);
         }
-    }
-
-    private static ServiceContext CreateServiceContext(string realmId, string accessToken)
-    {
-        var validator = new OAuth2RequestValidator(accessToken);
-        return new ServiceContext(realmId, IntuitServicesType.QBO, validator);
     }
 
     private static QBOAccount MapAccount(Account account)

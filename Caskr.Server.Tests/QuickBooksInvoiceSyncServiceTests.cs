@@ -1,11 +1,13 @@
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Caskr.server.Models;
 using Caskr.Server.Models;
 using Caskr.Server.Services;
 using Intuit.Ipp.Core;
+using Intuit.Ipp.Security;
 using QboCustomer = Intuit.Ipp.Data.Customer;
 using QboInvoice = Intuit.Ipp.Data.Invoice;
 using Microsoft.EntityFrameworkCore;
@@ -41,10 +43,10 @@ public class QuickBooksInvoiceSyncServiceTests
         });
         await context.SaveChangesAsync();
 
-        var authService = Mock.Of<IQuickBooksAuthService>();
+        var contextFactory = BuildContextFactoryMock(invoice.CompanyId);
         var qbClientMock = new Mock<IQuickBooksInvoiceClient>(MockBehavior.Strict);
         var logger = Mock.Of<ILogger<QuickBooksInvoiceSyncService>>();
-        var service = new QuickBooksInvoiceSyncService(context, authService, qbClientMock.Object, logger);
+        var service = new QuickBooksInvoiceSyncService(context, contextFactory.Object, qbClientMock.Object, logger);
 
         var result = await service.SyncInvoiceToQBOAsync(invoice.Id);
 
@@ -60,14 +62,7 @@ public class QuickBooksInvoiceSyncServiceTests
         await using var context = new CaskrDbContext(options);
         var invoice = await SeedInvoiceAsync(context);
 
-        var authServiceMock = new Mock<IQuickBooksAuthService>();
-        authServiceMock.Setup(a => a.RefreshTokenAsync(invoice.CompanyId))
-            .ReturnsAsync(new OAuthTokenResponse
-            {
-                AccessToken = "token",
-                RefreshToken = "refresh",
-                RealmId = "123"
-            });
+        var contextFactory = BuildContextFactoryMock(invoice.CompanyId);
 
         var clientMock = new Mock<IQuickBooksInvoiceClient>();
         clientMock.Setup(c => c.FindCustomerByEmailAsync(It.IsAny<ServiceContext>(), invoice.CustomerEmail!, It.IsAny<System.Threading.CancellationToken>()))
@@ -80,7 +75,7 @@ public class QuickBooksInvoiceSyncServiceTests
             .ReturnsAsync(new QboInvoice { Id = "INV-100" });
 
         var logger = Mock.Of<ILogger<QuickBooksInvoiceSyncService>>();
-        var service = new QuickBooksInvoiceSyncService(context, authServiceMock.Object, clientMock.Object, logger);
+        var service = new QuickBooksInvoiceSyncService(context, contextFactory.Object, clientMock.Object, logger);
 
         var result = await service.SyncInvoiceToQBOAsync(invoice.Id);
 
@@ -100,14 +95,7 @@ public class QuickBooksInvoiceSyncServiceTests
         await using var context = new CaskrDbContext(options);
         var invoice = await SeedInvoiceAsync(context);
 
-        var authServiceMock = new Mock<IQuickBooksAuthService>();
-        authServiceMock.Setup(a => a.RefreshTokenAsync(invoice.CompanyId))
-            .ReturnsAsync(new OAuthTokenResponse
-            {
-                AccessToken = "token",
-                RefreshToken = "refresh",
-                RealmId = "123"
-            });
+        var contextFactory = BuildContextFactoryMock(invoice.CompanyId);
 
         var clientMock = new Mock<IQuickBooksInvoiceClient>();
         clientMock.Setup(c => c.FindCustomerByEmailAsync(It.IsAny<ServiceContext>(), It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
@@ -129,7 +117,7 @@ public class QuickBooksInvoiceSyncServiceTests
             });
 
         var logger = Mock.Of<ILogger<QuickBooksInvoiceSyncService>>();
-        var service = new QuickBooksInvoiceSyncService(context, authServiceMock.Object, clientMock.Object, logger);
+        var service = new QuickBooksInvoiceSyncService(context, contextFactory.Object, clientMock.Object, logger);
 
         var result = await service.SyncInvoiceToQBOAsync(invoice.Id);
 
@@ -217,5 +205,16 @@ public class QuickBooksInvoiceSyncServiceTests
         await context.SaveChangesAsync();
 
         return invoice;
+    }
+
+    private static Mock<IQuickBooksIntegrationContextFactory> BuildContextFactoryMock(int companyId)
+    {
+        var factory = new Mock<IQuickBooksIntegrationContextFactory>();
+        var validator = new OAuth2RequestValidator("token");
+        var serviceContext = new ServiceContext("realm", IntuitServicesType.QBO, validator);
+        var integrationContext = new QuickBooksIntegrationContext(companyId, "realm", serviceContext);
+        factory.Setup(f => f.CreateAsync(companyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(integrationContext);
+        return factory;
     }
 }

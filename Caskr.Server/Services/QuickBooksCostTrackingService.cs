@@ -8,7 +8,6 @@ using Caskr.server;
 using Caskr.server.Models;
 using Intuit.Ipp.Core;
 using Intuit.Ipp.Data;
-using Intuit.Ipp.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -28,18 +27,18 @@ public sealed class QuickBooksCostTrackingService : IQuickBooksCostTrackingServi
     };
 
     private readonly CaskrDbContext _dbContext;
-    private readonly IQuickBooksAuthService _authService;
+    private readonly IQuickBooksIntegrationContextFactory _integrationContextFactory;
     private readonly IQuickBooksJournalEntryClient _journalEntryClient;
     private readonly ILogger<QuickBooksCostTrackingService> _logger;
 
     public QuickBooksCostTrackingService(
         CaskrDbContext dbContext,
-        IQuickBooksAuthService authService,
+        IQuickBooksIntegrationContextFactory integrationContextFactory,
         IQuickBooksJournalEntryClient journalEntryClient,
         ILogger<QuickBooksCostTrackingService> logger)
     {
         _dbContext = dbContext;
-        _authService = authService;
+        _integrationContextFactory = integrationContextFactory;
         _journalEntryClient = journalEntryClient;
         _logger = logger;
     }
@@ -127,7 +126,8 @@ public sealed class QuickBooksCostTrackingService : IQuickBooksCostTrackingServi
                 throw new InvalidOperationException("Work In Progress account mapping is missing.");
             }
 
-            var serviceContext = await CreateServiceContextAsync(batch.CompanyId);
+            var integrationContext = await _integrationContextFactory.CreateAsync(batch.CompanyId);
+            var serviceContext = integrationContext.ServiceContext;
             var description = BuildDescription(batch, orders);
             var journalEntry = BuildJournalEntry(totalCost, description, cogsAccount, wipAccount);
             var createdEntry = await _journalEntryClient.CreateJournalEntryAsync(serviceContext, journalEntry, CancellationToken.None);
@@ -188,38 +188,6 @@ public sealed class QuickBooksCostTrackingService : IQuickBooksCostTrackingServi
         log.ExternalEntityId = externalId;
         log.SyncedAt = DateTime.UtcNow;
         log.UpdatedAt = DateTime.UtcNow;
-    }
-
-    private async Task<ServiceContext> CreateServiceContextAsync(int companyId)
-    {
-        var integration = await _dbContext.AccountingIntegrations
-            .AsNoTracking()
-            .SingleOrDefaultAsync(ai => ai.CompanyId == companyId
-                                        && ai.Provider == AccountingProvider.QuickBooks
-                                        && ai.IsActive);
-
-        if (integration is null)
-        {
-            throw new InvalidOperationException($"Company {companyId} does not have an active QuickBooks integration.");
-        }
-
-        var tokenResponse = await _authService.RefreshTokenAsync(companyId);
-        if (string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
-        {
-            throw new InvalidOperationException("QuickBooks access token is missing.");
-        }
-
-        var realmId = !string.IsNullOrWhiteSpace(tokenResponse.RealmId)
-            ? tokenResponse.RealmId
-            : integration.RealmId;
-
-        if (string.IsNullOrWhiteSpace(realmId))
-        {
-            throw new InvalidOperationException("QuickBooks realm ID is missing.");
-        }
-
-        var validator = new OAuth2RequestValidator(tokenResponse.AccessToken);
-        return new ServiceContext(realmId, IntuitServicesType.QBO, validator);
     }
 
     private async Task<Dictionary<CaskrAccountType, ChartOfAccountsMapping>> LoadAccountMappingsAsync(int companyId)

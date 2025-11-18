@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Caskr.server.Models;
 using Caskr.Server.Models;
 using Caskr.Server.Services;
 using Intuit.Ipp.Core;
 using Intuit.Ipp.Data;
+using Intuit.Ipp.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -17,7 +19,7 @@ namespace Caskr.Server.Tests;
 public class QuickBooksDataServiceTests : IDisposable
 {
     private readonly MemoryCache _memoryCache = new(new MemoryCacheOptions());
-    private readonly Mock<IQuickBooksAuthService> _authService = new();
+    private readonly Mock<IQuickBooksIntegrationContextFactory> _contextFactory = new();
     private readonly Mock<IQuickBooksAccountQueryClient> _queryClient = new();
     private readonly CaskrDbContext _context;
 
@@ -42,15 +44,7 @@ public class QuickBooksDataServiceTests : IDisposable
     [Fact]
     public async System.Threading.Tasks.Task GetChartOfAccountsAsync_UsesCacheAfterFirstCall()
     {
-        _authService
-            .Setup(s => s.RefreshTokenAsync(100))
-            .ReturnsAsync(new OAuthTokenResponse
-            {
-                AccessToken = "token",
-                RefreshToken = "refresh",
-                RealmId = "12345",
-                ExpiresIn = 3600
-            });
+        SetupContextFactory(100);
 
         _queryClient
             .Setup(c => c.ExecuteActiveAccountQuery(It.IsAny<ServiceContext>()))
@@ -70,8 +64,7 @@ public class QuickBooksDataServiceTests : IDisposable
 
         var service = new QuickBooksDataService(
             _memoryCache,
-            _context,
-            _authService.Object,
+            _contextFactory.Object,
             _queryClient.Object,
             NullLogger<QuickBooksDataService>.Instance);
 
@@ -81,22 +74,14 @@ public class QuickBooksDataServiceTests : IDisposable
         Assert.Single(first);
         Assert.Equal("Cash", first[0].Name);
         Assert.Equal(first, second);
-        _authService.Verify(s => s.RefreshTokenAsync(100), Times.Once);
+        _contextFactory.Verify(f => f.CreateAsync(100, It.IsAny<CancellationToken>()), Times.Once);
         _queryClient.Verify(c => c.ExecuteActiveAccountQuery(It.IsAny<ServiceContext>()), Times.Once);
     }
 
     [Fact]
     public async System.Threading.Tasks.Task GetChartOfAccountsAsync_BypassesCacheWhenRequested()
     {
-        _authService
-            .Setup(s => s.RefreshTokenAsync(100))
-            .ReturnsAsync(new OAuthTokenResponse
-            {
-                AccessToken = "token",
-                RefreshToken = "refresh",
-                RealmId = "12345",
-                ExpiresIn = 3600
-            });
+        SetupContextFactory(100);
 
         _queryClient
             .SetupSequence(c => c.ExecuteActiveAccountQuery(It.IsAny<ServiceContext>()))
@@ -129,8 +114,7 @@ public class QuickBooksDataServiceTests : IDisposable
 
         var service = new QuickBooksDataService(
             _memoryCache,
-            _context,
-            _authService.Object,
+            _contextFactory.Object,
             _queryClient.Object,
             NullLogger<QuickBooksDataService>.Instance);
 
@@ -139,17 +123,20 @@ public class QuickBooksDataServiceTests : IDisposable
 
         Assert.Equal("Cash", first[0].Name);
         Assert.Equal("Revenue", refreshed[0].Name);
-        _authService.Verify(s => s.RefreshTokenAsync(100), Times.Exactly(2));
+        _contextFactory.Verify(f => f.CreateAsync(100, It.IsAny<CancellationToken>()), Times.Exactly(2));
         _queryClient.Verify(c => c.ExecuteActiveAccountQuery(It.IsAny<ServiceContext>()), Times.Exactly(2));
     }
 
     [Fact]
     public async System.Threading.Tasks.Task GetChartOfAccountsAsync_NoIntegration_Throws()
     {
+        _contextFactory
+            .Setup(f => f.CreateAsync(999, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("No integration"));
+
         var service = new QuickBooksDataService(
             _memoryCache,
-            _context,
-            _authService.Object,
+            _contextFactory.Object,
             _queryClient.Object,
             NullLogger<QuickBooksDataService>.Instance);
 
@@ -160,5 +147,14 @@ public class QuickBooksDataServiceTests : IDisposable
     {
         _context.Dispose();
         _memoryCache.Dispose();
+    }
+
+    private void SetupContextFactory(int companyId)
+    {
+        var validator = new OAuth2RequestValidator("token");
+        var context = new ServiceContext("12345", IntuitServicesType.QBO, validator);
+        _contextFactory
+            .Setup(f => f.CreateAsync(companyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new QuickBooksIntegrationContext(companyId, "12345", context));
     }
 }
