@@ -15,7 +15,11 @@ public class TtbInventorySnapshotCalculatorTests
     public async Task BuildSnapshotRowsAsync_ShouldAggregateActiveBarrels()
     {
         await using var context = CreateContext();
-        SeedBarrels(context, "Aging");
+        SeedBarrels(
+            context,
+            "Aging",
+            new DateTime(2024, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2024, 12, 31, 0, 0, 0, DateTimeKind.Utc));
 
         var calculator = new TtbInventorySnapshotCalculator(context, NullLogger<TtbInventorySnapshotCalculator>.Instance);
         var results = await calculator.BuildSnapshotRowsAsync(1, new DateTime(2025, 02, 15), CancellationToken.None);
@@ -34,12 +38,35 @@ public class TtbInventorySnapshotCalculatorTests
     public async Task BuildSnapshotRowsAsync_ShouldIgnoreInactiveStatuses()
     {
         await using var context = CreateContext();
-        SeedBarrels(context, "Sold");
+        SeedBarrels(
+            context,
+            "Sold",
+            new DateTime(2024, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2025, 02, 10, 0, 0, 0, DateTimeKind.Utc));
 
         var calculator = new TtbInventorySnapshotCalculator(context, NullLogger<TtbInventorySnapshotCalculator>.Instance);
         var results = await calculator.BuildSnapshotRowsAsync(1, new DateTime(2025, 02, 15), CancellationToken.None);
 
         Assert.Empty(results);
+    }
+
+    [Fact]
+    public async Task BuildSnapshotRowsAsync_ShouldRespectSnapshotDateWhenStatusChanges()
+    {
+        await using var context = CreateContext();
+        SeedBarrels(
+            context,
+            "Sold",
+            new DateTime(2024, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2025, 02, 25, 0, 0, 0, DateTimeKind.Utc));
+
+        var calculator = new TtbInventorySnapshotCalculator(context, NullLogger<TtbInventorySnapshotCalculator>.Instance);
+        var historicalResults = await calculator.BuildSnapshotRowsAsync(1, new DateTime(2025, 02, 15), CancellationToken.None);
+        var historicalSnapshot = Assert.Single(historicalResults);
+        Assert.Equal(53m * 2, historicalSnapshot.WineGallons);
+
+        var postSaleResults = await calculator.BuildSnapshotRowsAsync(1, new DateTime(2025, 03, 01), CancellationToken.None);
+        Assert.Empty(postSaleResults);
     }
 
     private static CaskrDbContext CreateContext()
@@ -51,8 +78,14 @@ public class TtbInventorySnapshotCalculatorTests
         return new CaskrDbContext(options);
     }
 
-    private static void SeedBarrels(CaskrDbContext context, string statusName)
+    private static void SeedBarrels(
+        CaskrDbContext context,
+        string statusName,
+        DateTime? createdAt = null,
+        DateTime? updatedAt = null)
     {
+        var created = createdAt ?? DateTime.UtcNow;
+        var updated = updatedAt ?? created;
         var company = new Company
         {
             Id = 1,
@@ -93,8 +126,8 @@ public class TtbInventorySnapshotCalculatorTests
             BatchId = 1,
             Batch = batch,
             Quantity = 2,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = created,
+            UpdatedAt = updated
         };
 
         var rickhouse = new Rickhouse

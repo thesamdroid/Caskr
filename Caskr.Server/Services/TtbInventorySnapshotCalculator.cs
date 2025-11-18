@@ -36,6 +36,7 @@ public sealed class TtbInventorySnapshotCalculator(
         CancellationToken cancellationToken)
     {
         var normalizedDate = snapshotDate.Date;
+        var snapshotUpperBoundExclusive = normalizedDate.AddDays(1);
         var barrels = await dbContext.Barrels
             .AsNoTracking()
             .Include(b => b.Order)
@@ -44,7 +45,7 @@ public sealed class TtbInventorySnapshotCalculator(
                 .ThenInclude(o => o.SpiritType)
             .Include(b => b.Batch)
                 .ThenInclude(batch => batch!.MashBill)
-            .Where(b => b.CompanyId == companyId)
+            .Where(b => b.CompanyId == companyId && b.Order.CreatedAt < snapshotUpperBoundExclusive)
             .ToListAsync(cancellationToken);
 
         if (barrels.Count == 0)
@@ -72,7 +73,7 @@ public sealed class TtbInventorySnapshotCalculator(
                 continue;
             }
 
-            if (!ShouldIncludeBarrel(barrel.Order))
+            if (!ShouldIncludeBarrel(barrel.Order, snapshotUpperBoundExclusive))
             {
                 continue;
             }
@@ -125,15 +126,26 @@ public sealed class TtbInventorySnapshotCalculator(
         return snapshots;
     }
 
-    private static bool ShouldIncludeBarrel(Order order)
+    private static bool ShouldIncludeBarrel(Order order, DateTime snapshotUpperBoundExclusive)
     {
+        if (order.CreatedAt >= snapshotUpperBoundExclusive)
+        {
+            return false;
+        }
+
         var statusName = order.Status?.Name;
         if (string.IsNullOrWhiteSpace(statusName))
         {
             return true;
         }
 
-        return !InactiveOrderStatuses.Contains(statusName.Trim());
+        var normalizedStatus = statusName.Trim();
+        if (!InactiveOrderStatuses.Contains(normalizedStatus))
+        {
+            return true;
+        }
+
+        return order.UpdatedAt >= snapshotUpperBoundExclusive;
     }
 
     private static TtbTaxStatus DetermineTaxStatus(Order order)
