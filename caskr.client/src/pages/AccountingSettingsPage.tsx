@@ -195,18 +195,18 @@ function AccountingSettingsPage() {
   const disabledMappings = !isConnected || accountsLoading || mappingsLoading
 
   return (
-    <section className='content-section accounting-settings'>
+    <section className="content-section accounting-settings" aria-labelledby="accounting-settings-title">
       {toast && (
-        <div className='toast-container' role='status' aria-live='assertive'>
+        <div className="toast-container" role="status" aria-live="assertive">
           <div className={`toast ${toast.type === 'success' ? 'toast-success' : 'toast-error'}`}>
             {toast.message}
           </div>
         </div>
       )}
-      <div className='section-header accounting-header'>
+      <div className="section-header accounting-header">
         <div>
-          <h2 className='section-title'>Accounting Settings</h2>
-          <p className='section-subtitle'>Connect QuickBooks Online and map CASKr accounts to your chart of accounts.</p>
+          <h1 id="accounting-settings-title" className="section-title">Accounting Settings</h1>
+          <p className="section-subtitle">Connect QuickBooks Online and map CASKr accounts to your chart of accounts.</p>
         </div>
         <div className='status-group'>
           <span className={`status-pill ${isConnected ? 'connected' : 'disconnected'}`}>{connectionInfo.label}</span>
