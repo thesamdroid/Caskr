@@ -5,6 +5,7 @@ using Caskr.Server.Events;
 using Caskr.Server.Services;
 using Caskr.server.Models;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -18,18 +19,18 @@ public sealed class QuickBooksBatchCostTrackingEventHandler : INotificationHandl
 {
     private readonly CaskrDbContext _dbContext;
     private readonly IBackgroundTaskQueue _taskQueue;
-    private readonly IQuickBooksCostTrackingService _costTrackingService;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<QuickBooksBatchCostTrackingEventHandler> _logger;
 
     public QuickBooksBatchCostTrackingEventHandler(
         CaskrDbContext dbContext,
         IBackgroundTaskQueue taskQueue,
-        IQuickBooksCostTrackingService costTrackingService,
+        IServiceScopeFactory serviceScopeFactory,
         ILogger<QuickBooksBatchCostTrackingEventHandler> logger)
     {
         _dbContext = dbContext;
         _taskQueue = taskQueue;
-        _costTrackingService = costTrackingService;
+        _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
     }
 
@@ -54,9 +55,11 @@ public sealed class QuickBooksBatchCostTrackingEventHandler : INotificationHandl
 
         await _taskQueue.QueueBackgroundWorkItemAsync(async token =>
         {
+            await using var scope = _serviceScopeFactory.CreateAsyncScope();
+            var costTrackingService = scope.ServiceProvider.GetRequiredService<IQuickBooksCostTrackingService>();
             try
             {
-                var result = await _costTrackingService.RecordBatchCOGSAsync(notification.BatchId);
+                var result = await costTrackingService.RecordBatchCOGSAsync(notification.BatchId);
                 if (!result.Success)
                 {
                     _logger.LogWarning(

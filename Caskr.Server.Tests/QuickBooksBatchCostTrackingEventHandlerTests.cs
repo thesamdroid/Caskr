@@ -6,6 +6,7 @@ using Caskr.Server.Services;
 using Caskr.server.Models;
 using Caskr.server.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -42,8 +43,9 @@ public class QuickBooksBatchCostTrackingEventHandlerTests
         var costService = new Mock<IQuickBooksCostTrackingService>();
         costService.Setup(s => s.RecordBatchCOGSAsync(It.IsAny<int>()))
             .ReturnsAsync(new JournalEntrySyncResult(true, "J-1", null));
+        var scopeFactory = CreateScopeFactory(costService);
         var logger = Mock.Of<ILogger<QuickBooksBatchCostTrackingEventHandler>>();
-        var handler = new QuickBooksBatchCostTrackingEventHandler(context, queue.Object, costService.Object, logger);
+        var handler = new QuickBooksBatchCostTrackingEventHandler(context, queue.Object, scopeFactory.Object, logger);
 
         await handler.Handle(new BatchCompletedEvent(55, 9), CancellationToken.None);
 
@@ -56,11 +58,26 @@ public class QuickBooksBatchCostTrackingEventHandlerTests
         await using var context = CreateContext(nameof(Handle_WhenQuickBooksNotConnected_DoesNotEnqueue));
         var queue = new Mock<IBackgroundTaskQueue>();
         var costService = new Mock<IQuickBooksCostTrackingService>();
+        var scopeFactory = CreateScopeFactory(costService);
         var logger = Mock.Of<ILogger<QuickBooksBatchCostTrackingEventHandler>>();
-        var handler = new QuickBooksBatchCostTrackingEventHandler(context, queue.Object, costService.Object, logger);
+        var handler = new QuickBooksBatchCostTrackingEventHandler(context, queue.Object, scopeFactory.Object, logger);
 
         await handler.Handle(new BatchCompletedEvent(10, 2), CancellationToken.None);
 
         queue.Verify(q => q.QueueBackgroundWorkItemAsync(It.IsAny<Func<CancellationToken, Task>>()), Times.Never);
+    }
+
+    private static Mock<IServiceScopeFactory> CreateScopeFactory(Mock<IQuickBooksCostTrackingService> costService)
+    {
+        var provider = new Mock<IServiceProvider>();
+        provider.Setup(p => p.GetService(typeof(IQuickBooksCostTrackingService)))
+            .Returns(costService.Object);
+
+        var scope = new Mock<IAsyncServiceScope>();
+        scope.SetupGet(s => s.ServiceProvider).Returns(provider.Object);
+
+        var scopeFactory = new Mock<IServiceScopeFactory>();
+        scopeFactory.Setup(f => f.CreateAsyncScope()).Returns(scope.Object);
+        return scopeFactory;
     }
 }
