@@ -20,6 +20,15 @@ export interface QuickBooksAccountMapping {
   qboAccountName: string
 }
 
+export type QuickBooksSyncFrequency = 'Immediate' | 'Hourly' | 'Daily' | 'Manual'
+
+export interface QuickBooksSyncPreferences {
+  companyId: number
+  autoSyncInvoices: boolean
+  autoSyncCogs: boolean
+  syncFrequency: QuickBooksSyncFrequency
+}
+
 export type QuickBooksSyncStatus = 'Pending' | 'InProgress' | 'Success' | 'Failed'
 
 export interface QuickBooksInvoiceSyncStatus {
@@ -38,6 +47,13 @@ export interface SaveMappingsPayload {
   companyId: number
   mappings: QuickBooksAccountMapping[]
 }
+
+const createDefaultSyncPreferences = (companyId: number): QuickBooksSyncPreferences => ({
+  companyId,
+  autoSyncInvoices: false,
+  autoSyncCogs: false,
+  syncFrequency: 'Manual'
+})
 
 export const fetchQuickBooksStatus = createAsyncThunk(
   'accounting/fetchStatus',
@@ -134,6 +150,65 @@ export const saveAccountMappings = createAsyncThunk(
   }
 )
 
+export const fetchAccountingSyncPreferences = createAsyncThunk(
+  'accounting/fetchSyncPreferences',
+  async (companyId: number) => {
+    const response = await authorizedFetch(`api/accounting/quickbooks/preferences?companyId=${companyId}`)
+    if (response.status === 404) {
+      return createDefaultSyncPreferences(companyId)
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to load accounting sync preferences')
+    }
+
+    return (await response.json()) as QuickBooksSyncPreferences
+  }
+)
+
+export const saveAccountingSyncPreferences = createAsyncThunk(
+  'accounting/saveSyncPreferences',
+  async (payload: QuickBooksSyncPreferences) => {
+    const response = await authorizedFetch('api/accounting/quickbooks/preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    const body = (await response.json().catch(() => ({}))) as Partial<QuickBooksSyncPreferences> & {
+      message?: string
+    }
+
+    if (!response.ok) {
+      const message = body.message ?? 'Failed to save accounting sync preferences'
+      throw new Error(message)
+    }
+
+    return {
+      ...payload,
+      ...body
+    }
+  }
+)
+
+export const testQuickBooksConnection = createAsyncThunk(
+  'accounting/testQuickBooksConnection',
+  async (companyId: number) => {
+    const response = await authorizedFetch(`api/accounting/quickbooks/test?companyId=${companyId}`)
+    const payload = (await response.json().catch(() => ({}))) as { success?: boolean; message?: string }
+
+    if (!response.ok || payload.success === false) {
+      const message = payload.message ?? 'QuickBooks connection test failed'
+      throw new Error(message)
+    }
+
+    return {
+      success: true,
+      message: payload.message ?? 'QuickBooks connection verified.'
+    }
+  }
+)
+
 export const fetchInvoiceSyncStatus = createAsyncThunk(
   'accounting/fetchInvoiceSyncStatus',
   async (invoiceId: number) => {
@@ -184,6 +259,10 @@ interface AccountingState {
   savingMappings: boolean
   connecting: boolean
   disconnecting: boolean
+  preferences: QuickBooksSyncPreferences | null
+  preferencesLoading: boolean
+  savingPreferences: boolean
+  testingConnection: boolean
   error: string | null
   invoiceStatuses: Record<number, QuickBooksInvoiceSyncStatus>
   invoiceStatusLoading: Record<number, boolean>
@@ -202,6 +281,10 @@ const initialState: AccountingState = {
   savingMappings: false,
   connecting: false,
   disconnecting: false,
+  preferences: null,
+  preferencesLoading: false,
+  savingPreferences: false,
+  testingConnection: false,
   error: null,
   invoiceStatuses: {},
   invoiceStatusLoading: {},
@@ -259,6 +342,7 @@ const accountingSlice = createSlice({
         state.status = { connected: false }
         state.statusCompanyId = null
         state.mappings = []
+        state.preferences = null
       })
       .addCase(disconnectQuickBooks.rejected, (state, action) => {
         state.disconnecting = false
@@ -307,6 +391,48 @@ const accountingSlice = createSlice({
       .addCase(saveAccountMappings.rejected, (state, action) => {
         state.savingMappings = false
         state.error = action.error.message ?? 'Unable to save mappings'
+      })
+
+    builder
+      .addCase(fetchAccountingSyncPreferences.pending, state => {
+        state.preferencesLoading = true
+        state.error = null
+      })
+      .addCase(fetchAccountingSyncPreferences.fulfilled, (state, action) => {
+        state.preferences = action.payload
+        state.preferencesLoading = false
+      })
+      .addCase(fetchAccountingSyncPreferences.rejected, (state, action) => {
+        state.preferencesLoading = false
+        state.preferences = null
+        state.error = action.error.message ?? 'Unable to load accounting sync preferences'
+      })
+
+    builder
+      .addCase(saveAccountingSyncPreferences.pending, state => {
+        state.savingPreferences = true
+        state.error = null
+      })
+      .addCase(saveAccountingSyncPreferences.fulfilled, (state, action) => {
+        state.savingPreferences = false
+        state.preferences = action.payload
+      })
+      .addCase(saveAccountingSyncPreferences.rejected, (state, action) => {
+        state.savingPreferences = false
+        state.error = action.error.message ?? 'Unable to save accounting sync preferences'
+      })
+
+    builder
+      .addCase(testQuickBooksConnection.pending, state => {
+        state.testingConnection = true
+        state.error = null
+      })
+      .addCase(testQuickBooksConnection.fulfilled, state => {
+        state.testingConnection = false
+      })
+      .addCase(testQuickBooksConnection.rejected, (state, action) => {
+        state.testingConnection = false
+        state.error = action.error.message ?? 'Unable to verify QuickBooks connection'
       })
 
     builder

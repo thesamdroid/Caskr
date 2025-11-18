@@ -9,6 +9,8 @@ import {
   QuickBooksAccountMapping,
   clearAccountingError
 } from '../features/accountingSlice'
+import AccountingSyncPreferences from '../components/accounting/AccountingSyncPreferences'
+import { ToastState } from '../types/toast'
 import { useAppDispatch, useAppSelector } from '../hooks'
 
 const CASKR_ACCOUNT_TYPES = [
@@ -26,8 +28,6 @@ type AccountTypeValue = (typeof CASKR_ACCOUNT_TYPES)[number]['value']
 
 type MappingSelection = Record<AccountTypeValue, QuickBooksAccountMapping | undefined>
 
-type ToastState = { type: 'success' | 'error'; message: string } | null
-
 const createEmptyMappings = (): MappingSelection => {
   return CASKR_ACCOUNT_TYPES.reduce((acc, accountType) => {
     acc[accountType.value] = undefined
@@ -36,7 +36,7 @@ const createEmptyMappings = (): MappingSelection => {
 }
 
 const useToast = () => {
-  const [toast, setToast] = useState<ToastState>(null)
+  const [toast, setToast] = useState<ToastState | null>(null)
 
   useEffect(() => {
     if (!toast) return
@@ -44,7 +44,9 @@ const useToast = () => {
     return () => window.clearTimeout(timer)
   }, [toast])
 
-  return { toast, setToast }
+  const showToast = (next: ToastState) => setToast(next)
+
+  return { toast, showToast }
 }
 
 const formatConnectedDate = (date?: string) => {
@@ -74,7 +76,7 @@ function AccountingSettingsPage() {
   const companyId = 1
   const [localMappings, setLocalMappings] = useState<MappingSelection>(() => createEmptyMappings())
   const [searchTerms, setSearchTerms] = useState<Partial<Record<AccountTypeValue, string>>>({})
-  const { toast, setToast } = useToast()
+  const { toast, showToast } = useToast()
 
   const isConnected = Boolean(status?.connected)
 
@@ -106,9 +108,9 @@ function AccountingSettingsPage() {
 
   useEffect(() => {
     if (!error) return
-    setToast({ type: 'error', message: error })
+    showToast({ type: 'error', message: error })
     dispatch(clearAccountingError())
-  }, [dispatch, error, setToast])
+  }, [dispatch, error, showToast])
 
   const connectionInfo = useMemo(
     () => ({
@@ -122,11 +124,11 @@ function AccountingSettingsPage() {
   const handleConnect = async () => {
     try {
       const { authUrl } = await dispatch(connectQuickBooks(companyId)).unwrap()
-      setToast({ type: 'success', message: 'Redirecting to QuickBooks…' })
+      showToast({ type: 'success', message: 'Redirecting to QuickBooks…' })
       window.location.href = authUrl
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to start QuickBooks connection'
-      setToast({ type: 'error', message })
+      showToast({ type: 'error', message })
     }
   }
 
@@ -137,10 +139,10 @@ function AccountingSettingsPage() {
     try {
       await dispatch(disconnectQuickBooks(companyId)).unwrap()
       setLocalMappings(createEmptyMappings())
-      setToast({ type: 'success', message: 'QuickBooks connection removed.' })
+      showToast({ type: 'success', message: 'QuickBooks connection removed.' })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to disconnect QuickBooks'
-      setToast({ type: 'error', message })
+      showToast({ type: 'error', message })
     }
   }
 
@@ -168,7 +170,7 @@ function AccountingSettingsPage() {
   const handleSave = async () => {
     const missingAccountType = CASKR_ACCOUNT_TYPES.find(accountType => !localMappings[accountType.value])
     if (missingAccountType) {
-      setToast({ type: 'error', message: `${missingAccountType.label} must be mapped before saving.` })
+      showToast({ type: 'error', message: `${missingAccountType.label} must be mapped before saving.` })
       return
     }
 
@@ -183,10 +185,10 @@ function AccountingSettingsPage() {
 
     try {
       await dispatch(saveAccountMappings({ companyId, mappings: payload })).unwrap()
-      setToast({ type: 'success', message: 'Chart of accounts mappings saved.' })
+      showToast({ type: 'success', message: 'Chart of accounts mappings saved.' })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to save mappings'
-      setToast({ type: 'error', message })
+      showToast({ type: 'error', message })
     }
   }
 
@@ -346,6 +348,7 @@ function AccountingSettingsPage() {
           </button>
         </div>
       </div>
+      <AccountingSyncPreferences companyId={companyId} isConnected={isConnected} onToast={showToast} />
     </section>
   )
 }
