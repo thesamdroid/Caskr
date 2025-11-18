@@ -47,6 +47,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<ChartOfAccountsMapping> ChartOfAccountsMappings { get; set; } = null!;
 
+    public virtual DbSet<AccountingSyncPreference> AccountingSyncPreferences { get; set; } = null!;
+
     public virtual DbSet<Invoice> Invoices { get; set; } = null!;
 
     public virtual DbSet<InvoiceLineItem> InvoiceLineItems { get; set; } = null!;
@@ -480,6 +482,50 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.CompanyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_chart_of_accounts_mapping_company");
+        });
+
+        modelBuilder.Entity<AccountingSyncPreference>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("accounting_sync_preferences_pkey");
+
+            entity.ToTable("accounting_sync_preferences");
+
+            entity.HasIndex(e => e.CompanyId)
+                .HasDatabaseName("idx_accounting_sync_preferences_company_id");
+
+            entity.HasIndex(e => new { e.CompanyId, e.Provider })
+                .IsUnique()
+                .HasDatabaseName("ux_accounting_sync_preferences_company_provider");
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("nextval('\"accounting_sync_preferences_id_seq\"'::regclass)");
+
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Provider)
+                .HasConversion<string>()
+                .HasColumnName("provider");
+            entity.Property(e => e.AutoSyncInvoices)
+                .HasDefaultValue(false)
+                .HasColumnName("auto_sync_invoices");
+            entity.Property(e => e.AutoSyncCogs)
+                .HasDefaultValue(false)
+                .HasColumnName("auto_sync_cogs");
+            entity.Property(e => e.SyncFrequency)
+                .HasMaxLength(32)
+                .HasDefaultValue("Manual")
+                .HasColumnName("sync_frequency");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .HasConstraintName("fk_accounting_sync_preferences_company");
         });
 
         modelBuilder.Entity<Invoice>(entity =>

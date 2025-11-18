@@ -251,6 +251,110 @@ public class QuickBooksControllerTests : IDisposable
     }
 
     [Fact]
+    public async Task GetSyncPreferences_WhenPreferenceMissing_ReturnsNotFound()
+    {
+        var user = new User { Id = 702, CompanyId = 52, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+        _context!.AccountingIntegrations.Add(new AccountingIntegration
+        {
+            CompanyId = user.CompanyId,
+            Provider = AccountingProvider.QuickBooks,
+            RealmId = "realm",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        var result = await controller.GetSyncPreferences(user.CompanyId);
+
+        var notFound = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var payload = Assert.IsType<QuickBooksErrorResponse>(notFound.Value);
+        Assert.Contains("preferences", payload.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task SaveSyncPreferences_WithValidRequest_CreatesPreference()
+    {
+        var user = new User { Id = 703, CompanyId = 53, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+        _context!.AccountingIntegrations.Add(new AccountingIntegration
+        {
+            CompanyId = user.CompanyId,
+            Provider = AccountingProvider.QuickBooks,
+            RealmId = "realm",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        var request = new QuickBooksSyncPreferencesRequest
+        {
+            CompanyId = user.CompanyId,
+            AutoSyncInvoices = true,
+            AutoSyncCogs = true,
+            SyncFrequency = "Hourly"
+        };
+
+        var result = await controller.SaveSyncPreferences(request);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var payload = Assert.IsType<QuickBooksSyncPreferencesResponse>(ok.Value);
+        Assert.Equal(user.CompanyId, payload.CompanyId);
+        Assert.True(payload.AutoSyncInvoices);
+        Assert.Equal("Hourly", payload.SyncFrequency);
+
+        var savedPreference = await _context.AccountingSyncPreferences.SingleAsync();
+        Assert.Equal(user.CompanyId, savedPreference.CompanyId);
+        Assert.True(savedPreference.AutoSyncInvoices);
+        Assert.True(savedPreference.AutoSyncCogs);
+        Assert.Equal("Hourly", savedPreference.SyncFrequency);
+    }
+
+    [Fact]
+    public async Task TestQuickBooksConnection_WithoutIntegration_ReturnsFailurePayload()
+    {
+        var user = new User { Id = 704, CompanyId = 54, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+
+        var result = await controller.TestQuickBooksConnection(user.CompanyId);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var payload = Assert.IsType<QuickBooksConnectionTestResponse>(ok.Value);
+        Assert.False(payload.Success);
+        Assert.Contains("not connected", payload.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task TestQuickBooksConnection_WithIntegration_VerifiesDataService()
+    {
+        var user = new User { Id = 705, CompanyId = 56, UserTypeId = (int)UserTypeEnum.Admin };
+        var controller = CreateController(user);
+        _context!.AccountingIntegrations.Add(new AccountingIntegration
+        {
+            CompanyId = user.CompanyId,
+            Provider = AccountingProvider.QuickBooks,
+            RealmId = "realm",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+        _context.SaveChanges();
+
+        _quickBooksDataService
+            .Setup(s => s.GetChartOfAccountsAsync(user.CompanyId, true))
+            .ReturnsAsync(new List<QBOAccount>());
+
+        var result = await controller.TestQuickBooksConnection(user.CompanyId);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var payload = Assert.IsType<QuickBooksConnectionTestResponse>(ok.Value);
+        Assert.True(payload.Success);
+        _quickBooksDataService.Verify(s => s.GetChartOfAccountsAsync(user.CompanyId, true), Times.Once);
+    }
+
+    [Fact]
     public async Task GetInvoiceSyncStatus_WithExistingLog_ReturnsLatestEntry()
     {
         var user = new User { Id = 710, CompanyId = 45, UserTypeId = (int)UserTypeEnum.Admin };
