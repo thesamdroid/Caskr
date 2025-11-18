@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caskr - Dark Mode Mockup</title>
+    <style>
+        /* ==================== DARK MODE COLOR PALETTE ==================== */
+        :root {
+            /* Dark Backgrounds */
+            --dark-bg-primary: #0f0f0f;
+            --dark-bg-secondary: #1a1a1a;
+            --dark-bg-tertiary: #242424;
+            
+            /* Gold Accents */
+            --gold-primary: #d4af37;
+            --gold-light: #f4d03f;
+            --gold-dark: #b8941f;
+            
+            /* White Accents */
+            --white-primary: #ffffff;
+            --white-muted: #e5e5e5;
+            --white-overlay: rgba(255, 255, 255, 0.1);
+            
+            /* Text Colors */
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #808080;
+            
+            /* Status Colors */
+            --success-green: #10b981;
+            --warning-amber: #f59e0b;
+            --error-red: #ef4444;
+            
+            /* Borders */
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-standard: rgba(255, 255, 255, 0.15);
+            --border-emphasis: rgba(212, 175, 55, 0.3);
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+            --shadow-gold: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+
+        /* ==================== GLOBAL STYLES ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--dark-bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ==================== HEADER ==================== */
+        .header {
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-standard);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 70px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gold-primary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+            color: var(--gold-light);
+            transform: scale(1.05);
+        }
+
+        .barrel-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-gold);
+            animation: subtleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes subtleGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.5); }
+        }
+
+        .barrel-icon::before {
+            content: '🛢';
+            font-size: 24px;
+            filter: grayscale(1) brightness(0.2);
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-item a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-item a:hover {
+            background: var(--dark-bg-tertiary);
+            color: var(--gold-primary);
+        }
+
+        .nav-item a.active {
+            color: var(--gold-primary);
+            background: var(--white-overlay);
+        }
+
+        /* ==================== MAIN CONTENT ==================== */
+        .main-content {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* ==================== STATS GRID ==================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: var(--dark-bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--border-standard);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 24px;
+        }
+
+        .stat-icon.orders {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .stat-icon.completed {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .stat-icon.pending {
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 100%);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+
+        .stat-icon.progress {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .stat-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-change {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .stat-change.positive { color: var(--success-green); }
+        .stat-change.neutral { color: var(--text-secondary); }
+
+        /* ==================== ORDER CARDS ==================== */
+        .orders-section {
+            margin-top: 2.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .order-card {
+            background: var(--dark-bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .order-card:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: var(--border-standard);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .order-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .status-badge.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .status-badge.completed {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-badge::before {
+            content: '●';
+            font-size: 0.5rem;
+        }
+
+        .progress-section {
+            margin-bottom: 1rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-percentage {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gold-primary);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--dark-bg-tertiary);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold-light) 0%, var(--gold-primary) 100%);
+            transition: width 0.3s ease;
+            border-radius: 9999px;
+            box-shadow: 0 0 10px var(--gold-primary);
+        }
+
+        .task-summary {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--dark-bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .task-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .task-stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .task-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* ==================== BUTTONS ==================== */
+        .btn {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            color: var(--dark-bg-primary);
+            border: none;
+            border-radius: 8px;
+            padding: 0.625rem 1.25rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            font-size: 0.875rem;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-gold);
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--gold-primary);
+            color: var(--gold-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gold-primary);
+            color: var(--dark-bg-primary);
+        }
+
+        /* ==================== MODAL ==================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            z-index: 200;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--dark-bg-secondary);
+            border: 1px solid var(--border-standard);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), var(--shadow-gold);
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-standard);
+            background: var(--dark-bg-tertiary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .nav-menu {
+                gap: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main-content {
+                padding: 0 1rem;
+            }
+        }
+
+        /* ==================== DEMO CONTROLS ==================== */
+        .demo-controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--dark-bg-secondary);
+            border: 1px solid var(--gold-primary);
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: var(--shadow-gold);
+            z-index: 1000;
+        }
+
+        .demo-controls h4 {
+            color: var(--gold-primary);
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .demo-controls button {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-controls button:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="#" class="logo">
+                <div class="barrel-icon"></div>
+                CASKr
+            </a>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="#" class="active">Dashboard</a></li>
+                    <li class="nav-item"><a href="#">Orders</a></li>
+                    <li class="nav-item"><a href="#">Barrels</a></li>
+                    <li class="nav-item"><a href="#">Products</a></li>
+                    <li class="nav-item"><a href="#">Accounting</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Manage your orders and track progress</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon orders">📦</div>
+                <div class="stat-content">
+                    <p class="stat-label">Active Orders</p>
+                    <h3 class="stat-value">24</h3>
+                    <div class="stat-change positive">
+                        <span>↗</span>
+                        <span>+12% from last month</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon completed">✓</div>
+                <div class="stat-content">
+                    <p class="stat-label">Completed Orders</p>
+                    <h3 class="stat-value">156</h3>
+                    <div class="stat-change neutral">
+                        <span>−</span>
+                        <span>No change</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon pending">⏱</div>
+                <div class="stat-content">
+                    <p class="stat-label">Total Tasks</p>
+                    <h3 class="stat-value">87</h3>
+                    <div class="stat-change positive">
+                        <span>↗</span>
+                        <span>32 remaining</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon progress">📊</div>
+                <div class="stat-content">
+                    <p class="stat-label">Overall Progress</p>
+                    <h3 class="stat-value">63%</h3>
+                    <div class="stat-change positive">
+                        <span>↗</span>
+                        <span>Task completion rate</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Section -->
+        <div class="orders-section">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Current Orders</h2>
+                    <p class="page-subtitle">Track and manage all active orders</p>
+                </div>
+                <button class="btn"><span>+ New Order</span></button>
+            </div>
+
+            <div class="orders-grid">
+                <!-- Order Card 1 -->
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <h3 class="order-title">Bourbon Batch #2024-A</h3>
+                            <span class="status-badge pending">Pending</span>
+                        </div>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span class="progress-label">Progress</span>
+                            <span class="progress-percentage">45%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 45%"></div>
+                        </div>
+                    </div>
+                    <div class="task-summary">
+                        <div class="task-stat">
+                            <span class="task-stat-value">5</span>
+                            <span class="task-stat-label">Completed</span>
+                        </div>
+                        <div class="task-stat">
+                            <span class="task-stat-value">6</span>
+                            <span class="task-stat-label">Remaining</span>
+                        </div>
+                        <div class="task-stat">
+                            <span class="task-stat-value">11</span>
+                            <span class="task-stat-label">Total</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Card 2 -->
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <h3 class="order-title">Rye Whiskey Special</h3>
+                            <span class="status-badge completed">Completed</span>
+                        </div>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span class="progress-label">Progress</span>
+                            <span class="progress-percentage">100%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="task-summary">
+                        <div class="task-stat">
+                            <span class="task-stat-value">8</span>
+                            <span class="task-stat-label">Completed</span>
+                        </div>
+                        <div class="task-stat">
+                            <span class="task-stat-value">0</span>
+                            <span class="task-stat-label">Remaining</span>
+                        </div>
+                        <div class="task-stat">
+                            <span class="task-stat-value">8</span>
+                            <span class="task-stat-label">Total</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Card 3 -->
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <h3 class="order-title">Tennessee Blend #103</h3>
+                            <span class="status-badge pending">Pending</span>
+                        </div>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span class="progress-label">Progress</span>
+                            <span class="progress-percentage">78%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 78%"></div>
+                        </div>
+                    </div>
+                    <div class="task-summary">
+                        <div class="task-stat">
+                            <span class="task-stat-value">7</span>
+                            <span class="task-stat-label">Completed</span>
+                        </div>
+                        <div class="task-stat">
+                            <span class="task-stat-value">2</span>
+                            <span class="task-stat-label">Remaining</span>
+                        </div>
+                        <div class="task-stat">
+                            <span class="task-stat-value">9</span>
+                            <span class="task-stat-label">Total</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Example (Hidden by default) -->
+    <div class="modal-overlay" id="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Order</h3>
+                <p class="modal-subtitle">Fill in the details for your new order</p>
+            </div>
+            <form>
+                <div class="form-group">
+                    <label class="form-label">Order Name</label>
+                    <input type="text" class="form-input" placeholder="Enter order name" value="Bourbon Batch #2024-B">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Barrel Type</label>
+                    <input type="text" class="form-input" placeholder="Select barrel type" value="American Oak">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input" placeholder="Enter quantity" value="50">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal').style.display='none'">
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" class="btn" onclick="event.preventDefault(); alert('Order would be created!'); document.getElementById('modal').style.display='none'">
+                        <span>Create Order</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Demo Controls -->
+    <div class="demo-controls">
+        <h4>🎨 Demo Controls</h4>
+        <button class="btn" onclick="document.getElementById('modal').style.display='flex'">
+            <span>Show Modal</span>
+        </button>
+        <button class="btn btn-secondary" onclick="alert('This is the dark mode theme with:\n\n• Gold primary (#d4af37)\n• White secondary\n• Dark backgrounds\n• Smooth animations\n• Professional aesthetic')">
+            <span>Theme Info</span>
+        </button>
+    </div>
+
+    <script>
+        // Add smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href'))?.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Close modal on overlay click
+        document.getElementById('modal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+
+        // Escape key to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('modal').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

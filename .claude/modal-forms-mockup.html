@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caskr - Modals & Forms (Dark Mode)</title>
+    <style>
+        :root {
+            --dark-bg-primary: #0f0f0f;
+            --dark-bg-secondary: #1a1a1a;
+            --dark-bg-tertiary: #242424;
+            --gold-primary: #d4af37;
+            --gold-light: #f4d03f;
+            --gold-dark: #b8941f;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #808080;
+            --success-green: #10b981;
+            --error-red: #ef4444;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-standard: rgba(255, 255, 255, 0.15);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            --shadow-gold: 0 0 20px rgba(212, 175, 55, 0.3);
+            --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark-bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--gold-primary);
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+
+        .demo-section {
+            margin-bottom: 3rem;
+        }
+
+        .demo-section h2 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            color: var(--dark-bg-primary);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--gold-light), var(--gold-primary));
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-gold);
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--gold-primary);
+            color: var(--gold-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gold-primary);
+            color: var(--dark-bg-primary);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            z-index: 200;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--dark-bg-secondary);
+            border: 1px solid var(--border-standard);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), var(--shadow-gold);
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-standard);
+            background: var(--dark-bg-tertiary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all var(--transition-base);
+            font-family: inherit;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-error {
+            color: var(--error-red);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .form-error::before {
+            content: '⚠';
+        }
+
+        .form-success {
+            color: var(--success-green);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .form-success::before {
+            content: '✓';
+        }
+
+        .input-error {
+            border-color: var(--error-red) !important;
+        }
+
+        .input-success {
+            border-color: var(--success-green) !important;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        /* Form Card */
+        .form-card {
+            background: var(--dark-bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .form-card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gold-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            accent-color: var(--gold-primary);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--dark-bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .radio-option:hover {
+            border-color: var(--gold-primary);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .radio {
+            accent-color: var(--gold-primary);
+        }
+
+        .page-indicator {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--dark-bg-secondary);
+            border: 2px solid var(--gold-primary);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: var(--shadow-gold);
+        }
+
+        .page-indicator-title {
+            color: var(--gold-primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Modals & Forms Demo</h1>
+
+        <!-- Buttons Section -->
+        <div class="demo-section">
+            <h2>Buttons & Interactions</h2>
+            <div class="btn-group">
+                <button class="btn" onclick="openModal('createOrder')">
+                    <span>Open Create Order Modal</span>
+                </button>
+                <button class="btn" onclick="openModal('editOrder')">
+                    <span>Open Edit Modal</span>
+                </button>
+                <button class="btn btn-secondary">
+                    <span>Secondary Button</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Form Card Section -->
+        <div class="demo-section">
+            <h2>Form Elements</h2>
+            <div class="form-card">
+                <h3 class="form-card-title">Sample Form</h3>
+                
+                <div class="form-group">
+                    <label class="form-label">Order Name*</label>
+                    <input type="text" class="form-input" placeholder="Enter order name" value="Bourbon Batch #2024">
+                    <div class="form-success">Valid order name</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Address*</label>
+                    <input type="email" class="form-input input-error" placeholder="Enter email" value="invalid-email">
+                    <div class="form-error">Please enter a valid email address</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Barrel Type</label>
+                    <select class="form-select">
+                        <option>Select barrel type</option>
+                        <option selected>American Oak</option>
+                        <option>French Oak</option>
+                        <option>Charred Oak</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" placeholder="Enter order description...">Premium bourbon batch with special aging process</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Preferences</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" class="checkbox" id="pref1" checked>
+                        <label for="pref1">Send notifications</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" class="checkbox" id="pref2">
+                        <label for="pref2">Automatic quality checks</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Priority Level</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="priority" class="radio" checked>
+                            <span>High Priority</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="priority" class="radio">
+                            <span>Medium Priority</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="priority" class="radio">
+                            <span>Low Priority</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn"><span>Save Changes</span></button>
+                    <button class="btn btn-secondary"><span>Cancel</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Order Modal -->
+    <div class="modal-overlay" id="createOrderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Order</h3>
+                <p class="modal-subtitle">Fill in the details to create a new production order</p>
+            </div>
+            
+            <form>
+                <div class="form-group">
+                    <label class="form-label">Order Name*</label>
+                    <input type="text" class="form-input" placeholder="e.g., Bourbon Batch #2024-A" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Barrel Type*</label>
+                    <select class="form-select" required>
+                        <option value="">Select barrel type</option>
+                        <option>American Oak</option>
+                        <option>French Oak</option>
+                        <option>Charred Oak</option>
+                        <option>New Oak</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Quantity*</label>
+                    <input type="number" class="form-input" placeholder="Number of barrels" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-textarea" placeholder="Add any special instructions or notes..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createOrder')">
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" class="btn" onclick="event.preventDefault(); alert('Order created!'); closeModal('createOrder')">
+                        <span>Create Order</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Order Modal -->
+    <div class="modal-overlay" id="editOrderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Order</h3>
+                <p class="modal-subtitle">Update order details</p>
+            </div>
+            
+            <form>
+                <div class="form-group">
+                    <label class="form-label">Order Name</label>
+                    <input type="text" class="form-input" value="Bourbon Batch #2024-A">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select class="form-select">
+                        <option>Pending</option>
+                        <option selected>In Progress</option>
+                        <option>Completed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input" value="50">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editOrder')">
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" class="btn" onclick="event.preventDefault(); alert('Order updated!'); closeModal('editOrder')">
+                        <span>Save Changes</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="page-indicator">
+        <div class="page-indicator-title">📄 Modals & Forms</div>
+        <div style="color: var(--text-secondary); font-size: 0.75rem;">Interactive Examples</div>
+    </div>
+
+    <script>
+        function openModal(type) {
+            const modalId = type === 'createOrder' ? 'createOrderModal' : 'editOrderModal';
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(type) {
+            const modalId = type === 'createOrder' ? 'createOrderModal' : 'editOrderModal';
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                    overlay.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

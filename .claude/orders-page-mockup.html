@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caskr - Orders (Dark Mode)</title>
+    <style>
+        :root {
+            --dark-bg-primary: #0f0f0f;
+            --dark-bg-secondary: #1a1a1a;
+            --dark-bg-tertiary: #242424;
+            --gold-primary: #d4af37;
+            --gold-light: #f4d03f;
+            --gold-dark: #b8941f;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #808080;
+            --success-green: #10b981;
+            --warning-amber: #f59e0b;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-standard: rgba(255, 255, 255, 0.15);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+            --shadow-gold: 0 0 20px rgba(212, 175, 55, 0.3);
+            --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark-bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-standard);
+            padding: 1.25rem 2rem;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gold-primary);
+            text-decoration: none;
+        }
+
+        .barrel-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-gold);
+            font-size: 24px;
+        }
+
+        .main-content {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+            color: var(--dark-bg-primary);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-gold);
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .filter-input, .filter-select {
+            padding: 0.625rem;
+            background: var(--dark-bg-tertiary);
+            border: 1px solid var(--border-standard);
+            border-radius: 8px;
+            color: var(--text-primary);
+            transition: all var(--transition-base);
+            min-width: 200px;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+
+        .table-container {
+            background: var(--dark-bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-md);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--dark-bg-tertiary);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--gold-primary);
+            border-bottom: 2px solid var(--border-standard);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        tbody tr {
+            transition: all var(--transition-base);
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .status-badge::before {
+            content: '●';
+            font-size: 0.5rem;
+        }
+
+        .status-badge.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .status-badge.in-progress {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .status-badge.completed {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            padding: 0.375rem 0.75rem;
+            background: transparent;
+            border: 1px solid var(--border-standard);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            font-size: 0.875rem;
+        }
+
+        .action-btn:hover {
+            border-color: var(--gold-primary);
+            color: var(--gold-primary);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .page-indicator {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--dark-bg-secondary);
+            border: 2px solid var(--gold-primary);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: var(--shadow-gold);
+        }
+
+        .page-indicator-title {
+            color: var(--gold-primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="#" class="logo">
+                <div class="barrel-icon">🛢</div>
+                CASKr
+            </a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Orders</h1>
+                <p style="color: var(--text-secondary);">Manage all your production orders</p>
+            </div>
+            <button class="btn">+ Create New Order</button>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label class="filter-label">Search</label>
+                <input type="text" class="filter-input" placeholder="Search orders...">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select class="filter-select">
+                    <option>All Statuses</option>
+                    <option>Pending</option>
+                    <option>In Progress</option>
+                    <option>Completed</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Date Range</label>
+                <select class="filter-select">
+                    <option>Last 30 Days</option>
+                    <option>Last 60 Days</option>
+                    <option>Last 90 Days</option>
+                    <option>All Time</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order Name</th>
+                        <th>Status</th>
+                        <th>Barrels</th>
+                        <th>Created Date</th>
+                        <th>Progress</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Bourbon Batch #2024-A</strong></td>
+                        <td><span class="status-badge pending">Pending</span></td>
+                        <td>50</td>
+                        <td>Oct 15, 2024</td>
+                        <td>45%</td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn">Edit</button>
+                                <button class="action-btn">View</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rye Whiskey Special Edition</strong></td>
+                        <td><span class="status-badge completed">Completed</span></td>
+                        <td>30</td>
+                        <td>Oct 10, 2024</td>
+                        <td>100%</td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn">Edit</button>
+                                <button class="action-btn">View</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tennessee Blend #103</strong></td>
+                        <td><span class="status-badge in-progress">In Progress</span></td>
+                        <td>40</td>
+                        <td>Oct 5, 2024</td>
+                        <td>78%</td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn">Edit</button>
+                                <button class="action-btn">View</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Premium Single Barrel Select</strong></td>
+                        <td><span class="status-badge pending">Pending</span></td>
+                        <td>25</td>
+                        <td>Sep 28, 2024</td>
+                        <td>22%</td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn">Edit</button>
+                                <button class="action-btn">View</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Wheat Whiskey Experiment</strong></td>
+                        <td><span class="status-badge in-progress">In Progress</span></td>
+                        <td>15</td>
+                        <td>Sep 20, 2024</td>
+                        <td>55%</td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn">Edit</button>
+                                <button class="action-btn">View</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Barrel-Aged Reserve Collection</strong></td>
+                        <td><span class="status-badge completed">Completed</span></td>
+                        <td>60</td>
+                        <td>Sep 15, 2024</td>
+                        <td>100%</td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn">Edit</button>
+                                <button class="action-btn">View</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Kentucky Straight Bourbon Reserve</strong></td>
+                        <td><span class="status-badge in-progress">In Progress</span></td>
+                        <td>45</td>
+                        <td>Sep 10, 2024</td>
+                        <td>67%</td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn">Edit</button>
+                                <button class="action-btn">View</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Small Batch Experimental Series</strong></td>
+                        <td><span class="status-badge pending">Pending</span></td>
+                        <td>10</td>
+                        <td>Sep 5, 2024</td>
+                        <td>12%</td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn">Edit</button>
+                                <button class="action-btn">View</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div class="page-indicator">
+        <div class="page-indicator-title">📄 Orders Page</div>
+        <div style="color: var(--text-secondary); font-size: 0.75rem;">Table View with Filters</div>
+    </div>
+</body>
+</html>
