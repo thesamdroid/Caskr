@@ -419,6 +419,71 @@ button:hover {
   color: var(--secondary-orange);
 }
 
+.accounting-preferences {
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 1.25rem;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.preference-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .preference-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
+
+.preference-row {
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 1rem;
+  background: var(--gray-50);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 160px;
+}
+
+.preference-copy label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.preference-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.preference-control input[type='checkbox'] {
+  width: 2.75rem;
+  height: 1.5rem;
+  accent-color: var(--primary-blue);
+}
+
+.preference-control select {
+  min-width: 180px;
+}
+
+.preferences-actions,
+.preferences-actions-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.preferences-actions {
+  justify-content: flex-end;
+}
+
 .helper-text.info {
   color: var(--primary-blue);
 }

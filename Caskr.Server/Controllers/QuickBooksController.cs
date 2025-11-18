@@ -40,6 +40,14 @@ public class QuickBooksController(
     private const int RateLimitRequestsPerWindow = 10;
     private static readonly TimeSpan RateLimitWindow = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan InProgressWindow = TimeSpan.FromMinutes(5);
+    private const string DefaultSyncFrequency = "Manual";
+    private static readonly string[] AllowedSyncFrequencies =
+    {
+        "Immediate",
+        "Hourly",
+        "Daily",
+        DefaultSyncFrequency
+    };
 
     private readonly IQuickBooksAuthService _quickBooksAuthService = quickBooksAuthService;
     private readonly IUsersService _usersService = usersService;
@@ -550,6 +558,152 @@ public class QuickBooksController(
         }
     }
 
+    /// <summary>
+    ///     Retrieves the saved QuickBooks sync preferences for a company.
+    /// </summary>
+    /// <param name="companyId">The company identifier.</param>
+    [HttpGet("preferences")]
+    [ProducesResponseType(typeof(QuickBooksSyncPreferencesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<QuickBooksSyncPreferencesResponse>> GetSyncPreferences([FromQuery(Name = "companyId")] int? companyId)
+    {
+        if (companyId is null || companyId <= 0)
+        {
+            return BadRequest(new QuickBooksErrorResponse("A valid companyId query parameter is required."));
+        }
+
+        var authorizationResult = await AuthorizeCompanyAsync(companyId.Value);
+        if (authorizationResult.errorResult is { } error)
+        {
+            return ConvertToActionResult<QuickBooksSyncPreferencesResponse>(error);
+        }
+
+        var hasIntegration = await CompanyHasQuickBooksIntegrationAsync(companyId.Value);
+        if (!hasIntegration)
+        {
+            return NotFound(new QuickBooksErrorResponse("QuickBooks not connected for this company."));
+        }
+
+        var preference = await _dbContext.AccountingSyncPreferences
+            .AsNoTracking()
+            .SingleOrDefaultAsync(p => p.CompanyId == companyId.Value && p.Provider == AccountingProvider.QuickBooks);
+
+        if (preference is null)
+        {
+            return NotFound(new QuickBooksErrorResponse("QuickBooks sync preferences not configured."));
+        }
+
+        return Ok(MapPreferences(preference));
+    }
+
+    /// <summary>
+    ///     Creates or updates the QuickBooks sync preferences for a company.
+    /// </summary>
+    /// <param name="request">The sync preference payload.</param>
+    [HttpPost("preferences")]
+    [ProducesResponseType(typeof(QuickBooksSyncPreferencesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<QuickBooksSyncPreferencesResponse>> SaveSyncPreferences([FromBody] QuickBooksSyncPreferencesRequest? request)
+    {
+        if (request is null)
+        {
+            return BadRequest(new QuickBooksErrorResponse("Request body is required."));
+        }
+
+        if (request.CompanyId <= 0)
+        {
+            return BadRequest(new QuickBooksErrorResponse("A valid companyId is required."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SyncFrequency) && !IsValidSyncFrequency(request.SyncFrequency))
+        {
+            var allowed = string.Join(", ", AllowedSyncFrequencies);
+            return BadRequest(new QuickBooksErrorResponse($"Sync frequency must be one of: {allowed}."));
+        }
+
+        var authorizationResult = await AuthorizeCompanyAsync(request.CompanyId);
+        if (authorizationResult.errorResult is { } error)
+        {
+            return ConvertToActionResult<QuickBooksSyncPreferencesResponse>(error);
+        }
+
+        var hasIntegration = await CompanyHasQuickBooksIntegrationAsync(request.CompanyId);
+        if (!hasIntegration)
+        {
+            return BadRequest(new QuickBooksErrorResponse("QuickBooks is not connected for this company."));
+        }
+
+        var normalizedFrequency = NormalizeSyncFrequency(request.SyncFrequency);
+        var preference = await _dbContext.AccountingSyncPreferences
+            .SingleOrDefaultAsync(p => p.CompanyId == request.CompanyId && p.Provider == AccountingProvider.QuickBooks);
+
+        if (preference is null)
+        {
+            preference = new AccountingSyncPreference
+            {
+                CompanyId = request.CompanyId,
+                Provider = AccountingProvider.QuickBooks,
+                AutoSyncInvoices = request.AutoSyncInvoices,
+                AutoSyncCogs = request.AutoSyncCogs,
+                SyncFrequency = normalizedFrequency,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _dbContext.AccountingSyncPreferences.Add(preference);
+        }
+        else
+        {
+            preference.AutoSyncInvoices = request.AutoSyncInvoices;
+            preference.AutoSyncCogs = request.AutoSyncCogs;
+            preference.SyncFrequency = normalizedFrequency;
+            preference.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(MapPreferences(preference));
+    }
+
+    /// <summary>
+    ///     Performs a lightweight QuickBooks connectivity verification for the specified company.
+    /// </summary>
+    /// <param name="companyId">The company identifier.</param>
+    [HttpGet("test")]
+    [ProducesResponseType(typeof(QuickBooksConnectionTestResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<QuickBooksConnectionTestResponse>> TestQuickBooksConnection([FromQuery(Name = "companyId")] int? companyId)
+    {
+        if (companyId is null || companyId <= 0)
+        {
+            return BadRequest(new QuickBooksErrorResponse("A valid companyId query parameter is required."));
+        }
+
+        var authorizationResult = await AuthorizeCompanyAsync(companyId.Value);
+        if (authorizationResult.errorResult is { } error)
+        {
+            return ConvertToActionResult<QuickBooksConnectionTestResponse>(error);
+        }
+
+        var hasIntegration = await CompanyHasQuickBooksIntegrationAsync(companyId.Value);
+        if (!hasIntegration)
+        {
+            return Ok(new QuickBooksConnectionTestResponse(false, "QuickBooks is not connected for this company."));
+        }
+
+        try
+        {
+            await _quickBooksDataService.GetChartOfAccountsAsync(companyId.Value, true);
+            return Ok(new QuickBooksConnectionTestResponse(true, "QuickBooks connection verified."));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "QuickBooks connection test failed for company {CompanyId}", companyId.Value);
+            return Ok(new QuickBooksConnectionTestResponse(false, "Unable to verify QuickBooks connection."));
+        }
+    }
+
     private async Task<(User? user, IActionResult? errorResult)> AuthorizeCompanyAsync(int companyId)
     {
         if (companyId <= 0)
@@ -684,6 +838,35 @@ public class QuickBooksController(
         return await _dbContext.AccountingIntegrations
             .AsNoTracking()
             .AnyAsync(ai => ai.CompanyId == companyId && ai.Provider == AccountingProvider.QuickBooks && ai.IsActive);
+    }
+
+    private static bool IsValidSyncFrequency(string? frequency)
+    {
+        if (string.IsNullOrWhiteSpace(frequency))
+        {
+            return false;
+        }
+
+        return AllowedSyncFrequencies.Any(value => string.Equals(value, frequency, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string NormalizeSyncFrequency(string? frequency)
+    {
+        if (string.IsNullOrWhiteSpace(frequency))
+        {
+            return DefaultSyncFrequency;
+        }
+
+        return AllowedSyncFrequencies.First(value => string.Equals(value, frequency, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static QuickBooksSyncPreferencesResponse MapPreferences(AccountingSyncPreference preference)
+    {
+        return new QuickBooksSyncPreferencesResponse(
+            preference.CompanyId,
+            preference.AutoSyncInvoices,
+            preference.AutoSyncCogs,
+            string.IsNullOrWhiteSpace(preference.SyncFrequency) ? DefaultSyncFrequency : preference.SyncFrequency);
     }
 
     private bool IsRateLimited(int companyId)
@@ -899,6 +1082,52 @@ public sealed record QuickBooksAccountMappingResponse(
     [property: JsonPropertyName("caskrAccountType")] string CaskrAccountType,
     [property: JsonPropertyName("qboAccountId")] string QboAccountId,
     [property: JsonPropertyName("qboAccountName")] string? QboAccountName);
+
+/// <summary>
+///     Request payload describing QuickBooks sync preferences.
+/// </summary>
+public sealed class QuickBooksSyncPreferencesRequest
+{
+    /// <summary>
+    ///     Gets or sets the company identifier.
+    /// </summary>
+    [JsonPropertyName("companyId")]
+    public int CompanyId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets whether invoices should automatically sync.
+    /// </summary>
+    [JsonPropertyName("autoSyncInvoices")]
+    public bool AutoSyncInvoices { get; set; }
+
+    /// <summary>
+    ///     Gets or sets whether COGS should automatically sync.
+    /// </summary>
+    [JsonPropertyName("autoSyncCogs")]
+    public bool AutoSyncCogs { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the preferred sync frequency.
+    /// </summary>
+    [JsonPropertyName("syncFrequency")]
+    public string? SyncFrequency { get; set; }
+}
+
+/// <summary>
+///     Response payload describing the saved QuickBooks sync preferences.
+/// </summary>
+public sealed record QuickBooksSyncPreferencesResponse(
+    [property: JsonPropertyName("companyId")] int CompanyId,
+    [property: JsonPropertyName("autoSyncInvoices")] bool AutoSyncInvoices,
+    [property: JsonPropertyName("autoSyncCogs")] bool AutoSyncCogs,
+    [property: JsonPropertyName("syncFrequency")] string SyncFrequency);
+
+/// <summary>
+///     Response payload returned after testing the QuickBooks connection.
+/// </summary>
+public sealed record QuickBooksConnectionTestResponse(
+    [property: JsonPropertyName("success")] bool Success,
+    [property: JsonPropertyName("message")] string Message);
 
 /// <summary>
 ///     Represents the QuickBooks sync status for a specific invoice.

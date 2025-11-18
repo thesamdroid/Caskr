@@ -77,6 +77,7 @@ interface QuickBooksStubOptions {
   status?: Record<string, unknown>
   accounts?: unknown[]
   mappings?: unknown[]
+  preferences?: Record<string, unknown>
 }
 
 export const stubQuickBooksAccountingData = async (
@@ -102,6 +103,14 @@ export const stubQuickBooksAccountingData = async (
       { caskrAccountType: 'WorkInProgress', qboAccountId: 'acct-2', qboAccountName: 'Inventory Asset' }
     ]
 
+  let preferences =
+    options.preferences ?? {
+      companyId: 1,
+      autoSyncInvoices: true,
+      autoSyncCogs: false,
+      syncFrequency: 'Hourly'
+    }
+
   await page.route('**/api/accounting/quickbooks/status**', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status) })
   })
@@ -117,5 +126,24 @@ export const stubQuickBooksAccountingData = async (
     }
 
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mappings) })
+  })
+
+  await page.route('**/api/accounting/quickbooks/preferences**', async route => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(preferences) })
+      return
+    }
+
+    const body = route.request().postDataJSON?.() ?? {}
+    preferences = { ...preferences, ...body }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(preferences) })
+  })
+
+  await page.route('**/api/accounting/quickbooks/test**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, message: 'QuickBooks connection verified.' })
+    })
   })
 }
