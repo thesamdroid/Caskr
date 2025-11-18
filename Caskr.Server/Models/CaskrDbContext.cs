@@ -521,6 +521,8 @@ public partial class CaskrDbContext : DbContext
                 .HasMaxLength(32)
                 .HasDefaultValue("Manual")
                 .HasColumnName("sync_frequency");
+            entity.Property(e => e.LastSyncAt)
+                .HasColumnName("last_sync_at");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");

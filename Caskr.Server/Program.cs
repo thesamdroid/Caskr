@@ -1,6 +1,7 @@
 using Caskr.server;
 using Caskr.server.Models;
 using Caskr.server.Services;
+using Caskr.Server.Services.BackgroundJobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
@@ -20,6 +21,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddMediatR(typeof(Program));
 builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 builder.Services.AddHostedService<BackgroundWorkerService>();
+builder.Services.AddHostedService<QuickBooksSyncHostedService>();
 var rawSigningKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(rawSigningKey))
 {
