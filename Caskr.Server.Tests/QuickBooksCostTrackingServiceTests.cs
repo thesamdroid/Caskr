@@ -7,6 +7,7 @@ using Caskr.Server.Models;
 using Caskr.Server.Services;
 using Intuit.Ipp.Core;
 using QuickBooksJournalEntry = Intuit.Ipp.Data.JournalEntry;
+using Intuit.Ipp.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -41,10 +42,10 @@ public class QuickBooksCostTrackingServiceTests
         });
         await context.SaveChangesAsync();
 
-        var authService = Mock.Of<IQuickBooksAuthService>();
+        var contextFactory = BuildContextFactoryMock(batch.CompanyId);
         var journalClient = new Mock<IQuickBooksJournalEntryClient>(MockBehavior.Strict);
         var logger = Mock.Of<ILogger<QuickBooksCostTrackingService>>();
-        var service = new QuickBooksCostTrackingService(context, authService, journalClient.Object, logger);
+        var service = new QuickBooksCostTrackingService(context, contextFactory.Object, journalClient.Object, logger);
 
         var result = await service.RecordBatchCOGSAsync(batch.Id);
 
@@ -63,14 +64,7 @@ public class QuickBooksCostTrackingServiceTests
         await using var context = new CaskrDbContext(options);
         var (batch, company) = await SeedBatchAsync(context, includeCostLineItems: true);
 
-        var authService = new Mock<IQuickBooksAuthService>();
-        authService.Setup(a => a.RefreshTokenAsync(company.Id))
-            .ReturnsAsync(new OAuthTokenResponse
-            {
-                AccessToken = "token",
-                RefreshToken = "refresh",
-                RealmId = "realm"
-            });
+        var contextFactory = BuildContextFactoryMock(company.Id);
 
         var journalClient = new Mock<IQuickBooksJournalEntryClient>();
         journalClient.Setup(c => c.CreateJournalEntryAsync(
@@ -80,7 +74,7 @@ public class QuickBooksCostTrackingServiceTests
             .ReturnsAsync(new QuickBooksJournalEntry { Id = "JE-900" });
 
         var logger = Mock.Of<ILogger<QuickBooksCostTrackingService>>();
-        var service = new QuickBooksCostTrackingService(context, authService.Object, journalClient.Object, logger);
+        var service = new QuickBooksCostTrackingService(context, contextFactory.Object, journalClient.Object, logger);
 
         var result = await service.RecordBatchCOGSAsync(batch.Id);
 
@@ -99,18 +93,11 @@ public class QuickBooksCostTrackingServiceTests
         await using var context = new CaskrDbContext(options);
         var (batch, company) = await SeedBatchAsync(context, includeCostLineItems: false);
 
-        var authService = new Mock<IQuickBooksAuthService>();
-        authService.Setup(a => a.RefreshTokenAsync(company.Id))
-            .ReturnsAsync(new OAuthTokenResponse
-            {
-                AccessToken = "token",
-                RefreshToken = "refresh",
-                RealmId = "realm"
-            });
+        var contextFactory = BuildContextFactoryMock(company.Id);
 
         var journalClient = new Mock<IQuickBooksJournalEntryClient>(MockBehavior.Strict);
         var logger = Mock.Of<ILogger<QuickBooksCostTrackingService>>();
-        var service = new QuickBooksCostTrackingService(context, authService.Object, journalClient.Object, logger);
+        var service = new QuickBooksCostTrackingService(context, contextFactory.Object, journalClient.Object, logger);
 
         var result = await service.RecordBatchCOGSAsync(batch.Id);
 
@@ -134,14 +121,7 @@ public class QuickBooksCostTrackingServiceTests
         const string orderName = "Heritage Reserve";
         var (batch, company) = await SeedBatchAsync(context, includeCostLineItems: true, orderName: orderName);
 
-        var authService = new Mock<IQuickBooksAuthService>();
-        authService.Setup(a => a.RefreshTokenAsync(company.Id))
-            .ReturnsAsync(new OAuthTokenResponse
-            {
-                AccessToken = "token",
-                RefreshToken = "refresh",
-                RealmId = "realm"
-            });
+        var contextFactory = BuildContextFactoryMock(company.Id);
 
         QuickBooksJournalEntry? capturedEntry = null;
         var journalClient = new Mock<IQuickBooksJournalEntryClient>();
@@ -157,7 +137,7 @@ public class QuickBooksCostTrackingServiceTests
             });
 
         var logger = Mock.Of<ILogger<QuickBooksCostTrackingService>>();
-        var service = new QuickBooksCostTrackingService(context, authService.Object, journalClient.Object, logger);
+        var service = new QuickBooksCostTrackingService(context, contextFactory.Object, journalClient.Object, logger);
 
         var result = await service.RecordBatchCOGSAsync(batch.Id);
 
@@ -312,5 +292,15 @@ public class QuickBooksCostTrackingServiceTests
         await context.SaveChangesAsync();
 
         return (batch, company);
+    }
+
+    private static Mock<IQuickBooksIntegrationContextFactory> BuildContextFactoryMock(int companyId)
+    {
+        var factory = new Mock<IQuickBooksIntegrationContextFactory>();
+        var validator = new OAuth2RequestValidator("token");
+        var context = new ServiceContext("realm", IntuitServicesType.QBO, validator);
+        factory.Setup(f => f.CreateAsync(companyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new QuickBooksIntegrationContext(companyId, "realm", context));
+        return factory;
     }
 }

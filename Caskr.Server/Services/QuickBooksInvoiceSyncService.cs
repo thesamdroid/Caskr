@@ -9,7 +9,6 @@ using Caskr.server.Models;
 using Caskr.Server.Models;
 using Intuit.Ipp.Core;
 using Intuit.Ipp.Exception;
-using Intuit.Ipp.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using InvoiceModel = Caskr.server.Models.Invoice;
@@ -38,18 +37,18 @@ public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
     private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(2);
 
     private readonly CaskrDbContext _dbContext;
-    private readonly IQuickBooksAuthService _authService;
+    private readonly IQuickBooksIntegrationContextFactory _integrationContextFactory;
     private readonly IQuickBooksInvoiceClient _quickBooksClient;
     private readonly ILogger<QuickBooksInvoiceSyncService> _logger;
 
     public QuickBooksInvoiceSyncService(
         CaskrDbContext dbContext,
-        IQuickBooksAuthService authService,
+        IQuickBooksIntegrationContextFactory integrationContextFactory,
         IQuickBooksInvoiceClient quickBooksClient,
         ILogger<QuickBooksInvoiceSyncService> logger)
     {
         _dbContext = dbContext;
-        _authService = authService;
+        _integrationContextFactory = integrationContextFactory;
         _quickBooksClient = quickBooksClient;
         _logger = logger;
     }
@@ -96,7 +95,8 @@ public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
             attempt++;
             try
             {
-                var serviceContext = await CreateServiceContextAsync(invoice.CompanyId);
+                var integrationContext = await _integrationContextFactory.CreateAsync(invoice.CompanyId);
+                var serviceContext = integrationContext.ServiceContext;
                 var accountMappings = await LoadAccountMappingsAsync(invoice.CompanyId);
                 var customer = await EnsureCustomerAsync(serviceContext, invoice, CancellationToken.None);
                 var qbInvoice = MapInvoice(invoice, customer, accountMappings);
@@ -235,35 +235,6 @@ public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
         log.ExternalEntityId = externalId;
         log.SyncedAt = DateTime.UtcNow;
         log.UpdatedAt = DateTime.UtcNow;
-    }
-
-    private async Task<ServiceContext> CreateServiceContextAsync(int companyId)
-    {
-        var integration = await _dbContext.AccountingIntegrations
-            .AsNoTracking()
-            .SingleOrDefaultAsync(ai => ai.CompanyId == companyId && ai.Provider == AccountingProvider.QuickBooks && ai.IsActive);
-        if (integration is null)
-        {
-            throw new InvalidOperationException($"Company {companyId} does not have an active QuickBooks integration.");
-        }
-
-        var tokenResponse = await _authService.RefreshTokenAsync(companyId);
-        if (string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
-        {
-            throw new InvalidOperationException("QuickBooks access token is missing.");
-        }
-
-        var realmId = !string.IsNullOrWhiteSpace(tokenResponse.RealmId)
-            ? tokenResponse.RealmId
-            : integration.RealmId;
-
-        if (string.IsNullOrWhiteSpace(realmId))
-        {
-            throw new InvalidOperationException("QuickBooks realm ID is missing.");
-        }
-
-        var validator = new OAuth2RequestValidator(tokenResponse.AccessToken);
-        return new ServiceContext(realmId, IntuitServicesType.QBO, validator);
     }
 
     private async Task<IppCustomer> EnsureCustomerAsync(ServiceContext serviceContext, InvoiceModel invoice, CancellationToken cancellationToken)
