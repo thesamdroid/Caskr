@@ -24,7 +24,7 @@ test.describe('navigation links', () => {
     { link: 'Products', heading: 'Products', path: '/products' },
     { link: 'Accounting', heading: 'Accounting Settings', path: '/accounting' },
     { link: 'Sync History', heading: 'Accounting Sync History', path: '/accounting/sync-history' },
-    { link: 'Login', heading: 'Login', path: '/login' }
+    { link: 'Login', heading: 'Welcome to CASKr', path: '/login' }
   ];
 
   test('each navigation link leads to correct page', async ({ page }) => {
@@ -35,7 +35,9 @@ test.describe('navigation links', () => {
       const link = page.locator(`a[href="${p.path}"]`).first();
       await expect(link).toBeVisible();
       await link.click();
-      await expect(page.getByRole('heading', { name: p.heading })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: p.heading, exact: true })
+      ).toBeVisible();
     }
   });
 

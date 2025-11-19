@@ -55,7 +55,9 @@ test.describe('label document generation', () => {
 
     await page.goto('/orders')
 
-    await page.getByRole('row', { name: /TTB Filing Order/ }).click()
+    await page
+      .getByRole('button', { name: 'View details for order TTB Filing Order' })
+      .click()
     await page.getByRole('button', { name: 'Generate TTB Label' }).click()
 
     await page.getByLabel('Brand Name').fill('Mock Brand')
@@ -111,7 +113,9 @@ test.describe('label document generation', () => {
 
     await page.goto('/orders')
 
-    await page.getByRole('row', { name: /TTB Filing Order/ }).click()
+    await page
+      .getByRole('button', { name: 'View details for order TTB Filing Order' })
+      .click()
     await page.getByRole('button', { name: 'Generate TTB Label' }).click()
 
     await page.getByLabel('Brand Name').fill('Mock Brand')
@@ -153,7 +157,9 @@ test.describe('label document generation', () => {
 
     await page.goto('/orders')
 
-    await page.getByRole('row', { name: /TTB Filing Order/ }).click()
+    await page
+      .getByRole('button', { name: 'View details for order TTB Filing Order' })
+      .click()
     await page.getByRole('button', { name: 'Generate TTB Label' }).click()
 
     await page.getByLabel('Brand Name').fill('Mock Brand')
@@ -169,7 +175,7 @@ test.describe('label document generation', () => {
     await page.getByRole('button', { name: 'Back to form' }).click()
     await expect(previewRegion).toHaveCount(0)
     await expect(page.getByLabel('Brand Name')).toHaveValue('Mock Brand')
-    await expect(page.getByLabel('Product Name')).toHaveValue('Mock Product')
+    await expect(page.getByLabel('Product Name')).toHaveValue(/Mock Product$/)
     await expect(page.getByLabel('Alcohol Content')).toHaveValue('40%')
 
     await generateButton.click()

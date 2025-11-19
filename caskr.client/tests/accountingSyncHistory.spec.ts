@@ -9,8 +9,12 @@ test.describe('Accounting sync history page', () => {
 
     await expect(page.getByRole('heading', { name: 'Accounting Sync History' })).toBeVisible()
     await expect(page.getByLabel('Status')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Retry Failed Syncs' })).toBeEnabled()
+    await expect(
+      page.getByRole('button', { name: 'Export sync history to CSV' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Retry all failed sync operations' })
+    ).toBeEnabled()
 
     await expect(page.getByText('Customer missing in QuickBooks.')).toBeVisible()
     await expect(page.getByRole('link', { name: 'View in QuickBooks' })).toBeVisible()

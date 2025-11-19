@@ -12,8 +12,10 @@ test.describe('dashboard navigation', () => {
     await page.getByRole('link', { name: 'Barrels' }).click()
 
     await expect(page).toHaveURL(/\/barrels$/)
-    await expect(page.getByRole('heading', { level: 2, name: 'Barrels' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Forecasting' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Barrels' })).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Open forecasting modal' })
+    ).toBeVisible()
     await expect(page.getByRole('cell', { name: 'BRL-1001' })).toBeVisible()
   })
 })
