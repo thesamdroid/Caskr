@@ -122,36 +122,43 @@ function OrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map(order => (
-                <tr
-                  key={order.id}
-                  onClick={() => handleOpenActions(order)}
-                  className="clickable-row"
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      handleOpenActions(order)
-                    }
-                  }}
-                  aria-label={`View details for order ${order.name}`}
-                >
-                  <td>{order.name}</td>
-                  <td>
-                    <span className={`status-badge ${statusNames[order.statusId]?.toLowerCase().replace(/\s+/g, '-') || 'default'}`}>
-                      {statusNames[order.statusId] ?? order.statusId}
-                    </span>
-                  </td>
-                  <td>
-                    {outstandingTasks[order.id]?.length > 0 ? (
-                      <span className="text-gold">{outstandingTasks[order.id].length}</span>
-                    ) : (
-                      <span className="text-muted">-</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {orders.map(order => {
+                const statusName = statusNames[order.statusId]
+                const statusClass = statusName
+                  ? statusName.toLowerCase().replace(/\s+/g, '-')
+                  : 'default'
+
+                return (
+                  <tr
+                    key={order.id}
+                    onClick={() => handleOpenActions(order)}
+                    className="clickable-row"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleOpenActions(order)
+                      }
+                    }}
+                    aria-label={`View details for order ${order.name}`}
+                  >
+                    <td>{order.name}</td>
+                    <td>
+                      <span className={`status-badge ${statusClass}`}>
+                        {statusName ?? order.statusId}
+                      </span>
+                    </td>
+                    <td>
+                      {outstandingTasks[order.id]?.length > 0 ? (
+                        <span className="text-gold">{outstandingTasks[order.id].length}</span>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
