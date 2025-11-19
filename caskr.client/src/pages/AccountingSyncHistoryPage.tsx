@@ -266,20 +266,22 @@ function AccountingSyncHistoryPage() {
   }
 
   return (
-    <section className='content-section accounting-sync-history'>
-      <div className='section-header accounting-sync-header'>
+    <section className="content-section accounting-sync-history" aria-labelledby="sync-history-title">
+      <div className="section-header accounting-sync-header">
         <div>
-          <h2 className='section-title'>Accounting Sync History</h2>
-          <p className='section-subtitle'>Review QuickBooks sync operations, filter by status, and retry failed attempts.</p>
+          <h1 id="sync-history-title" className="section-title">Accounting Sync History</h1>
+          <p className="section-subtitle">Review QuickBooks sync operations, filter by status, and retry failed attempts.</p>
         </div>
-        <div className='section-actions'>
-          <button type='button' className='button-secondary' onClick={handleExport}>
+        <div className="section-actions">
+          <button type="button" className="button-secondary" onClick={handleExport} aria-label="Export sync history to CSV">
             Export CSV
           </button>
           <button
-            type='button'
+            type="button"
+            className="button-primary"
             onClick={handleBulkRetry}
             disabled={failedLogs.length === 0 || bulkRetrying}
+            aria-label="Retry all failed sync operations"
           >
             {bulkRetrying ? 'Retrying…' : 'Retry Failed Syncs'}
           </button>

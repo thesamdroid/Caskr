@@ -34,47 +34,108 @@ function UserTypesPage() {
   }
 
   return (
-    <section className='content-section'>
-      <div className='section-header'>
-        <h2 className='section-title'>User Types</h2>
+    <section className="content-section" aria-labelledby="user-types-title">
+      <div className="section-header">
+        <div>
+          <h1 id="user-types-title" className="section-title">User Types</h1>
+          <p className="section-subtitle">Manage user role types</p>
+        </div>
       </div>
-      <form onSubmit={handleAdd}>
-        <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name'/>
-        <button type='submit'>Add</button>
+
+      <form onSubmit={handleAdd} className="inline-form" aria-label="Add new user type">
+        <label htmlFor="user-type-name" className="visually-hidden">User Type Name</label>
+        <input
+          id="user-type-name"
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
+          placeholder="User type name"
+          required
+          aria-required="true"
+        />
+
+        <button type="submit" className="button-primary">
+          Add User Type
+        </button>
       </form>
-      <div className='table-container'>
-        <table className='table'>
-          <thead>
-            <tr><th>Name</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {userTypes.map(ut => (
-              <tr key={ut.id}>
-                <td>
-                  {editing === ut.id ? (
-                    <input value={editName} onChange={e => setEditName(e.target.value)} />
-                  ) : (
-                    ut.name
-                  )}
-                </td>
-                <td>
-                  {editing === ut.id ? (
-                    <>
-                      <button onClick={() => handleUpdate(ut.id)}>Save</button>
-                      <button onClick={() => setEditing(null)}>Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => startEdit(ut)}>Edit</button>
-                      <button onClick={() => dispatch(deleteUserType(ut.id))}>Delete</button>
-                    </>
-                  )}
-                </td>
+
+      {userTypes.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">👥</div>
+          <h3 className="empty-state-title">No user types yet</h3>
+          <p className="empty-state-text">Create your first user type using the form above</p>
+        </div>
+      ) : (
+        <div className="table-container">
+          <table className="table" role="table" aria-label="User types list">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {userTypes.map(ut => (
+                <tr key={ut.id}>
+                  <td>
+                    {editing === ut.id ? (
+                      <>
+                        <label htmlFor={`edit-user-type-${ut.id}`} className="visually-hidden">User Type Name</label>
+                        <input
+                          id={`edit-user-type-${ut.id}`}
+                          value={editName}
+                          onChange={e => setEditName(e.target.value)}
+                          aria-label="Edit user type name"
+                        />
+                      </>
+                    ) : (
+                      <span className="text-primary">{ut.name}</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="flex gap-2">
+                      {editing === ut.id ? (
+                        <>
+                          <button
+                            onClick={() => handleUpdate(ut.id)}
+                            className="button-primary button-sm"
+                            aria-label={`Save changes to user type ${ut.name}`}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditing(null)}
+                            className="button-secondary button-sm"
+                            aria-label="Cancel editing"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => startEdit(ut)}
+                            className="button-secondary button-sm"
+                            aria-label={`Edit user type ${ut.name}`}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => dispatch(deleteUserType(ut.id))}
+                            className="button-danger button-sm"
+                            aria-label={`Delete user type ${ut.name}`}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   )
 }

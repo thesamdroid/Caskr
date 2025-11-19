@@ -34,47 +34,108 @@ function StatusesPage() {
   }
 
   return (
-    <section className='content-section'>
-      <div className='section-header'>
-        <h2 className='section-title'>Statuses</h2>
+    <section className="content-section" aria-labelledby="statuses-title">
+      <div className="section-header">
+        <div>
+          <h1 id="statuses-title" className="section-title">Statuses</h1>
+          <p className="section-subtitle">Manage order status types</p>
+        </div>
       </div>
-      <form onSubmit={handleAdd}>
-        <input value={newName} onChange={e => setNewName(e.target.value)} placeholder='Name' />
-        <button type='submit'>Add</button>
+
+      <form onSubmit={handleAdd} className="inline-form" aria-label="Add new status">
+        <label htmlFor="status-name" className="visually-hidden">Status Name</label>
+        <input
+          id="status-name"
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
+          placeholder="Status name"
+          required
+          aria-required="true"
+        />
+
+        <button type="submit" className="button-primary">
+          Add Status
+        </button>
       </form>
-      <div className='table-container'>
-        <table className='table'>
-          <thead>
-            <tr><th>Name</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {statuses.map(s => (
-              <tr key={s.id}>
-                <td>
-                  {editing === s.id ? (
-                    <input value={editName} onChange={e => setEditName(e.target.value)} />
-                  ) : (
-                    s.name
-                  )}
-                </td>
-                <td>
-                  {editing === s.id ? (
-                    <>
-                      <button onClick={() => handleUpdate(s.id)}>Save</button>
-                      <button onClick={() => setEditing(null)}>Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => startEdit(s)}>Edit</button>
-                      <button onClick={() => dispatch(deleteStatus(s.id))}>Delete</button>
-                    </>
-                  )}
-                </td>
+
+      {statuses.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <h3 className="empty-state-title">No statuses yet</h3>
+          <p className="empty-state-text">Create your first status using the form above</p>
+        </div>
+      ) : (
+        <div className="table-container">
+          <table className="table" role="table" aria-label="Statuses list">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {statuses.map(s => (
+                <tr key={s.id}>
+                  <td>
+                    {editing === s.id ? (
+                      <>
+                        <label htmlFor={`edit-status-${s.id}`} className="visually-hidden">Status Name</label>
+                        <input
+                          id={`edit-status-${s.id}`}
+                          value={editName}
+                          onChange={e => setEditName(e.target.value)}
+                          aria-label="Edit status name"
+                        />
+                      </>
+                    ) : (
+                      <span className="text-primary">{s.name}</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="flex gap-2">
+                      {editing === s.id ? (
+                        <>
+                          <button
+                            onClick={() => handleUpdate(s.id)}
+                            className="button-primary button-sm"
+                            aria-label={`Save changes to status ${s.name}`}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditing(null)}
+                            className="button-secondary button-sm"
+                            aria-label="Cancel editing"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => startEdit(s)}
+                            className="button-secondary button-sm"
+                            aria-label={`Edit status ${s.name}`}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => dispatch(deleteStatus(s.id))}
+                            className="button-danger button-sm"
+                            aria-label={`Delete status ${s.name}`}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   )
 }
