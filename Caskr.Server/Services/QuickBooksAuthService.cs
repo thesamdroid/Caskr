@@ -20,10 +20,7 @@ namespace Caskr.Server.Services;
 /// </summary>
 public class QuickBooksAuthService : IQuickBooksAuthService
 {
-    private const string AccountingScope = "com.intuit.quickbooks.accounting";
-    private const string ProtectorPurpose = "Caskr.Server.Services.QuickBooksAuthService.Tokens";
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
-    private static readonly TimeSpan TokenExpirySkew = TimeSpan.FromMinutes(5);
 
     private readonly IConfiguration _configuration;
     private readonly CaskrDbContext _dbContext;
@@ -40,7 +37,7 @@ public class QuickBooksAuthService : IQuickBooksAuthService
     {
         _configuration = configuration;
         _dbContext = dbContext;
-        _tokenProtector = dataProtectionProvider.CreateProtector(ProtectorPurpose);
+        _tokenProtector = dataProtectionProvider.CreateProtector(QuickBooksConstants.OAuth.TokenProtectorPurpose);
         _logger = logger;
         _clientFactory = clientFactory;
     }
@@ -58,7 +55,9 @@ public class QuickBooksAuthService : IQuickBooksAuthService
         try
         {
             _logger.LogInformation("Generating QuickBooks authorization URL for company {CompanyId}", companyId);
-            var url = client.GetAuthorizationUrl(new[] { AccountingScope }, companyId.ToString(CultureInfo.InvariantCulture));
+            var url = client.GetAuthorizationUrl(
+                new[] { QuickBooksConstants.OAuth.AccountingScope },
+                companyId.ToString(CultureInfo.InvariantCulture));
             if (!Uri.TryCreate(url, UriKind.Absolute, out var authorizationUri))
             {
                 throw new InvalidOperationException("QuickBooks returned an invalid authorization URL.");
@@ -184,9 +183,10 @@ public class QuickBooksAuthService : IQuickBooksAuthService
 
     private (string clientId, string clientSecret, string environment) GetClientConfiguration()
     {
-        var clientId = _configuration["QuickBooks:ClientId"];
-        var clientSecret = _configuration["QuickBooks:ClientSecret"];
-        var environment = _configuration["QuickBooks:Environment"] ?? "sandbox";
+        var clientId = _configuration[QuickBooksConstants.ConfigurationKeys.ClientId];
+        var clientSecret = _configuration[QuickBooksConstants.ConfigurationKeys.ClientSecret];
+        var environment = _configuration[QuickBooksConstants.ConfigurationKeys.Environment]
+            ?? QuickBooksConstants.ConfigurationKeys.DefaultEnvironment;
 
         if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
         {
@@ -292,7 +292,7 @@ public class QuickBooksAuthService : IQuickBooksAuthService
         }
 
         var expiry = issuedAt.AddSeconds(payload.ExpiresInSeconds);
-        var safeExpiry = expiry - TokenExpirySkew;
+        var safeExpiry = expiry - QuickBooksConstants.OAuth.TokenExpirySkew;
         if (safeExpiry <= issuedAt)
         {
             safeExpiry = issuedAt;
@@ -305,7 +305,7 @@ public class QuickBooksAuthService : IQuickBooksAuthService
     {
         var redirectUri = !string.IsNullOrWhiteSpace(overrideValue)
             ? overrideValue
-            : _configuration["QuickBooks:RedirectUri"];
+            : _configuration[QuickBooksConstants.ConfigurationKeys.RedirectUri];
 
         if (string.IsNullOrWhiteSpace(redirectUri))
         {

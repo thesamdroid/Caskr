@@ -32,24 +32,26 @@ namespace Caskr.Server.Services;
 /// </summary>
 public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
 {
-    private const string InvoiceEntityType = "Invoice";
-    private const int MaxRetryCount = 3;
-    private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(2);
-
     private readonly CaskrDbContext _dbContext;
     private readonly IQuickBooksIntegrationContextFactory _integrationContextFactory;
     private readonly IQuickBooksInvoiceClient _quickBooksClient;
+    private readonly IQuickBooksSyncLogService _syncLogService;
+    private readonly IQuickBooksAccountMappingService _accountMappingService;
     private readonly ILogger<QuickBooksInvoiceSyncService> _logger;
 
     public QuickBooksInvoiceSyncService(
         CaskrDbContext dbContext,
         IQuickBooksIntegrationContextFactory integrationContextFactory,
         IQuickBooksInvoiceClient quickBooksClient,
+        IQuickBooksSyncLogService syncLogService,
+        IQuickBooksAccountMappingService accountMappingService,
         ILogger<QuickBooksInvoiceSyncService> logger)
     {
         _dbContext = dbContext;
         _integrationContextFactory = integrationContextFactory;
         _quickBooksClient = quickBooksClient;
+        _syncLogService = syncLogService;
+        _accountMappingService = accountMappingService;
         _logger = logger;
     }
 
@@ -66,69 +68,69 @@ public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
             return new InvoiceSyncResult(false, null, $"Invoice {invoiceId} was not found.");
         }
 
-        var existingSuccess = await _dbContext.AccountingSyncLogs
-            .AsNoTracking()
-            .Where(log => log.CompanyId == invoice.CompanyId
-                          && log.EntityType == InvoiceEntityType
-                          && log.EntityId == invoiceId.ToString(CultureInfo.InvariantCulture)
-                          && log.SyncStatus == SyncStatus.Success)
-            .OrderByDescending(log => log.SyncedAt)
-            .FirstOrDefaultAsync();
+        var invoiceIdText = invoiceId.ToString(CultureInfo.InvariantCulture);
+        var existingQboId = await _syncLogService.GetSuccessfulSyncExternalIdAsync(
+            invoice.CompanyId,
+            QuickBooksConstants.EntityTypes.Invoice,
+            invoiceIdText);
 
-        if (existingSuccess is not null)
+        if (existingQboId is not null)
         {
-            _logger.LogInformation("Invoice {InvoiceId} already synced to QuickBooks with QBO Id {QboInvoiceId}", invoiceId,
-                existingSuccess.ExternalEntityId);
-            return new InvoiceSyncResult(true, existingSuccess.ExternalEntityId, null);
+            _logger.LogInformation("Invoice {InvoiceId} already synced to QuickBooks with QBO Id {QboInvoiceId}",
+                invoiceId, existingQboId);
+            return new InvoiceSyncResult(true, existingQboId, null);
         }
 
-        var syncLog = await GetOrCreateSyncLogAsync(invoice.CompanyId, invoiceId);
-        UpdateSyncLog(syncLog, SyncStatus.InProgress, null, syncLog.ExternalEntityId);
+        var syncLog = await _syncLogService.GetOrCreateSyncLogAsync(
+            invoice.CompanyId,
+            QuickBooksConstants.EntityTypes.Invoice,
+            invoiceIdText);
+        _syncLogService.UpdateSyncLog(syncLog, SyncStatus.InProgress, null, syncLog.ExternalEntityId);
         await _dbContext.SaveChangesAsync();
 
         var attempt = 0;
-        var delay = InitialRetryDelay;
+        var delay = QuickBooksConstants.RetryPolicy.InitialRetryDelay;
         Exception? lastTransientException = null;
 
-        while (attempt < MaxRetryCount)
+        while (attempt < QuickBooksConstants.RetryPolicy.MaxRetryCount)
         {
             attempt++;
             try
             {
                 var integrationContext = await _integrationContextFactory.CreateAsync(invoice.CompanyId);
                 var serviceContext = integrationContext.ServiceContext;
-                var accountMappings = await LoadAccountMappingsAsync(invoice.CompanyId);
+                var accountMappings = await _accountMappingService.LoadAccountMappingsAsync(invoice.CompanyId);
                 var customer = await EnsureCustomerAsync(serviceContext, invoice, CancellationToken.None);
                 var qbInvoice = MapInvoice(invoice, customer, accountMappings);
                 var createdInvoice = await _quickBooksClient.CreateInvoiceAsync(serviceContext, qbInvoice, CancellationToken.None);
 
-                UpdateSyncLog(syncLog, SyncStatus.Success, null, createdInvoice.Id);
+                _syncLogService.UpdateSyncLog(syncLog, SyncStatus.Success, null, createdInvoice.Id);
                 syncLog.RetryCount = attempt - 1;
                 await _dbContext.SaveChangesAsync();
 
-                _logger.LogInformation("Successfully synced invoice {InvoiceId} to QuickBooks with Id {QboInvoiceId}", invoiceId,
-                    createdInvoice.Id);
+                _logger.LogInformation("Successfully synced invoice {InvoiceId} to QuickBooks with Id {QboInvoiceId}",
+                    invoiceId, createdInvoice.Id);
 
                 return new InvoiceSyncResult(true, createdInvoice.Id, null);
             }
-            catch (Exception ex) when (IsTransient(ex) && attempt < MaxRetryCount)
+            catch (Exception ex) when (IsTransient(ex) && attempt < QuickBooksConstants.RetryPolicy.MaxRetryCount)
             {
                 lastTransientException = ex;
                 syncLog.RetryCount = attempt;
-                UpdateSyncLog(syncLog, SyncStatus.InProgress, ex.Message, syncLog.ExternalEntityId);
+                _syncLogService.UpdateSyncLog(syncLog, SyncStatus.InProgress, ex.Message, syncLog.ExternalEntityId);
                 await _dbContext.SaveChangesAsync();
 
                 _logger.LogWarning(ex,
                     "Transient QuickBooks error while syncing invoice {InvoiceId}. Retrying attempt {Attempt}/{Max}",
-                    invoiceId, attempt, MaxRetryCount);
+                    invoiceId, attempt, QuickBooksConstants.RetryPolicy.MaxRetryCount);
 
                 await Task.Delay(delay);
-                delay = TimeSpan.FromSeconds(delay.TotalSeconds * 2);
+                delay = TimeSpan.FromSeconds(delay.TotalSeconds * QuickBooksConstants.RetryPolicy.BackoffMultiplier);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to sync invoice {InvoiceId} to QuickBooks", invoiceId);
-                UpdateSyncLog(syncLog, SyncStatus.Failed, ex.Message, syncLog.ExternalEntityId);
+                _syncLogService.UpdateSyncLog(syncLog, SyncStatus.Failed, ex.Message, syncLog.ExternalEntityId);
                 syncLog.RetryCount = attempt;
                 await _dbContext.SaveChangesAsync();
                 return new InvoiceSyncResult(false, null, ex.Message);
@@ -136,7 +138,7 @@ public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
         }
 
         var message = lastTransientException?.Message ?? "QuickBooks sync failed after multiple attempts.";
-        UpdateSyncLog(syncLog, SyncStatus.Failed, message, syncLog.ExternalEntityId);
+        _syncLogService.UpdateSyncLog(syncLog, SyncStatus.Failed, message, syncLog.ExternalEntityId);
         await _dbContext.SaveChangesAsync();
         return new InvoiceSyncResult(false, null, message);
     }
@@ -157,7 +159,7 @@ public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
         var pendingInvoiceIds = await _dbContext.AccountingSyncLogs
             .AsNoTracking()
             .Where(log => log.CompanyId == companyId
-                          && log.EntityType == InvoiceEntityType
+                          && log.EntityType == QuickBooksConstants.EntityTypes.Invoice
                           && (log.SyncStatus == SyncStatus.Pending || log.SyncStatus == SyncStatus.Failed))
             .Select(log => log.EntityId)
             .ToListAsync();
@@ -197,44 +199,6 @@ public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
             .Include(i => i.LineItems)
             .Include(i => i.Taxes)
             .SingleOrDefaultAsync(i => i.Id == invoiceId);
-    }
-
-    private async Task<AccountingSyncLog> GetOrCreateSyncLogAsync(int companyId, int invoiceId)
-    {
-        var invoiceIdText = invoiceId.ToString(CultureInfo.InvariantCulture);
-        var log = await _dbContext.AccountingSyncLogs
-            .SingleOrDefaultAsync(l => l.CompanyId == companyId
-                                       && l.EntityType == InvoiceEntityType
-                                       && l.EntityId == invoiceIdText);
-
-        if (log is not null)
-        {
-            return log;
-        }
-
-        log = new AccountingSyncLog
-        {
-            CompanyId = companyId,
-            EntityType = InvoiceEntityType,
-            EntityId = invoiceIdText,
-            SyncStatus = SyncStatus.Pending,
-            SyncedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        _dbContext.AccountingSyncLogs.Add(log);
-        await _dbContext.SaveChangesAsync();
-        return log;
-    }
-
-    private void UpdateSyncLog(AccountingSyncLog log, SyncStatus status, string? error, string? externalId)
-    {
-        log.SyncStatus = status;
-        log.ErrorMessage = error;
-        log.ExternalEntityId = externalId;
-        log.SyncedAt = DateTime.UtcNow;
-        log.UpdatedAt = DateTime.UtcNow;
     }
 
     private async Task<IppCustomer> EnsureCustomerAsync(ServiceContext serviceContext, InvoiceModel invoice, CancellationToken cancellationToken)
@@ -278,16 +242,6 @@ public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
         };
 
         return await _quickBooksClient.CreateCustomerAsync(serviceContext, qbCustomer, cancellationToken);
-    }
-
-    private async Task<Dictionary<CaskrAccountType, ChartOfAccountsMapping>> LoadAccountMappingsAsync(int companyId)
-    {
-        var mappings = await _dbContext.ChartOfAccountsMappings
-            .AsNoTracking()
-            .Where(m => m.CompanyId == companyId)
-            .ToListAsync();
-
-        return mappings.ToDictionary(m => m.CaskrAccountType, m => m);
     }
 
     private static QuickBooksInvoice MapInvoice(
@@ -352,7 +306,9 @@ public class QuickBooksInvoiceSyncService : IQuickBooksInvoiceSyncService
             Qty = lineItem.Quantity,
             TaxCodeRef = new IppReferenceType
             {
-                Value = lineItem.IsTaxable ? "TAX" : "NON"
+                Value = lineItem.IsTaxable
+                    ? QuickBooksConstants.TaxCodes.Taxable
+                    : QuickBooksConstants.TaxCodes.NonTaxable
             }
         };
 
