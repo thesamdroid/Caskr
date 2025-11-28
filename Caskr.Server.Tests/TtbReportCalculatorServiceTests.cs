@@ -119,6 +119,52 @@ public class TtbReportCalculatorServiceTests
     }
 
     [Fact]
+    public async Task CalculateMonthlyReportAsync_UsesMostRecentSnapshotBeforeStart()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        using var context = new CaskrDbContext(options);
+        var companyId = 3;
+        var month = 10;
+        var year = 2024;
+
+        context.TtbInventorySnapshots.AddRange(
+            new TtbInventorySnapshot
+            {
+                CompanyId = companyId,
+                SnapshotDate = new DateTime(2024, 9, 1),
+                ProductType = "Vodka",
+                SpiritsType = TtbSpiritsType.Under190Proof,
+                ProofGallons = 50m,
+                WineGallons = 25m,
+                TaxStatus = TtbTaxStatus.Bonded
+            },
+            new TtbInventorySnapshot
+            {
+                CompanyId = companyId,
+                SnapshotDate = new DateTime(2024, 9, 30),
+                ProductType = "Vodka",
+                SpiritsType = TtbSpiritsType.Under190Proof,
+                ProofGallons = 75m,
+                WineGallons = 37.5m,
+                TaxStatus = TtbTaxStatus.Bonded
+            });
+
+        await context.SaveChangesAsync();
+
+        var logger = new LoggerFactory().CreateLogger<TtbReportCalculatorService>();
+        var service = new TtbReportCalculatorService(context, logger);
+
+        var result = await service.CalculateMonthlyReportAsync(companyId, month, year);
+
+        var opening = Assert.Single(result.OpeningInventory.Rows);
+        Assert.Equal(75m, opening.ProofGallons);
+        Assert.Equal(37.5m, opening.WineGallons);
+    }
+
+    [Fact]
     public async Task CalculateMonthlyReportAsync_FallsBackToTransactionsWhenSnapshotMissing()
     {
         var options = new DbContextOptionsBuilder<CaskrDbContext>()

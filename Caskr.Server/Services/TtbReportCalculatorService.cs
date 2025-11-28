@@ -78,16 +78,22 @@ public sealed class TtbReportCalculatorService(
         DateTime startDate,
         CancellationToken cancellationToken)
     {
-        var previousMonthSnapshotDate = startDate.AddMonths(-1).Date;
-
-        var snapshotRows = await dbContext.TtbInventorySnapshots
+        var latestSnapshotDate = await dbContext.TtbInventorySnapshots
             .AsNoTracking()
-            .Where(snapshot => snapshot.CompanyId == companyId && snapshot.SnapshotDate == previousMonthSnapshotDate)
-            .ToListAsync(cancellationToken);
+            .Where(snapshot => snapshot.CompanyId == companyId && snapshot.SnapshotDate < startDate)
+            .MaxAsync(snapshot => (DateTime?)snapshot.SnapshotDate, cancellationToken);
 
-        if (snapshotRows.Count > 0)
+        if (latestSnapshotDate.HasValue)
         {
-            return AggregateSnapshots(snapshotRows);
+            var snapshotRows = await dbContext.TtbInventorySnapshots
+                .AsNoTracking()
+                .Where(snapshot => snapshot.CompanyId == companyId && snapshot.SnapshotDate == latestSnapshotDate.Value)
+                .ToListAsync(cancellationToken);
+
+            if (snapshotRows.Count > 0)
+            {
+                return AggregateSnapshots(snapshotRows);
+            }
         }
 
         var previousTransactions = await dbContext.TtbTransactions
@@ -106,9 +112,9 @@ public sealed class TtbReportCalculatorService(
         }
 
         logger.LogWarning(
-            "Opening inventory snapshot for {SnapshotDate:yyyy-MM-dd} not found for company {CompanyId}. Falling back to aggregated prior transactions.",
-            previousMonthSnapshotDate,
-            companyId);
+            "Opening inventory snapshot not found for company {CompanyId} before {StartDate:yyyy-MM-dd}. Falling back to aggregated prior transactions.",
+            companyId,
+            startDate);
 
         return AggregateTransactions(previousTransactions);
     }
