@@ -10,6 +10,7 @@ using QuickBooksJournalEntry = Intuit.Ipp.Data.JournalEntry;
 using Intuit.Ipp.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -45,7 +46,15 @@ public class QuickBooksCostTrackingServiceTests
         var contextFactory = BuildContextFactoryMock(batch.CompanyId);
         var journalClient = new Mock<IQuickBooksJournalEntryClient>(MockBehavior.Strict);
         var logger = Mock.Of<ILogger<QuickBooksCostTrackingService>>();
-        var service = new QuickBooksCostTrackingService(context, contextFactory.Object, journalClient.Object, logger);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
+        var service = new QuickBooksCostTrackingService(
+            context,
+            contextFactory.Object,
+            journalClient.Object,
+            syncLogService,
+            accountMappingService,
+            logger);
 
         var result = await service.RecordBatchCOGSAsync(batch.Id);
 
@@ -74,7 +83,15 @@ public class QuickBooksCostTrackingServiceTests
             .ReturnsAsync(new QuickBooksJournalEntry { Id = "JE-900" });
 
         var logger = Mock.Of<ILogger<QuickBooksCostTrackingService>>();
-        var service = new QuickBooksCostTrackingService(context, contextFactory.Object, journalClient.Object, logger);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
+        var service = new QuickBooksCostTrackingService(
+            context,
+            contextFactory.Object,
+            journalClient.Object,
+            syncLogService,
+            accountMappingService,
+            logger);
 
         var result = await service.RecordBatchCOGSAsync(batch.Id);
 
@@ -97,7 +114,15 @@ public class QuickBooksCostTrackingServiceTests
 
         var journalClient = new Mock<IQuickBooksJournalEntryClient>(MockBehavior.Strict);
         var logger = Mock.Of<ILogger<QuickBooksCostTrackingService>>();
-        var service = new QuickBooksCostTrackingService(context, contextFactory.Object, journalClient.Object, logger);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
+        var service = new QuickBooksCostTrackingService(
+            context,
+            contextFactory.Object,
+            journalClient.Object,
+            syncLogService,
+            accountMappingService,
+            logger);
 
         var result = await service.RecordBatchCOGSAsync(batch.Id);
 
@@ -137,7 +162,15 @@ public class QuickBooksCostTrackingServiceTests
             });
 
         var logger = Mock.Of<ILogger<QuickBooksCostTrackingService>>();
-        var service = new QuickBooksCostTrackingService(context, contextFactory.Object, journalClient.Object, logger);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
+        var service = new QuickBooksCostTrackingService(
+            context,
+            contextFactory.Object,
+            journalClient.Object,
+            syncLogService,
+            accountMappingService,
+            logger);
 
         var result = await service.RecordBatchCOGSAsync(batch.Id);
 
