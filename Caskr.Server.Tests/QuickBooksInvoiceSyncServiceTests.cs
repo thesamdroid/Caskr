@@ -12,6 +12,7 @@ using QboCustomer = Intuit.Ipp.Data.Customer;
 using QboInvoice = Intuit.Ipp.Data.Invoice;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -45,8 +46,16 @@ public class QuickBooksInvoiceSyncServiceTests
 
         var contextFactory = BuildContextFactoryMock(invoice.CompanyId);
         var qbClientMock = new Mock<IQuickBooksInvoiceClient>(MockBehavior.Strict);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
         var logger = Mock.Of<ILogger<QuickBooksInvoiceSyncService>>();
-        var service = new QuickBooksInvoiceSyncService(context, contextFactory.Object, qbClientMock.Object, logger);
+        var service = new QuickBooksInvoiceSyncService(
+            context,
+            contextFactory.Object,
+            qbClientMock.Object,
+            syncLogService,
+            accountMappingService,
+            logger);
 
         var result = await service.SyncInvoiceToQBOAsync(invoice.Id);
 
@@ -75,7 +84,15 @@ public class QuickBooksInvoiceSyncServiceTests
             .ReturnsAsync(new QboInvoice { Id = "INV-100" });
 
         var logger = Mock.Of<ILogger<QuickBooksInvoiceSyncService>>();
-        var service = new QuickBooksInvoiceSyncService(context, contextFactory.Object, clientMock.Object, logger);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
+        var service = new QuickBooksInvoiceSyncService(
+            context,
+            contextFactory.Object,
+            clientMock.Object,
+            syncLogService,
+            accountMappingService,
+            logger);
 
         var result = await service.SyncInvoiceToQBOAsync(invoice.Id);
 
@@ -117,7 +134,15 @@ public class QuickBooksInvoiceSyncServiceTests
             });
 
         var logger = Mock.Of<ILogger<QuickBooksInvoiceSyncService>>();
-        var service = new QuickBooksInvoiceSyncService(context, contextFactory.Object, clientMock.Object, logger);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
+        var service = new QuickBooksInvoiceSyncService(
+            context,
+            contextFactory.Object,
+            clientMock.Object,
+            syncLogService,
+            accountMappingService,
+            logger);
 
         var result = await service.SyncInvoiceToQBOAsync(invoice.Id);
 

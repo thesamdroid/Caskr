@@ -144,10 +144,14 @@ public class QuickBooksIntegrationTests
             .ReturnsAsync(new QuickBooksInvoice { Id = "INV-300" });
 
         var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
         var service = new QuickBooksInvoiceSyncService(
             context,
             contextFactory,
             clientMock.Object,
+            syncLogService,
+            accountMappingService,
             NullLogger<QuickBooksInvoiceSyncService>.Instance);
 
         var result = await service.SyncInvoiceToQBOAsync(invoice.Id);
@@ -176,10 +180,14 @@ public class QuickBooksIntegrationTests
             .ThrowsAsync(new InvalidOperationException("invalid customer"));
 
         var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
         var service = new QuickBooksInvoiceSyncService(
             context,
             contextFactory,
             clientMock.Object,
+            syncLogService,
+            accountMappingService,
             NullLogger<QuickBooksInvoiceSyncService>.Instance);
 
         var result = await service.SyncInvoiceToQBOAsync(invoice.Id);
@@ -214,10 +222,14 @@ public class QuickBooksIntegrationTests
             });
 
         var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
         var service = new QuickBooksCostTrackingService(
             context,
             contextFactory,
             journalClientMock.Object,
+            syncLogService,
+            accountMappingService,
             NullLogger<QuickBooksCostTrackingService>.Instance);
 
         var result = await service.RecordBatchCOGSAsync(batch.Id);
@@ -269,10 +281,14 @@ public class QuickBooksIntegrationTests
             });
 
         var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
         var service = new QuickBooksInvoiceSyncService(
             context,
             contextFactory,
             clientMock.Object,
+            syncLogService,
+            accountMappingService,
             NullLogger<QuickBooksInvoiceSyncService>.Instance);
 
         var result = await service.SyncInvoiceToQBOAsync(invoice.Id);
@@ -301,10 +317,14 @@ public class QuickBooksIntegrationTests
             .ReturnsAsync(new QuickBooksInvoice { Id = "INV-867" });
 
         var contextFactory = BuildIntegrationContextFactory(context, authServiceMock);
+        var syncLogService = new QuickBooksSyncLogService(context, NullLogger<QuickBooksSyncLogService>.Instance);
+        var accountMappingService = new QuickBooksAccountMappingService(context, NullLogger<QuickBooksAccountMappingService>.Instance);
         var service = new QuickBooksInvoiceSyncService(
             context,
             contextFactory,
             clientMock.Object,
+            syncLogService,
+            accountMappingService,
             NullLogger<QuickBooksInvoiceSyncService>.Instance);
 
         var firstResult = await service.SyncInvoiceToQBOAsync(invoice.Id);
