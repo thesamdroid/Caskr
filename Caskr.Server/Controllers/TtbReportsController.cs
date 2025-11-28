@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Claims;
@@ -64,6 +65,7 @@ public sealed class TtbReportsController(
             .OrderByDescending(r => r.GeneratedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
+        string? existingReportPdfPath = null;
         if (existingReport is not null)
         {
             if (existingReport.Status is TtbReportStatus.Submitted or TtbReportStatus.Approved)
@@ -71,8 +73,8 @@ public sealed class TtbReportsController(
                 return Conflict(CreateProblem("Submitted or approved reports cannot be regenerated."));
             }
 
+            existingReportPdfPath = existingReport.PdfPath;
             dbContext.TtbMonthlyReports.Remove(existingReport);
-            TryDeletePdf(existingReport.PdfPath);
         }
 
         TtbMonthlyReportData reportData;
@@ -139,6 +141,12 @@ public sealed class TtbReportsController(
 
         dbContext.TtbMonthlyReports.Add(report);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(existingReportPdfPath)
+            && !string.Equals(existingReportPdfPath, pdfResult.FilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            TryDeletePdf(existingReportPdfPath);
+        }
 
         var fileName = $"Form_5110_28_{request.Month:D2}_{request.Year}.pdf";
         return File(pdfResult.Content, "application/pdf", fileName);

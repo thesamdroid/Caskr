@@ -1,3 +1,4 @@
+using System.IO;
 using System.Security.Claims;
 using System.Threading;
 using Caskr.server;
@@ -215,6 +216,71 @@ public sealed class TtbReportsControllerTests : IDisposable
         });
 
         Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Generate_WhenRegenerationFails_KeepsExistingPdf()
+    {
+        var existingPdfPath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(existingPdfPath, "existing draft pdf");
+
+        try
+        {
+            dbContext.TtbMonthlyReports.Add(new TtbMonthlyReport
+            {
+                CompanyId = 10,
+                ReportMonth = 10,
+                ReportYear = 2024,
+                Status = TtbReportStatus.Draft,
+                GeneratedAt = DateTime.UtcNow.AddDays(-2),
+                PdfPath = existingPdfPath,
+                CreatedByUserId = 25
+            });
+
+            await dbContext.SaveChangesAsync();
+
+            var emptyReport = new TtbMonthlyReportData
+            {
+                CompanyId = 10,
+                Month = 10,
+                Year = 2024,
+                OpeningInventory = new InventorySection { Rows = Array.Empty<TtbSectionTotal>() },
+                Production = new ProductionSection { Rows = Array.Empty<TtbSectionTotal>() },
+                Transfers = new TransfersSection
+                {
+                    TransfersIn = Array.Empty<TtbSectionTotal>(),
+                    TransfersOut = Array.Empty<TtbSectionTotal>()
+                },
+                Losses = new LossSection { Rows = Array.Empty<TtbSectionTotal>() },
+                ClosingInventory = new InventorySection { Rows = Array.Empty<TtbSectionTotal>() }
+            };
+
+            calculator.Setup(c => c.CalculateMonthlyReportAsync(10, 10, 2024, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(emptyReport);
+
+            var controller = CreateController(25);
+            var result = await controller.Generate(new TtbReportGenerationRequest
+            {
+                CompanyId = 10,
+                Month = 10,
+                Year = 2024
+            });
+
+            dbContext.ChangeTracker.Clear();
+
+            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.True(File.Exists(existingPdfPath));
+
+            var savedReport = await dbContext.TtbMonthlyReports.SingleAsync(r => r.CompanyId == 10 && r.ReportMonth == 10 && r.ReportYear == 2024);
+            Assert.Equal(existingPdfPath, savedReport.PdfPath);
+        }
+        finally
+        {
+            if (File.Exists(existingPdfPath))
+            {
+                File.Delete(existingPdfPath);
+            }
+        }
     }
 
     private TtbReportsController CreateController(int userId)
