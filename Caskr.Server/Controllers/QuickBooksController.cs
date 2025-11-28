@@ -35,19 +35,6 @@ public class QuickBooksController(
     IQuickBooksInvoiceSyncService quickBooksInvoiceSyncService)
     : AuthorizedApiControllerBase
 {
-    private const string InvoiceEntityType = "Invoice";
-    private const string RateLimitCacheKeyPrefix = "quickbooks:sync-rate:";
-    private const int RateLimitRequestsPerWindow = 10;
-    private static readonly TimeSpan RateLimitWindow = TimeSpan.FromMinutes(1);
-    private static readonly TimeSpan InProgressWindow = TimeSpan.FromMinutes(5);
-    private const string DefaultSyncFrequency = "Manual";
-    private static readonly string[] AllowedSyncFrequencies =
-    {
-        "Immediate",
-        "Hourly",
-        "Daily",
-        DefaultSyncFrequency
-    };
 
     private readonly IQuickBooksAuthService _quickBooksAuthService = quickBooksAuthService;
     private readonly IUsersService _usersService = usersService;
@@ -244,7 +231,7 @@ public class QuickBooksController(
             var latestLog = await _dbContext.AccountingSyncLogs
                 .AsNoTracking()
                 .Where(log => log.CompanyId == authorizationResult.invoice!.CompanyId
-                              && log.EntityType == InvoiceEntityType
+                              && log.EntityType == QuickBooksConstants.EntityTypes.Invoice
                               && log.EntityId == invoiceId.Value.ToString(CultureInfo.InvariantCulture))
                 .OrderByDescending(log => log.UpdatedAt)
                 .FirstOrDefaultAsync();
@@ -505,11 +492,11 @@ public class QuickBooksController(
         }
 
         var now = DateTime.UtcNow;
-        var inProgressCutoff = now - InProgressWindow;
+        var inProgressCutoff = now - QuickBooksConstants.SyncConfiguration.InProgressWindow;
         var recentInProgress = await _dbContext.AccountingSyncLogs
             .AsNoTracking()
             .Where(log => log.CompanyId == invoice.CompanyId
-                          && log.EntityType == InvoiceEntityType
+                          && log.EntityType == QuickBooksConstants.EntityTypes.Invoice
                           && log.EntityId == invoice.Id.ToString(CultureInfo.InvariantCulture)
                           && log.SyncStatus == SyncStatus.InProgress
                           && log.SyncedAt >= inProgressCutoff)
@@ -618,7 +605,7 @@ public class QuickBooksController(
 
         if (!string.IsNullOrWhiteSpace(request.SyncFrequency) && !IsValidSyncFrequency(request.SyncFrequency))
         {
-            var allowed = string.Join(", ", AllowedSyncFrequencies);
+            var allowed = string.Join(", ", QuickBooksConstants.SyncFrequencies.AllAllowed);
             return BadRequest(new QuickBooksErrorResponse($"Sync frequency must be one of: {allowed}."));
         }
 
@@ -766,7 +753,7 @@ public class QuickBooksController(
             return $"{scheme}://{Request.Host.Value}/api/accounting/quickbooks/callback";
         }
 
-        var configured = _configuration["QuickBooks:RedirectUri"];
+        var configured = _configuration[QuickBooksConstants.ConfigurationKeys.RedirectUri];
         if (string.IsNullOrWhiteSpace(configured))
         {
             throw new InvalidOperationException("QuickBooks redirect URI is not configured.");
@@ -777,10 +764,10 @@ public class QuickBooksController(
 
     private string BuildSuccessRedirectUrl(int companyId, string realmId)
     {
-        var baseUrl = _configuration["QuickBooks:ConnectSuccessRedirectUrl"];
+        var baseUrl = _configuration[QuickBooksConstants.ConfigurationKeys.ConnectSuccessRedirectUrl];
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            baseUrl = "/accounting/quickbooks/success";
+            baseUrl = QuickBooksConstants.ConfigurationKeys.DefaultConnectSuccessRedirectUrl;
         }
 
         var parameters = new Dictionary<string, string?>
@@ -847,17 +834,19 @@ public class QuickBooksController(
             return false;
         }
 
-        return AllowedSyncFrequencies.Any(value => string.Equals(value, frequency, StringComparison.OrdinalIgnoreCase));
+        return QuickBooksConstants.SyncFrequencies.AllAllowed.Any(value =>
+            string.Equals(value, frequency, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string NormalizeSyncFrequency(string? frequency)
     {
         if (string.IsNullOrWhiteSpace(frequency))
         {
-            return DefaultSyncFrequency;
+            return QuickBooksConstants.SyncFrequencies.Default;
         }
 
-        return AllowedSyncFrequencies.First(value => string.Equals(value, frequency, StringComparison.OrdinalIgnoreCase));
+        return QuickBooksConstants.SyncFrequencies.AllAllowed.First(value =>
+            string.Equals(value, frequency, StringComparison.OrdinalIgnoreCase));
     }
 
     private static QuickBooksSyncPreferencesResponse MapPreferences(AccountingSyncPreference preference)
@@ -866,23 +855,25 @@ public class QuickBooksController(
             preference.CompanyId,
             preference.AutoSyncInvoices,
             preference.AutoSyncCogs,
-            string.IsNullOrWhiteSpace(preference.SyncFrequency) ? DefaultSyncFrequency : preference.SyncFrequency);
+            string.IsNullOrWhiteSpace(preference.SyncFrequency)
+                ? QuickBooksConstants.SyncFrequencies.Default
+                : preference.SyncFrequency);
     }
 
     private bool IsRateLimited(int companyId)
     {
-        var cacheKey = $"{RateLimitCacheKeyPrefix}{companyId}";
+        var cacheKey = $"{QuickBooksConstants.RateLimiting.CacheKeyPrefix}{companyId}";
         var now = DateTime.UtcNow;
-        var windowStart = now - RateLimitWindow;
+        var windowStart = now - QuickBooksConstants.RateLimiting.Window;
 
         var timestamps = _memoryCache.GetOrCreate(cacheKey, entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = RateLimitWindow;
+            entry.AbsoluteExpirationRelativeToNow = QuickBooksConstants.RateLimiting.Window;
             return new List<DateTime>();
         })!;
 
         timestamps.RemoveAll(timestamp => timestamp < windowStart);
-        if (timestamps.Count >= RateLimitRequestsPerWindow)
+        if (timestamps.Count >= QuickBooksConstants.RateLimiting.MaxRequestsPerWindow)
         {
             return true;
         }
@@ -890,7 +881,7 @@ public class QuickBooksController(
         timestamps.Add(now);
         _memoryCache.Set(cacheKey, timestamps, new MemoryCacheEntryOptions
         {
-            AbsoluteExpirationRelativeToNow = RateLimitWindow
+            AbsoluteExpirationRelativeToNow = QuickBooksConstants.RateLimiting.Window
         });
 
         return false;

@@ -15,9 +15,6 @@ namespace Caskr.Server.Services;
 /// </summary>
 public class QuickBooksDataService : IQuickBooksDataService
 {
-    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
-    private const string CacheKeyPrefix = "QuickBooksDataService.ChartOfAccounts";
-
     private readonly IMemoryCache _cache;
     private readonly IQuickBooksIntegrationContextFactory _contextFactory;
     private readonly IQuickBooksAccountQueryClient _accountQueryClient;
@@ -66,7 +63,7 @@ public class QuickBooksDataService : IQuickBooksDataService
             _logger.LogInformation("Fetching QuickBooks chart of accounts for company {CompanyId} (realm {RealmId})", companyId, realmId);
             var qbAccounts = _accountQueryClient.ExecuteActiveAccountQuery(serviceContext);
             var mappedAccounts = qbAccounts.Select(MapAccount).ToList();
-            _cache.Set(cacheKey, mappedAccounts, CacheDuration);
+            _cache.Set(cacheKey, mappedAccounts, QuickBooksConstants.CacheConfiguration.ChartOfAccountsCacheDuration);
             return mappedAccounts;
         }
         catch (IdsException ex)
@@ -93,5 +90,6 @@ public class QuickBooksDataService : IQuickBooksDataService
             isActive);
     }
 
-    private static string GetCacheKey(int companyId) => $"{CacheKeyPrefix}:{companyId}";
+    private static string GetCacheKey(int companyId) =>
+        $"{QuickBooksConstants.CacheConfiguration.ChartOfAccountsCacheKeyPrefix}:{companyId}";
 }
