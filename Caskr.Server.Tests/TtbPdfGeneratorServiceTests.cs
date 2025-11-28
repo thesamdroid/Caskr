@@ -1,0 +1,209 @@
+using System.Globalization;
+using Caskr.server.Models;
+using Caskr.server.Services;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace Caskr.Server.Tests;
+
+public class TtbPdfGeneratorServiceTests
+{
+    [Fact]
+    public async Task GenerateForm5110_28Async_FillsAndSavesPdf()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new CaskrDbContext(options);
+        var company = new Company
+        {
+            Id = 15,
+            CompanyName = "ACME Distilling",
+            AddressLine1 = "123 Oak Street",
+            City = "Austin",
+            State = "TX",
+            PostalCode = "78701",
+            Country = "USA",
+            TtbPermitNumber = "TX-12345",
+            CreatedAt = DateTime.UtcNow,
+            RenewalDate = DateTime.UtcNow.AddYears(1)
+        };
+
+        context.Companies.Add(company);
+        await context.SaveChangesAsync();
+
+        var reportData = new TtbMonthlyReportData
+        {
+            CompanyId = company.Id,
+            Month = 2,
+            Year = 2024,
+            StartDate = new DateTime(2024, 2, 1),
+            EndDate = new DateTime(2024, 2, 29),
+            OpeningInventory = new InventorySection
+            {
+                Rows = new[]
+                {
+                    new TtbSectionTotal
+                    {
+                        ProductType = "Whiskey",
+                        SpiritsType = TtbSpiritsType.Under190Proof,
+                        ProofGallons = 10.5m,
+                        WineGallons = 5.25m
+                    }
+                }
+            },
+            Production = new ProductionSection
+            {
+                Rows = new[]
+                {
+                    new TtbSectionTotal
+                    {
+                        ProductType = "Whiskey",
+                        SpiritsType = TtbSpiritsType.Under190Proof,
+                        ProofGallons = 5.2m,
+                        WineGallons = 2.6m
+                    }
+                }
+            },
+            Transfers = new TransfersSection
+            {
+                TransfersIn = new[]
+                {
+                    new TtbSectionTotal
+                    {
+                        ProductType = "Neutral Spirits",
+                        SpiritsType = TtbSpiritsType.Neutral190OrMore,
+                        ProofGallons = 3.1m,
+                        WineGallons = 1.55m
+                    }
+                },
+                TransfersOut = new[]
+                {
+                    new TtbSectionTotal
+                    {
+                        ProductType = "Whiskey",
+                        SpiritsType = TtbSpiritsType.Under190Proof,
+                        ProofGallons = 1.75m,
+                        WineGallons = 0.9m
+                    }
+                }
+            },
+            Losses = new LossSection
+            {
+                Rows = new[]
+                {
+                    new TtbSectionTotal
+                    {
+                        ProductType = "Whiskey",
+                        SpiritsType = TtbSpiritsType.Under190Proof,
+                        ProofGallons = 0.25m,
+                        WineGallons = 0.1m
+                    }
+                }
+            },
+            ClosingInventory = new InventorySection
+            {
+                Rows = new[]
+                {
+                    new TtbSectionTotal
+                    {
+                        ProductType = "Whiskey",
+                        SpiritsType = TtbSpiritsType.Under190Proof,
+                        ProofGallons = 14m,
+                        WineGallons = 6.9m
+                    },
+                    new TtbSectionTotal
+                    {
+                        ProductType = "Neutral Spirits",
+                        SpiritsType = TtbSpiritsType.Neutral190OrMore,
+                        ProofGallons = 2.5m,
+                        WineGallons = 1.2m
+                    }
+                }
+            }
+        };
+
+        var tempRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempRoot);
+        var formsDirectory = Path.Combine(tempRoot, "Forms");
+        Directory.CreateDirectory(formsDirectory);
+
+        var projectRoot = FindSolutionRoot();
+        var sourceTemplate = Path.Combine(projectRoot, "Caskr.Server", "Forms", "ttb_form_5110_28.pdf");
+        var testTemplate = Path.Combine(formsDirectory, "ttb_form_5110_28.pdf");
+        File.Copy(sourceTemplate, testTemplate, true);
+
+        var env = new TestWebHostEnvironment(tempRoot);
+        var service = new TtbPdfGeneratorService(context, env, NullLogger<TtbPdfGeneratorService>.Instance);
+
+        var result = await service.GenerateForm5110_28Async(reportData);
+
+        var expectedPath = Path.Combine(
+            tempRoot,
+            "Storage",
+            "TTBReports",
+            company.Id.ToString(CultureInfo.InvariantCulture),
+            reportData.Year.ToString("D4", CultureInfo.InvariantCulture),
+            reportData.Month.ToString("D2", CultureInfo.InvariantCulture),
+            "Form_5110_28.pdf");
+
+        Assert.Equal(expectedPath, result.FilePath);
+        Assert.True(File.Exists(result.FilePath));
+        Assert.NotEmpty(result.Content);
+
+        using var reader = new PdfReader(new MemoryStream(result.Content));
+        using var pdfDocument = new PdfDocument(reader);
+        var firstPageText = PdfTextExtractor.GetTextFromPage(pdfDocument.GetPage(1));
+
+        Assert.Contains("ACME Distilling", firstPageText);
+        Assert.Contains("TX-12345", firstPageText);
+        Assert.Contains("02", firstPageText);
+        Assert.Contains("2024", firstPageText);
+        Assert.Contains("10.50", firstPageText);
+        Assert.Contains("3.10", firstPageText);
+        Assert.Contains("14.00", firstPageText);
+        Assert.Contains("2.50", firstPageText);
+    }
+
+    private sealed class TestWebHostEnvironment : IWebHostEnvironment
+    {
+        public TestWebHostEnvironment(string contentRootPath)
+        {
+            ContentRootPath = contentRootPath;
+            WebRootPath = contentRootPath;
+        }
+
+        public string ApplicationName { get; set; } = "Caskr.server";
+
+        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
+
+        public string WebRootPath { get; set; }
+
+        public string EnvironmentName { get; set; } = "Development";
+
+        public string ContentRootPath { get; set; }
+
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+    }
+
+    private static string FindSolutionRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Caskr.sln")))
+        {
+            directory = directory.Parent;
+        }
+
+        if (directory is null)
+        {
+            throw new DirectoryNotFoundException("Unable to locate solution root containing Caskr.sln");
+        }
+
+        return directory.FullName;
+    }
+}
