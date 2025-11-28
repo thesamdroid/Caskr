@@ -132,6 +132,118 @@ Now please create unit tests for this service:
 
 ---
 
+## 🚨 CRITICAL: TTB Compliance for Regulatory Features
+
+**If you're working on ANY TTB-related task (TTB-001 through TTB-014), you MUST follow additional compliance requirements.**
+
+### Required Reading for TTB Tasks
+
+Before implementing any TTB feature, review these documents:
+
+1. **Mapping Document:** `docs/TTB_FORM_5110_28_MAPPING.md`
+   - Form structure, calculations, data model mappings
+
+2. **Compliance Guide:** `docs/TTB_COMPLIANCE_GUIDE.md`
+   - Development workflow, validation rules, code review checklist
+
+### TTB Task Prompt Template
+
+For ALL TTB tasks, add this compliance context to your AI prompt:
+
+```
+🚨 COMPLIANCE REQUIREMENT:
+This task involves TTB (Alcohol and Tobacco Tax and Trade Bureau) regulatory compliance.
+
+REQUIRED READING:
+- docs/TTB_FORM_5110_28_MAPPING.md (form structure and calculations)
+- docs/TTB_COMPLIANCE_GUIDE.md (development standards)
+
+REGULATORY AUTHORITY: 27 CFR Part 19 Subpart V - Records and Reports
+
+COMPLIANCE RULES:
+1. Use EXACT formulas from mapping document (no approximations)
+2. Proof Gallons = Wine Gallons × (ABV × 2) / 100
+3. Inventory must balance: Closing = Opening + Additions - Removals
+4. Transaction multipliers are fixed by regulation (see compliance guide)
+5. Validate calculations within 0.01 proof gallon tolerance
+6. Include form line references in code comments (e.g., "// TTB 5110.28, Part I, Line 21")
+7. Handle ALL edge cases from mapping document
+
+[YOUR TASK PROMPT HERE]
+
+Implementation requirements:
+- Follow patterns in TtbReportCalculatorService.cs
+- Add validation that throws on balance errors
+- Include unit tests for edge cases
+- Reference specific TTB form lines in comments
+- No magic numbers (use named constants)
+```
+
+### Example: TTB-001 with Compliance
+
+**Original Prompt:**
+```
+Research and document TTB Form 5110.28 (Monthly Report of Processing Operations).
+```
+
+**Compliance-Enhanced Prompt:**
+```
+🚨 COMPLIANCE REQUIREMENT:
+This task creates the foundation for federal TTB reporting compliance.
+
+REGULATORY AUTHORITY: 27 CFR Part 19 Subpart V - Records and Reports
+
+Task: Research and document TTB Form 5110.28 (Monthly Report of Processing Operations).
+
+This is the primary monthly compliance report for distilled spirits plants.
+Download official form from TTB.gov (https://www.ttb.gov/forms/f511028.pdf).
+
+Create documentation file: docs/TTB_FORM_5110_28_MAPPING.md
+
+Document:
+1) All form fields with descriptions and data types
+2) Mapping to Caskr database tables (Orders, Batches, Barrels, Transfers, etc.)
+3) Calculation formulas:
+   - Opening inventory (from previous month closing)
+   - Production this month (sum of completed batches)
+   - Transfers in/out
+   - Losses (evaporation, spillage)
+   - Gains (rare)
+   - Closing inventory = opening + production + transfers in - transfers out - losses
+4) Different sections for spirits ≥190 proof (neutral spirits), wine, etc.
+5) Units: Wine gallons vs proof gallons conversion
+6) Edge cases: in-progress batches, inter-facility transfers, tax determinations
+7) Required attachments and supporting documentation
+
+CRITICAL: This documentation will be referenced by all future TTB feature development.
+Accuracy is legally required. Cite TTB sources for all regulatory statements.
+```
+
+### TTB Code Review Checklist
+
+Before submitting TTB-related pull requests, verify:
+
+- [ ] Reviewed mapping document for affected form sections
+- [ ] Calculations use exact formulas (no approximations)
+- [ ] Code comments reference TTB form line numbers
+- [ ] Validation throws errors on balance mismatches
+- [ ] Edge cases are handled per mapping document
+- [ ] Unit tests cover TTB-specific scenarios
+- [ ] No magic numbers (constants are named)
+- [ ] Error messages reference compliance docs
+
+### Why This Matters
+
+**TTB reporting is federal law.** Incorrect reports can result in:
+- Federal penalties and fines
+- License suspension or revocation
+- Criminal liability for intentional misreporting
+- Failed audits (TTB can audit 3 years back)
+
+**When in doubt:** Consult the compliance guide, review TTB regulations, or ask a compliance expert. Never guess.
+
+---
+
 ## Multi-Agent Workflow (Advanced)
 
 If you have access to multiple AI agents or Claude Code with parallel execution:

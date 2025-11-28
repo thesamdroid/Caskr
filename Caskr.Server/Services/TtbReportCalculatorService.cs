@@ -14,10 +14,32 @@ public interface ITtbReportCalculator
     Task<TtbMonthlyReportData> CalculateMonthlyReportAsync(int companyId, int month, int year, CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// Calculates TTB Form 5110.28 (Monthly Report of Processing Operations) data.
+///
+/// COMPLIANCE REFERENCE: docs/TTB_FORM_5110_28_MAPPING.md
+/// REGULATORY AUTHORITY: 27 CFR Part 19 Subpart V - Records and Reports
+///
+/// This service implements the official TTB inventory balance equation:
+///   Closing Inventory = Opening Inventory
+///                      + Production
+///                      + Transfers In
+///                      - Transfers Out
+///                      - Losses
+///
+/// All calculations must balance within 0.01 proof gallons (federal regulation).
+/// Transaction multipliers are fixed by TTB regulation and cannot be modified.
+///
+/// CRITICAL: This service generates data for federal compliance reporting.
+/// Any modification must be reviewed against TTB regulations and the mapping document.
+/// Incorrect calculations can result in federal penalties and license suspension.
+/// </summary>
 public sealed class TtbReportCalculatorService(
     CaskrDbContext dbContext,
     ILogger<TtbReportCalculatorService> logger) : ITtbReportCalculator
 {
+    // TTB regulation allows 0.01 proof gallon tolerance for rounding
+    // See: docs/TTB_FORM_5110_28_MAPPING.md, Section "Calculation Formulas"
     private const decimal SnapshotTolerance = 0.01m;
 
     public async Task<TtbMonthlyReportData> CalculateMonthlyReportAsync(int companyId, int month, int year, CancellationToken cancellationToken = default)
