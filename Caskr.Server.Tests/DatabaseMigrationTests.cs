@@ -38,4 +38,22 @@ public class DatabaseMigrationTests
         Assert.Contains("CREATE TABLE IF NOT EXISTS public.ttb_transactions", scriptContents);
         Assert.Contains("CREATE INDEX IF NOT EXISTS idx_ttb_transactions_company_date", scriptContents);
     }
+
+    [Fact]
+    public void TtbAutoReportsMigrationScript_DefinesScheduleColumns()
+    {
+        var solutionRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+        var scriptPath = Path.Combine(solutionRoot, "Database", "initdb.d", "11-migration-ttb-auto-reports.sql");
+
+        Assert.True(File.Exists(scriptPath), $"Migration script not found at path '{scriptPath}'.");
+
+        var scriptContents = File.ReadAllText(scriptPath);
+
+        Assert.Contains("auto_generate_ttb_reports", scriptContents);
+        Assert.Contains("ttb_auto_report_cadence", scriptContents);
+        Assert.Contains("ttb_auto_report_hour_utc", scriptContents);
+        Assert.Contains("ttb_auto_report_day_of_month", scriptContents);
+        Assert.Contains("ttb_auto_report_day_of_week", scriptContents);
+        Assert.Contains("is_ttb_contact", scriptContents);
+    }
 }

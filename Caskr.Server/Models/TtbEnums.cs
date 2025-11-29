@@ -14,6 +14,12 @@ public enum TtbFormType
     Form5110_40 = 1
 }
 
+public enum TtbAutoReportCadence
+{
+    Monthly = 0,
+    Weekly = 1
+}
+
 public enum TtbTransactionType
 {
     Production = 0,
