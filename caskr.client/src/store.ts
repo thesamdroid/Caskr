@@ -8,6 +8,7 @@ import spiritTypesReducer from './features/spiritTypesSlice'
 import mashBillsReducer from './features/mashBillsSlice'
 import barrelsReducer from './features/barrelsSlice'
 import accountingReducer from './features/accountingSlice'
+import ttbReportsReducer from './features/ttbReportsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -19,7 +20,8 @@ export const store = configureStore({
     spiritTypes: spiritTypesReducer,
     mashBills: mashBillsReducer,
     barrels: barrelsReducer,
-    accounting: accountingReducer
+    accounting: accountingReducer,
+    ttbReports: ttbReportsReducer
   }
 })
 
