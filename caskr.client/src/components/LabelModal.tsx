@@ -142,6 +142,11 @@ const LabelModal = ({ isOpen, onClose, orderName, companyId: fallbackCompanyId }
               <input
                 value={productName}
                 onChange={e => { setProductName(e.target.value); setError(null); }}
+                onFocus={() => {
+                  if (orderName && productName === orderName) {
+                    setProductName('')
+                  }
+                }}
                 placeholder='e.g., Straight Bourbon Whiskey'
                 required
                 disabled={isGenerating}
