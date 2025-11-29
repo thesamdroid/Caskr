@@ -2,6 +2,9 @@
 
 All changes must ensure the .NET solution builds and **all tests run and pass**.
 
+Always ensure the environment loads both the .NET SDK and a Chromium-based browser so
+the server and client test suites can execute successfully.
+
 Run this branch through the testing protocol. Make sure all objects are loaded
 into the execution environments to appropriately run the tasks. If any tests
 fail, make sure they get fixed. If they fail because of missing elements in the
