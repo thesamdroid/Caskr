@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { seedAuthenticatedUser } from './support/auth'
 
 const sampleReports = [
   { id: 1, reportMonth: 10, reportYear: 2024, status: 'Draft', generatedAt: '2024-11-05T00:00:00Z' },
@@ -7,6 +8,7 @@ const sampleReports = [
 
 test.describe('TTB reports page', () => {
   test('renders reports and supports preview, download, and generation flows', async ({ page }) => {
+    await seedAuthenticatedUser(page)
     await page.route('**/api/ttb/reports?**', route =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sampleReports) })
     )
@@ -42,6 +44,8 @@ test.describe('TTB reports page', () => {
 
   test('applies filters when fetching reports', async ({ page }) => {
     const requests: string[] = []
+
+    await seedAuthenticatedUser(page)
 
     await page.route('**/api/ttb/reports?**', route => {
       requests.push(route.request().url())

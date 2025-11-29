@@ -43,6 +43,7 @@ function TtbReportsPage() {
   const reports = useAppSelector(state => state.ttbReports.items)
   const isLoading = useAppSelector(state => state.ttbReports.isLoading)
   const fetchError = useAppSelector(state => state.ttbReports.error)
+  const authUser = useAppSelector(state => state.auth.user)
 
   const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear())
   const [statusFilter, setStatusFilter] = useState<TtbReportStatus | 'All'>('All')
@@ -53,7 +54,7 @@ function TtbReportsPage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const companyId = 1
+  const companyId = authUser?.companyId ?? 1
 
   useEffect(() => {
     dispatch(fetchTtbReports({ companyId, year: yearFilter, status: statusFilter }))

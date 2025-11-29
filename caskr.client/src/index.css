@@ -493,6 +493,27 @@ label {
   transition: all var(--transition-base);
   display: block;
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.nav-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--text-secondary);
+}
+
+.nav-item a:hover .nav-icon-wrapper,
+.nav-item a.active .nav-icon-wrapper {
+  color: var(--text-gold);
+}
+
+.nav-label {
+  line-height: 1.4;
 }
 
 .nav-item a::after {
