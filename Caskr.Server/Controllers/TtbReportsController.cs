@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using Caskr.server.Models;
 using Caskr.server.Services;
 using Microsoft.AspNetCore.Http;
@@ -87,7 +88,9 @@ public sealed class TtbReportsController(
                 ReportYear = r.ReportYear,
                 FormType = r.FormType,
                 Status = r.Status,
-                GeneratedAt = r.GeneratedAt
+                GeneratedAt = r.GeneratedAt,
+                ValidationErrors = r.ValidationErrors,
+                ValidationWarnings = r.ValidationWarnings
             })
             .ToListAsync(cancellationToken);
 
@@ -295,15 +298,30 @@ public sealed class TtbReportsController(
             return StatusCode(StatusCodes.Status500InternalServerError, CreateProblem("Generated PDF is empty."));
         }
 
+        // Serialize validation results for storage
+        var validationErrors = reportData.Validation.Errors.Count > 0
+            ? JsonSerializer.Serialize(reportData.Validation.Errors)
+            : null;
+        var validationWarnings = reportData.Validation.Warnings.Count > 0
+            ? JsonSerializer.Serialize(reportData.Validation.Warnings)
+            : null;
+
+        // Determine status based on validation results
+        var status = reportData.Validation.IsValid
+            ? TtbReportStatus.Draft
+            : TtbReportStatus.ValidationFailed;
+
         var report = new TtbMonthlyReport
         {
             CompanyId = request.CompanyId,
             ReportMonth = request.Month,
             ReportYear = request.Year,
-            Status = TtbReportStatus.Draft,
+            Status = status,
             FormType = request.FormType,
             GeneratedAt = DateTime.UtcNow,
             PdfPath = pdfResult.FilePath,
+            ValidationErrors = validationErrors,
+            ValidationWarnings = validationWarnings,
             CreatedByUserId = user.Id
         };
 
@@ -429,4 +447,8 @@ public sealed class TtbReportSummaryResponse
     public TtbReportStatus Status { get; set; }
 
     public DateTime? GeneratedAt { get; set; }
+
+    public string? ValidationErrors { get; set; }
+
+    public string? ValidationWarnings { get; set; }
 }

@@ -25,6 +25,8 @@ public sealed class TtbMonthlyReportData
     public LossSection Losses { get; init; } = new();
 
     public InventorySection ClosingInventory { get; init; } = new();
+
+    public ValidationResult Validation { get; init; } = new();
 }
 
 public sealed class InventorySection

@@ -660,6 +660,8 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.SubmittedAt).HasColumnName("submitted_at");
             entity.Property(e => e.TtbConfirmationNumber).HasColumnName("ttb_confirmation_number");
             entity.Property(e => e.PdfPath).HasColumnName("pdf_path");
+            entity.Property(e => e.ValidationErrors).HasColumnName("validation_errors");
+            entity.Property(e => e.ValidationWarnings).HasColumnName("validation_warnings");
             entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
 
             entity.HasOne(d => d.Company)

@@ -30,6 +30,10 @@ public class TtbMonthlyReport
 
     public string? PdfPath { get; set; }
 
+    public string? ValidationErrors { get; set; }
+
+    public string? ValidationWarnings { get; set; }
+
     [Required]
     public int CreatedByUserId { get; set; }
 
