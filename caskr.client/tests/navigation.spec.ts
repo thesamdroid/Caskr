@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { seedAuthenticatedUser } from './support/auth';
 
 test.describe('navigation links', () => {
   test.beforeEach(async ({ page }) => {
+    await seedAuthenticatedUser(page);
     await page.route('**', async route => {
       const url = new URL(route.request().url());
       if (!url.pathname.startsWith('/api/')) {
@@ -21,7 +23,7 @@ test.describe('navigation links', () => {
     { link: 'Dashboard', heading: 'Dashboard', path: '/' },
     { link: 'Orders', heading: 'Orders', path: '/orders' },
     { link: 'Barrels', heading: 'Barrels', path: '/barrels' },
-    { link: 'TTB Reports', heading: 'TTB Monthly Reports (Form 5110.28)', path: '/ttb-reports' },
+    { link: 'TTB Compliance', heading: 'TTB Monthly Reports (Form 5110.28)', path: '/ttb-reports' },
     { link: 'Products', heading: 'Products', path: '/products' },
     { link: 'Accounting', heading: 'Accounting Settings', path: '/accounting' },
     { link: 'Sync History', heading: 'Accounting Sync History', path: '/accounting/sync-history' },
@@ -47,5 +49,15 @@ test.describe('navigation links', () => {
     await expect(page.getByRole('link', { name: 'Statuses' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'User Types' })).toHaveCount(0);
+  });
+
+  test('hides TTB compliance navigation when permission is missing', async ({ page }) => {
+    await page.addInitScript(() => localStorage.clear());
+    await seedAuthenticatedUser(page, { permissions: [] });
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'TTB Compliance' })).toHaveCount(0);
+
+    await page.goto('/ttb-reports');
+    await expect(page).toHaveURL('/');
   });
 });

@@ -1,6 +1,9 @@
 using Caskr.server.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -147,13 +150,21 @@ namespace Caskr.server.Services
 
         public async Task<LoginResponse> LoginAsync(string email, string password)
         {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+
             // Authenticate with Keycloak
-            var keycloakTokens = await AuthenticateWithKeycloakAsync(email, password);
+            var keycloakTokens = await AuthenticateWithKeycloakAsync(normalizedEmail, password);
 
             // Get user from database
-            var user = await _dbContext.Users
+            var users = await _dbContext.Users
                 .Include(u => u.Company)
-                .FirstOrDefaultAsync(u => u.Email == email.ToLowerInvariant());
+                .Include(u => u.UserType)
+                .ToListAsync();
+
+            var user = _dbContext.Users.Local.FirstOrDefault(u =>
+                    string.Equals(u.Email?.Trim(), normalizedEmail, StringComparison.OrdinalIgnoreCase))
+                ?? users.FirstOrDefault(u =>
+                    string.Equals(u.Email?.Trim(), normalizedEmail, StringComparison.OrdinalIgnoreCase));
 
             if (user == null)
             {
@@ -169,7 +180,7 @@ namespace Caskr.server.Services
             user.LastLoginAt = DateTime.UtcNow;
             await _dbContext.SaveChangesAsync();
 
-            _logger.LogInformation("User logged in successfully: {Email} (ID: {UserId})", 
+            _logger.LogInformation("User logged in successfully: {Email} (ID: {UserId})",
                 user.Email, user.Id);
 
             return new LoginResponse
@@ -184,7 +195,9 @@ namespace Caskr.server.Services
                     Email = user.Email,
                     CompanyId = user.CompanyId,
                     CompanyName = user.Company?.CompanyName ?? "Unknown",
-                    UserTypeId = user.UserTypeId
+                    UserTypeId = user.UserTypeId,
+                    Role = user.UserType?.Name ?? string.Empty,
+                    Permissions = BuildPermissionsFor(user)
                 }
             };
         }
@@ -215,6 +228,26 @@ namespace Caskr.server.Services
         }
 
         #region Keycloak Integration Methods
+
+        private static List<string> BuildPermissionsFor(User user)
+        {
+            var permissions = new List<string>();
+            var roleName = user.UserType?.Name ?? string.Empty;
+
+            if (user.IsPrimaryContact)
+            {
+                permissions.Add("TTB_COMPLIANCE");
+            }
+
+            if (roleName.Contains("admin", StringComparison.OrdinalIgnoreCase) ||
+                roleName.Contains("compliance", StringComparison.OrdinalIgnoreCase) ||
+                roleName.Contains("operations", StringComparison.OrdinalIgnoreCase))
+            {
+                permissions.Add("TTB_COMPLIANCE");
+            }
+
+            return permissions.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
 
         private async Task<string> CreateKeycloakUserAsync(string email, string name, string password)
         {

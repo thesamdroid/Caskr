@@ -1,28 +1,28 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { authorizedFetch } from '../api/authorizedFetch'
+import { useAppDispatch, useAppSelector } from '../hooks'
+import { login } from '../features/authSlice'
 
 function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const navigate = useNavigate()
+  const dispatch = useAppDispatch()
+  const isLoading = useAppSelector(state => state.auth.isLoading)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const response = await authorizedFetch('api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-    if (!response.ok) {
-      setMessage('Login failed')
-      return
+    setMessage('')
+
+    try {
+      await dispatch(login({ email, password })).unwrap()
+      setPassword('')
+      navigate('/')
+    } catch (error) {
+      const errorMessage = typeof error === 'string' ? error : 'Login failed'
+      setMessage(errorMessage)
     }
-    const data = await response.json()
-    localStorage.setItem('token', data.token)
-    setPassword('')
-    navigate('/')
   }
 
   return (
@@ -80,7 +80,7 @@ function LoginPage() {
             </div>
           )}
 
-          <button type="submit" className="button-primary w-full button-lg">
+          <button type="submit" className="button-primary w-full button-lg" disabled={isLoading}>
             Sign In
           </button>
         </form>
