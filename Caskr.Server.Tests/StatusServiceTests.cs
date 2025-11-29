@@ -59,6 +59,18 @@ public class StatusServiceTests
     }
 
     [Fact]
+    public async Task AddStatusAsync_AllowsNullStatusAndReturnsCreatedEntity()
+    {
+        var createdStatus = new Status { Id = (int)StatusType.ResearchAndDevelopment };
+        _repo.Setup(r => r.AddStatusAsync(It.Is<Status?>(s => s is null))).ReturnsAsync(createdStatus);
+
+        var result = await _service.AddStatusAsync(null);
+
+        Assert.Equal(createdStatus, result);
+        _repo.Verify(r => r.AddStatusAsync(It.Is<Status?>(s => s is null)), Times.Once);
+    }
+
+    [Fact]
     public async Task UpdateStatusAsync_DelegatesToRepository()
     {
         var status = new Status { Id = (int)StatusType.Ordering };
