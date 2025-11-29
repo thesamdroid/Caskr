@@ -62,6 +62,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<TtbTransaction> TtbTransactions { get; set; } = null!;
 
+    public virtual DbSet<TtbGaugeRecord> TtbGaugeRecords { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -734,6 +736,46 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.CompanyId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_ttb_transactions_company");
+        });
+
+        modelBuilder.Entity<TtbGaugeRecord>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ttb_gauge_records_pkey");
+
+            entity.ToTable("ttb_gauge_records");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BarrelId).HasColumnName("barrel_id");
+            entity.Property(e => e.GaugeDate).HasColumnName("gauge_date");
+            entity.Property(e => e.GaugeType)
+                .HasConversion<string>()
+                .HasColumnName("gauge_type");
+            entity.Property(e => e.Proof)
+                .HasColumnType("decimal(5,2)")
+                .HasColumnName("proof");
+            entity.Property(e => e.Temperature)
+                .HasColumnType("decimal(5,2)")
+                .HasColumnName("temperature");
+            entity.Property(e => e.WineGallons)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("wine_gallons");
+            entity.Property(e => e.ProofGallons)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("proof_gallons");
+            entity.Property(e => e.GaugedByUserId).HasColumnName("gauged_by_user_id");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+
+            entity.HasOne(d => d.Barrel)
+                .WithMany()
+                .HasForeignKey(d => d.BarrelId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_ttb_gauge_records_barrel");
+
+            entity.HasOne(d => d.GaugedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.GaugedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_ttb_gauge_records_user");
         });
 
         OnModelCreatingPartial(modelBuilder);
