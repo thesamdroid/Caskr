@@ -10,6 +10,8 @@ public partial class User
 
     public bool IsActive { get; set; } = true;
 
+    public bool IsTtbContact { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? LastLoginAt { get; set; }

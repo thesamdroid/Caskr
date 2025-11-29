@@ -1,3 +1,6 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+
 namespace Caskr.server.Models;
 
 public partial class Company
@@ -9,6 +12,19 @@ public partial class Company
     public DateTime CreatedAt { get; set; }
 
     public DateTime RenewalDate { get; set; }
+
+    public bool AutoGenerateTtbReports { get; set; }
+
+    [Required]
+    public TtbAutoReportCadence TtbAutoReportCadence { get; set; } = TtbAutoReportCadence.Monthly;
+
+    [Range(0, 23)]
+    public int TtbAutoReportHourUtc { get; set; } = 6;
+
+    [Range(1, 28)]
+    public int TtbAutoReportDayOfMonth { get; set; } = 1;
+
+    public DayOfWeek TtbAutoReportDayOfWeek { get; set; } = DayOfWeek.Monday;
 
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 

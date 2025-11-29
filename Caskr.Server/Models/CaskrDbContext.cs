@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace Caskr.server.Models;
 
@@ -204,6 +205,23 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.PhoneNumber).HasColumnName("phone_number");
             entity.Property(e => e.Website).HasColumnName("website");
             entity.Property(e => e.TtbPermitNumber).HasColumnName("ttb_permit_number");
+            entity.Property(e => e.AutoGenerateTtbReports)
+                .HasDefaultValue(false)
+                .HasColumnName("auto_generate_ttb_reports");
+            entity.Property(e => e.TtbAutoReportCadence)
+                .HasConversion<string>()
+                .HasDefaultValue(TtbAutoReportCadence.Monthly)
+                .HasColumnName("ttb_auto_report_cadence");
+            entity.Property(e => e.TtbAutoReportHourUtc)
+                .HasDefaultValue(6)
+                .HasColumnName("ttb_auto_report_hour_utc");
+            entity.Property(e => e.TtbAutoReportDayOfMonth)
+                .HasDefaultValue(1)
+                .HasColumnName("ttb_auto_report_day_of_month");
+            entity.Property(e => e.TtbAutoReportDayOfWeek)
+                .HasConversion<string>()
+                .HasDefaultValue(DayOfWeek.Monday)
+                .HasColumnName("ttb_auto_report_day_of_week");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
@@ -270,6 +288,9 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
+            entity.Property(e => e.IsTtbContact)
+                .HasDefaultValue(false)
+                .HasColumnName("is_ttb_contact");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .ValueGeneratedOnAdd()
