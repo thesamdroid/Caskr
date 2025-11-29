@@ -10,6 +10,7 @@ import barrelsReducer from './features/barrelsSlice'
 import accountingReducer from './features/accountingSlice'
 import ttbReportsReducer from './features/ttbReportsSlice'
 import ttbTransactionsReducer from './features/ttbTransactionsSlice'
+import ttbGaugeRecordsReducer from './features/ttbGaugeRecordsSlice'
 import authReducer from './features/authSlice'
 
 export const store = configureStore({
@@ -25,6 +26,7 @@ export const store = configureStore({
     accounting: accountingReducer,
     ttbReports: ttbReportsReducer,
     ttbTransactions: ttbTransactionsReducer,
+    ttbGaugeRecords: ttbGaugeRecordsReducer,
     auth: authReducer
   }
 })

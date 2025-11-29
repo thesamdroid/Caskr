@@ -48,3 +48,10 @@ public enum TtbTaxStatus
     Export = 2,
     TaxFree = 3
 }
+
+public enum TtbGaugeType
+{
+    Fill = 0,
+    Storage = 1,
+    Removal = 2
+}
