@@ -115,12 +115,12 @@ export default function TtbReportGenerationModal({
             <select
               id='report-form-type'
               value={selectedFormType}
-              onChange={event => setSelectedFormType(event.target.value as TtbFormType)}
+              onChange={event => setSelectedFormType(Number(event.target.value) as TtbFormType)}
               required
               aria-required='true'
             >
-              <option value='5110_28'>Form 5110.28 – Processing</option>
-              <option value='5110_40'>Form 5110.40 – Storage</option>
+              <option value={TtbFormType.Form5110_28}>Form 5110.28 – Processing</option>
+              <option value={TtbFormType.Form5110_40}>Form 5110.40 – Storage</option>
             </select>
           </label>
         </div>

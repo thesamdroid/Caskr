@@ -3,7 +3,10 @@ import { authorizedFetch } from '../api/authorizedFetch'
 
 export type TtbReportStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected'
 
-export type TtbFormType = '5110_28' | '5110_40'
+export enum TtbFormType {
+  Form5110_28 = 0,
+  Form5110_40 = 1
+}
 
 export interface TtbReport {
   id: number
@@ -25,6 +28,19 @@ interface TtbReportsState {
   items: TtbReport[]
   isLoading: boolean
   error: string | null
+}
+
+const normalizeFormType = (value: any): TtbFormType => {
+  if (value === TtbFormType.Form5110_40 || value === 1 || value === '1') return TtbFormType.Form5110_40
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === 'form5110_40' || normalized === '5110_40' || normalized === '40') {
+      return TtbFormType.Form5110_40
+    }
+  }
+
+  return TtbFormType.Form5110_28
 }
 
 const statusLookup: Record<number, TtbReportStatus> = {
@@ -53,10 +69,7 @@ const normalizeReport = (payload: any): TtbReport => ({
   id: payload.id,
   reportMonth: payload.reportMonth ?? payload.month ?? payload.report_month ?? payload.ReportMonth,
   reportYear: payload.reportYear ?? payload.year ?? payload.report_year ?? payload.ReportYear,
-  formType:
-    (payload.formType ?? payload.form_type ?? payload.FormType ?? '5110_28').toString().includes('40')
-      ? '5110_40'
-      : '5110_28',
+  formType: normalizeFormType(payload.formType ?? payload.form_type ?? payload.FormType ?? TtbFormType.Form5110_28),
   status: toStatus(payload.status ?? payload.Status),
   generatedAt: payload.generatedAt ?? payload.generated_at ?? payload.GeneratedAt ?? null
 })
@@ -73,8 +86,8 @@ export const fetchTtbReports = createAsyncThunk(
       params.append('status', status)
     }
 
-    if (formType && formType !== 'All') {
-      params.append('formType', formType)
+    if (formType !== undefined && formType !== 'All') {
+      params.append('formType', formType.toString())
     }
 
     const response = await authorizedFetch(`/api/ttb/reports?${params.toString()}`)

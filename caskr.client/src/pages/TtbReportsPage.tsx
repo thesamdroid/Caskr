@@ -16,7 +16,7 @@ const statusBadges: Record<TtbReportStatus, string> = {
 
 const statusOptions: Array<TtbReportStatus | 'All'> = ['All', 'Draft', 'Submitted', 'Approved', 'Rejected']
 
-const formTypeOptions: Array<TtbFormType | 'All'> = ['All', '5110_28', '5110_40']
+const formTypeOptions: Array<TtbFormType | 'All'> = ['All', TtbFormType.Form5110_28, TtbFormType.Form5110_40]
 
 const formatMonthYear = (month: number, year: number) =>
   new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1))
@@ -27,9 +27,10 @@ const formatDate = (value?: string | null) => {
 }
 
 const buildFileName = (formType: TtbFormType, month: number, year: number) =>
-  `Form_${formType === '5110_40' ? '5110_40' : '5110_28'}_${month.toString().padStart(2, '0')}_${year}.pdf`
+  `Form_${formType === TtbFormType.Form5110_40 ? '5110_40' : '5110_28'}_${month.toString().padStart(2, '0')}_${year}.pdf`
 
-const describeFormType = (formType: TtbFormType) => (formType === '5110_40' ? 'Form 5110.40 (Storage)' : 'Form 5110.28 (Processing)')
+const describeFormType = (formType: TtbFormType) =>
+  formType === TtbFormType.Form5110_40 ? 'Form 5110.40 (Storage)' : 'Form 5110.28 (Processing)'
 
 function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob)
@@ -196,7 +197,13 @@ function TtbReportsPage() {
 
         <label>
           <span>Form type</span>
-          <select value={formTypeFilter} onChange={event => setFormTypeFilter(event.target.value as TtbFormType | 'All')}>
+          <select
+            value={formTypeFilter}
+            onChange={event => {
+              const value = event.target.value
+              setFormTypeFilter(value === 'All' ? 'All' : (Number(value) as TtbFormType))
+            }}
+          >
             {formTypeOptions.map(option => (
               <option key={option} value={option}>
                 {option === 'All' ? 'All Forms' : describeFormType(option as TtbFormType)}
@@ -289,7 +296,7 @@ function TtbReportsPage() {
         onClose={() => setIsGenerateModalOpen(false)}
         onSubmit={handleGenerateReport}
         defaultYear={yearFilter}
-        defaultFormType={formTypeFilter === 'All' ? '5110_28' : formTypeFilter}
+        defaultFormType={formTypeFilter === 'All' ? TtbFormType.Form5110_28 : formTypeFilter}
         isSubmitting={isGenerating}
         errorMessage={actionError}
       />
