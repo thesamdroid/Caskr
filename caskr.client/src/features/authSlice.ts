@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
 }
 
 export const TTB_COMPLIANCE_PERMISSION = 'TTB_COMPLIANCE'
+export const TTB_EDIT_PERMISSION = 'TTB_EDIT'
 
 interface AuthState {
   user: AuthUser | null

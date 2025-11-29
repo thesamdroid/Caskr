@@ -11,8 +11,9 @@ import AccountingSettingsPage from './pages/AccountingSettingsPage'
 import AccountingSyncHistoryPage from './pages/AccountingSyncHistoryPage'
 import TtbReportsPage from './pages/TtbReportsPage'
 import TtbAutoReportPreviewPage from './pages/TtbAutoReportPreviewPage'
+import TtbTransactionsPage from './pages/TtbTransactionsPage'
 import PermissionGuard from './components/PermissionGuard'
-import { TTB_COMPLIANCE_PERMISSION } from './features/authSlice'
+import { TTB_COMPLIANCE_PERMISSION, TTB_EDIT_PERMISSION } from './features/authSlice'
 
 function App() {
   return (
@@ -31,6 +32,14 @@ function App() {
             }
           />
           <Route path='ttb-auto-report-preview' element={<TtbAutoReportPreviewPage />} />
+          <Route
+            path='ttb-transactions'
+            element={
+              <PermissionGuard requiredPermission={TTB_EDIT_PERMISSION}>
+                <TtbTransactionsPage />
+              </PermissionGuard>
+            }
+          />
           <Route path='products' element={<ProductsPage />} />
           <Route path='accounting' element={<AccountingSettingsPage />} />
         <Route path='accounting/sync-history' element={<AccountingSyncHistoryPage />} />
