@@ -19,6 +19,9 @@ public class TtbMonthlyReport
     [Required]
     public TtbReportStatus Status { get; set; }
 
+    [Required]
+    public TtbFormType FormType { get; set; } = TtbFormType.Form5110_28;
+
     public DateTime? GeneratedAt { get; set; }
 
     public DateTime? SubmittedAt { get; set; }

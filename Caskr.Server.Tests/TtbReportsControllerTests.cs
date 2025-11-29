@@ -71,6 +71,7 @@ public sealed class TtbReportsControllerTests : IDisposable
             ReportMonth = 9,
             ReportYear = 2024,
             Status = TtbReportStatus.Submitted,
+            FormType = TtbFormType.Form5110_28,
             GeneratedAt = DateTime.UtcNow,
             CreatedByUserId = 25
         });
@@ -131,6 +132,7 @@ public sealed class TtbReportsControllerTests : IDisposable
             ReportMonth = 8,
             ReportYear = 2024,
             Status = TtbReportStatus.Draft,
+            FormType = TtbFormType.Form5110_28,
             GeneratedAt = DateTime.UtcNow.AddDays(-1),
             PdfPath = "/tmp/old.pdf",
             CreatedByUserId = 25
@@ -203,6 +205,7 @@ public sealed class TtbReportsControllerTests : IDisposable
         Assert.Equal(8, savedReport.ReportMonth);
         Assert.Equal(2024, savedReport.ReportYear);
         Assert.Equal(25, savedReport.CreatedByUserId);
+        Assert.Equal(TtbFormType.Form5110_28, savedReport.FormType);
     }
 
     [Fact]
@@ -236,6 +239,50 @@ public sealed class TtbReportsControllerTests : IDisposable
         });
 
         Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Generate_WhenStorageReportRequested_UsesStorageServices()
+    {
+        var storageData = new TtbForm5110_40Data
+        {
+            CompanyId = 10,
+            Month = 8,
+            Year = 2024,
+            OpeningBarrels = 5m,
+            BarrelsReceived = 2m,
+            BarrelsRemoved = 1m,
+            ClosingBarrels = 6m,
+            ProofGallonsByWarehouse = new[]
+            {
+                new WarehouseProofGallons { WarehouseName = "Main", ProofGallons = 120m }
+            }
+        };
+
+        calculator.Setup(c => c.CalculateForm5110_40Async(10, 8, 2024, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(storageData);
+
+        pdfGenerator.Setup(p => p.GenerateForm5110_40Async(storageData, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PdfGenerationResult("/tmp/storage.pdf", new byte[] { 9, 8, 7 }));
+
+        var controller = CreateController(25);
+        var actionResult = await controller.Generate(new TtbReportGenerationRequest
+        {
+            CompanyId = 10,
+            Month = 8,
+            Year = 2024,
+            FormType = TtbFormType.Form5110_40
+        });
+
+        calculator.Verify(c => c.CalculateMonthlyReportAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), default), Times.Never);
+        calculator.Verify(c => c.CalculateForm5110_40Async(10, 8, 2024, It.IsAny<CancellationToken>()), Times.Once);
+
+        var fileResult = Assert.IsType<FileContentResult>(actionResult);
+        Assert.Equal("Form_5110_40_08_2024.pdf", fileResult.FileDownloadName);
+        Assert.Equal(new byte[] { 9, 8, 7 }, fileResult.FileContents);
+
+        var savedReport = await dbContext.TtbMonthlyReports.SingleAsync(r => r.CompanyId == 10 && r.FormType == TtbFormType.Form5110_40);
+        Assert.Equal(TtbFormType.Form5110_40, savedReport.FormType);
     }
 
     [Fact]
@@ -318,37 +365,40 @@ public sealed class TtbReportsControllerTests : IDisposable
             },
             new TtbMonthlyReport
             {
-                CompanyId = 10,
-                ReportMonth = 7,
-                ReportYear = 2024,
-                Status = TtbReportStatus.Submitted,
-                GeneratedAt = DateTime.UtcNow.AddDays(-10),
-                CreatedByUserId = 25
-            },
+            CompanyId = 10,
+            ReportMonth = 7,
+            ReportYear = 2024,
+            Status = TtbReportStatus.Submitted,
+            FormType = TtbFormType.Form5110_28,
+            GeneratedAt = DateTime.UtcNow.AddDays(-10),
+            CreatedByUserId = 25
+        },
             new TtbMonthlyReport
-            {
-                CompanyId = 10,
-                ReportMonth = 6,
-                ReportYear = 2023,
-                Status = TtbReportStatus.Approved,
-                GeneratedAt = DateTime.UtcNow.AddDays(-40),
-                CreatedByUserId = 25
-            },
+        {
+            CompanyId = 10,
+            ReportMonth = 6,
+            ReportYear = 2023,
+            Status = TtbReportStatus.Approved,
+            FormType = TtbFormType.Form5110_28,
+            GeneratedAt = DateTime.UtcNow.AddDays(-40),
+            CreatedByUserId = 25
+        },
             new TtbMonthlyReport
-            {
-                CompanyId = 22,
-                ReportMonth = 8,
-                ReportYear = 2024,
-                Status = TtbReportStatus.Submitted,
-                GeneratedAt = DateTime.UtcNow.AddDays(-3),
-                CreatedByUserId = 30
-            });
+        {
+            CompanyId = 22,
+            ReportMonth = 8,
+            ReportYear = 2024,
+            Status = TtbReportStatus.Submitted,
+            FormType = TtbFormType.Form5110_28,
+            GeneratedAt = DateTime.UtcNow.AddDays(-3),
+            CreatedByUserId = 30
+        });
 
         await dbContext.SaveChangesAsync();
 
         var controller = CreateController(25);
 
-        var actionResult = await controller.List(10, 2024, TtbReportStatus.Submitted);
+        var actionResult = await controller.List(10, 2024, status: TtbReportStatus.Submitted);
 
         var ok = Assert.IsType<OkObjectResult>(actionResult);
         var response = Assert.IsAssignableFrom<IEnumerable<TtbReportSummaryResponse>>(ok.Value);
@@ -359,6 +409,68 @@ public sealed class TtbReportsControllerTests : IDisposable
         Assert.Equal(TtbReportStatus.Submitted, submittedReport.Status);
         Assert.Equal(10, submittedReport.CompanyId);
         Assert.Equal(2024, submittedReport.ReportYear);
+        Assert.Equal(TtbFormType.Form5110_28, submittedReport.FormType);
+    }
+
+    [Fact]
+    public async Task List_WithFormTypeFilter_ReturnsOnlyMatchingForms()
+    {
+        dbContext.TtbMonthlyReports.AddRange(
+            new TtbMonthlyReport
+            {
+                CompanyId = 10,
+                ReportMonth = 8,
+                ReportYear = 2024,
+                Status = TtbReportStatus.Draft,
+                FormType = TtbFormType.Form5110_40,
+                GeneratedAt = DateTime.UtcNow.AddDays(-2),
+                CreatedByUserId = 25
+            },
+            new TtbMonthlyReport
+            {
+                CompanyId = 10,
+                ReportMonth = 7,
+                ReportYear = 2024,
+                Status = TtbReportStatus.Submitted,
+                FormType = TtbFormType.Form5110_28,
+                GeneratedAt = DateTime.UtcNow.AddDays(-10),
+                CreatedByUserId = 25
+            },
+            new TtbMonthlyReport
+            {
+                CompanyId = 10,
+                ReportMonth = 6,
+                ReportYear = 2024,
+                Status = TtbReportStatus.Draft,
+                FormType = TtbFormType.Form5110_28,
+                GeneratedAt = DateTime.UtcNow.AddDays(-20),
+                CreatedByUserId = 25
+            },
+            new TtbMonthlyReport
+            {
+                CompanyId = 22,
+                ReportMonth = 8,
+                ReportYear = 2024,
+                Status = TtbReportStatus.Submitted,
+                FormType = TtbFormType.Form5110_40,
+                GeneratedAt = DateTime.UtcNow.AddDays(-3),
+                CreatedByUserId = 30
+            });
+
+        await dbContext.SaveChangesAsync();
+
+        var controller = CreateController(25);
+
+        var actionResult = await controller.List(10, 2024, formType: TtbFormType.Form5110_40);
+
+        var ok = Assert.IsType<OkObjectResult>(actionResult);
+        var response = Assert.IsAssignableFrom<IEnumerable<TtbReportSummaryResponse>>(ok.Value);
+        var reports = response.ToList();
+
+        var storageReport = Assert.Single(reports);
+        Assert.Equal(8, storageReport.ReportMonth);
+        Assert.Equal(TtbFormType.Form5110_40, storageReport.FormType);
+        Assert.Equal(TtbReportStatus.Draft, storageReport.Status);
     }
 
     [Fact]

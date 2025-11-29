@@ -3,7 +3,7 @@ import PdfViewerModal from '../components/PdfViewerModal'
 import TtbReportGenerationModal from '../components/TtbReportGenerationModal'
 import { authorizedFetch } from '../api/authorizedFetch'
 import { useAppDispatch, useAppSelector } from '../hooks'
-import { fetchTtbReports, TtbReport, TtbReportStatus } from '../features/ttbReportsSlice'
+import { fetchTtbReports, TtbFormType, TtbReport, TtbReportStatus } from '../features/ttbReportsSlice'
 
 // TTB Compliance: This page surfaces Form 5110.28 artifacts per docs/TTB_FORM_5110_28_MAPPING.md
 // to ensure users can preview and download federally required reports without altering calculations.
@@ -14,7 +14,9 @@ const statusBadges: Record<TtbReportStatus, string> = {
   Rejected: 'rejected'
 }
 
-const statusOptions: Array<TtbReportStatus | 'All'> = ['All', 'Draft', 'Submitted', 'Approved']
+const statusOptions: Array<TtbReportStatus | 'All'> = ['All', 'Draft', 'Submitted', 'Approved', 'Rejected']
+
+const formTypeOptions: Array<TtbFormType | 'All'> = ['All', '5110_28', '5110_40']
 
 const formatMonthYear = (month: number, year: number) =>
   new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1))
@@ -24,7 +26,10 @@ const formatDate = (value?: string | null) => {
   return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(value))
 }
 
-const buildFileName = (month: number, year: number) => `Form_5110_28_${year}_${month.toString().padStart(2, '0')}.pdf`
+const buildFileName = (formType: TtbFormType, month: number, year: number) =>
+  `Form_${formType === '5110_40' ? '5110_40' : '5110_28'}_${month.toString().padStart(2, '0')}_${year}.pdf`
+
+const describeFormType = (formType: TtbFormType) => (formType === '5110_40' ? 'Form 5110.40 (Storage)' : 'Form 5110.28 (Processing)')
 
 function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob)
@@ -47,6 +52,7 @@ function TtbReportsPage() {
 
   const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear())
   const [statusFilter, setStatusFilter] = useState<TtbReportStatus | 'All'>('All')
+  const [formTypeFilter, setFormTypeFilter] = useState<TtbFormType | 'All'>('All')
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false)
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null)
   const [pdfTitle, setPdfTitle] = useState('')
@@ -57,15 +63,15 @@ function TtbReportsPage() {
   const companyId = authUser?.companyId ?? 1
 
   useEffect(() => {
-    dispatch(fetchTtbReports({ companyId, year: yearFilter, status: statusFilter }))
-  }, [companyId, dispatch, statusFilter, yearFilter])
+    dispatch(fetchTtbReports({ companyId, year: yearFilter, status: statusFilter, formType: formTypeFilter }))
+  }, [companyId, dispatch, formTypeFilter, statusFilter, yearFilter])
 
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear()
     return Array.from({ length: 6 }, (_, index) => currentYear - index)
   }, [])
 
-  const handleGenerateReport = async (month: number, year: number) => {
+  const handleGenerateReport = async (month: number, year: number, formType: TtbFormType) => {
     setActionError(null)
     setActionSuccess(null)
     setIsGenerating(true)
@@ -74,7 +80,7 @@ function TtbReportsPage() {
       const response = await authorizedFetch('/api/ttb/reports/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyId, month, year })
+        body: JSON.stringify({ companyId, month, year, formType })
       })
 
       if (!response.ok) {
@@ -82,10 +88,10 @@ function TtbReportsPage() {
       }
 
       const blob = await response.blob()
-      downloadBlob(blob, buildFileName(month, year))
-      setActionSuccess('TTB report generated. Download started for the new draft.')
+      downloadBlob(blob, buildFileName(formType, month, year))
+      setActionSuccess(`${describeFormType(formType)} generated. Download started for the new draft.`)
       setIsGenerateModalOpen(false)
-      dispatch(fetchTtbReports({ companyId, year: yearFilter, status: statusFilter }))
+      dispatch(fetchTtbReports({ companyId, year: yearFilter, status: statusFilter, formType: formTypeFilter }))
     } catch (error) {
       console.error('[TtbReportsPage] Error generating TTB report', { month, year, error })
       setActionError('Unable to generate this TTB report. Please review the reporting period and try again.')
@@ -105,8 +111,8 @@ function TtbReportsPage() {
       }
 
       const blob = await response.blob()
-      downloadBlob(blob, buildFileName(report.reportMonth, report.reportYear))
-      setActionSuccess('Download started for the selected TTB report.')
+      downloadBlob(blob, buildFileName(report.formType, report.reportMonth, report.reportYear))
+      setActionSuccess(`${describeFormType(report.formType)} download started for the selected period.`)
     } catch (error) {
       console.error('[TtbReportsPage] Error downloading TTB report', { reportId: report.id, error })
       setActionError('Unable to download the selected TTB report. Please try again.')
@@ -127,7 +133,7 @@ function TtbReportsPage() {
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       setPdfPreviewUrl(url)
-      setPdfTitle(`Form 5110.28 – ${formatMonthYear(report.reportMonth, report.reportYear)}`)
+      setPdfTitle(`${describeFormType(report.formType)} – ${formatMonthYear(report.reportMonth, report.reportYear)}`)
     } catch (error) {
       console.error('[TtbReportsPage] Error opening TTB report preview', { reportId: report.id, error })
       setActionError('Unable to open the TTB report preview. Please download the PDF instead.')
@@ -142,15 +148,15 @@ function TtbReportsPage() {
   }
 
   const handleSubmitPlaceholder = () => {
-    setActionSuccess('Manual submission required: finalize Form 5110.28 and submit via TTB systems.')
+    setActionSuccess('Manual submission required: finalize the selected TTB form and submit via TTB systems.')
   }
 
   return (
     <section className='content-section' aria-labelledby='ttb-reports-title'>
       <div className='section-header'>
         <div>
-          <h1 id='ttb-reports-title' className='section-title'>TTB Monthly Reports (Form 5110.28)</h1>
-          <p className='section-subtitle'>Monitor generated compliance reports and download official PDFs for submission.</p>
+          <h1 id='ttb-reports-title' className='section-title'>TTB Monthly Reports</h1>
+          <p className='section-subtitle'>Monitor generated storage and processing reports and download official PDFs for submission.</p>
         </div>
         <div className='section-actions'>
           <button
@@ -187,6 +193,17 @@ function TtbReportsPage() {
             ))}
           </select>
         </label>
+
+        <label>
+          <span>Form type</span>
+          <select value={formTypeFilter} onChange={event => setFormTypeFilter(event.target.value as TtbFormType | 'All')}>
+            {formTypeOptions.map(option => (
+              <option key={option} value={option}>
+                {option === 'All' ? 'All Forms' : describeFormType(option as TtbFormType)}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {(fetchError || actionError || actionSuccess) && (
@@ -201,13 +218,13 @@ function TtbReportsPage() {
         <div className='empty-state'>
           <div className='empty-state-icon'>📑</div>
           <h3 className='empty-state-title'>Loading TTB reports</h3>
-          <p className='empty-state-text'>Fetching Form 5110.28 activity for the selected filters…</p>
+          <p className='empty-state-text'>Fetching storage and processing activity for the selected filters…</p>
         </div>
       ) : reports.length === 0 ? (
         <div className='empty-state'>
           <div className='empty-state-icon'>🧾</div>
           <h3 className='empty-state-title'>No TTB reports yet</h3>
-          <p className='empty-state-text'>Generate your first Form 5110.28 report to begin monthly compliance tracking.</p>
+          <p className='empty-state-text'>Generate your first TTB report to begin monthly compliance tracking.</p>
         </div>
       ) : (
         <div className='table-container'>
@@ -215,20 +232,22 @@ function TtbReportsPage() {
             <thead>
               <tr>
                 <th scope='col'>Month/Year</th>
+                <th scope='col'>Form</th>
                 <th scope='col'>Generated Date</th>
                 <th scope='col'>Status</th>
                 <th scope='col'>Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {reports.map(report => (
-                <tr key={report.id}>
-                  <td>{formatMonthYear(report.reportMonth, report.reportYear)}</td>
-                  <td>{formatDate(report.generatedAt)}</td>
-                  <td>
-                    <span className={`status-badge ${statusBadges[report.status]}`}>
-                      {report.status}
-                    </span>
+              <tbody>
+                {reports.map(report => (
+                  <tr key={report.id}>
+                    <td>{formatMonthYear(report.reportMonth, report.reportYear)}</td>
+                    <td>{describeFormType(report.formType)}</td>
+                    <td>{formatDate(report.generatedAt)}</td>
+                    <td>
+                      <span className={`status-badge ${statusBadges[report.status]}`}>
+                        {report.status}
+                      </span>
                   </td>
                   <td>
                     <div className='table-actions'>
@@ -270,6 +289,7 @@ function TtbReportsPage() {
         onClose={() => setIsGenerateModalOpen(false)}
         onSubmit={handleGenerateReport}
         defaultYear={yearFilter}
+        defaultFormType={formTypeFilter === 'All' ? '5110_28' : formTypeFilter}
         isSubmitting={isGenerating}
         errorMessage={actionError}
       />

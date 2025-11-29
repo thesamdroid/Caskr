@@ -3,10 +3,13 @@ import { authorizedFetch } from '../api/authorizedFetch'
 
 export type TtbReportStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected'
 
+export type TtbFormType = '5110_28' | '5110_40'
+
 export interface TtbReport {
   id: number
   reportMonth: number
   reportYear: number
+  formType: TtbFormType
   status: TtbReportStatus
   generatedAt?: string | null
 }
@@ -15,6 +18,7 @@ interface FetchParams {
   companyId: number
   year: number
   status?: TtbReportStatus | 'All'
+  formType?: TtbFormType | 'All'
 }
 
 interface TtbReportsState {
@@ -49,13 +53,17 @@ const normalizeReport = (payload: any): TtbReport => ({
   id: payload.id,
   reportMonth: payload.reportMonth ?? payload.month ?? payload.report_month ?? payload.ReportMonth,
   reportYear: payload.reportYear ?? payload.year ?? payload.report_year ?? payload.ReportYear,
+  formType:
+    (payload.formType ?? payload.form_type ?? payload.FormType ?? '5110_28').toString().includes('40')
+      ? '5110_40'
+      : '5110_28',
   status: toStatus(payload.status ?? payload.Status),
   generatedAt: payload.generatedAt ?? payload.generated_at ?? payload.GeneratedAt ?? null
 })
 
 export const fetchTtbReports = createAsyncThunk(
   'ttbReports/fetch',
-  async ({ companyId, year, status }: FetchParams) => {
+  async ({ companyId, year, status, formType }: FetchParams) => {
     const params = new URLSearchParams({
       companyId: companyId.toString(),
       year: year.toString()
@@ -63,6 +71,10 @@ export const fetchTtbReports = createAsyncThunk(
 
     if (status && status !== 'All') {
       params.append('status', status)
+    }
+
+    if (formType && formType !== 'All') {
+      params.append('formType', formType)
     }
 
     const response = await authorizedFetch(`/api/ttb/reports?${params.toString()}`)

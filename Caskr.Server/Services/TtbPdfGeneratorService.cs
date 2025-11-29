@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 using Caskr.server.Models;
 using iText.Forms;
 using iText.Kernel.Pdf;
@@ -11,8 +12,21 @@ namespace Caskr.server.Services;
 public interface ITtbPdfGenerator
 {
     Task<PdfGenerationResult> GenerateForm5110_28Async(TtbMonthlyReportData reportData, CancellationToken cancellationToken = default);
+
+    Task<PdfGenerationResult> GenerateForm5110_40Async(
+        TtbForm5110_40Data reportData,
+        CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// Generates TTB PDF outputs for Forms 5110.28 and 5110.40.
+///
+/// COMPLIANCE REFERENCE: docs/TTB_FORM_5110_28_MAPPING.md
+/// REGULATORY AUTHORITY: 27 CFR Part 19 Subpart V - Records and Reports
+///
+/// CRITICAL: This service populates official federal compliance documents.
+/// Any modification must be reviewed against TTB regulations and the mapping document.
+/// </summary>
 public sealed class TtbPdfGeneratorService(
     CaskrDbContext dbContext,
     IWebHostEnvironment env,
@@ -69,7 +83,7 @@ public sealed class TtbPdfGeneratorService(
                     throw new InvalidOperationException("Form template is missing expected form fields");
                 }
 
-                PopulateHeaderFields(form, company, reportData);
+                PopulateHeaderFields(form, company, reportData.Month, reportData.Year);
 
                 MapSection(form, "opening_inventory", reportData.OpeningInventory.Rows);
                 MapSection(form, "production", reportData.Production.Rows);
@@ -105,12 +119,95 @@ public sealed class TtbPdfGeneratorService(
         }
     }
 
-    private void PopulateHeaderFields(PdfAcroForm form, Company company, TtbMonthlyReportData reportData)
+    public async Task<PdfGenerationResult> GenerateForm5110_40Async(
+        TtbForm5110_40Data reportData,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(reportData);
+
+        logger.LogInformation(
+            "Generating TTB Form 5110.40 for CompanyId {CompanyId} Month {Month} Year {Year}",
+            reportData.CompanyId,
+            reportData.Month,
+            reportData.Year);
+
+        var company = await dbContext.Companies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == reportData.CompanyId, cancellationToken);
+
+        if (company is null)
+        {
+            logger.LogError("Company {CompanyId} not found when generating Form 5110.40", reportData.CompanyId);
+            throw new InvalidOperationException($"Company {reportData.CompanyId} not found");
+        }
+
+        var templatePath = Path.Combine(env.ContentRootPath, "Forms", "ttb_form_5110_40.pdf");
+        if (!File.Exists(templatePath))
+        {
+            logger.LogError("Form template not found at {TemplatePath}", templatePath);
+            throw new FileNotFoundException("Form template not found", templatePath);
+        }
+
+        using var ms = new MemoryStream();
+
+        try
+        {
+            using (var reader = new PdfReader(templatePath))
+            using (var writer = new PdfWriter(ms))
+            using (var pdf = new PdfDocument(reader, writer))
+            {
+                var form = PdfAcroForm.GetAcroForm(pdf, false);
+
+                if (form is null)
+                {
+                    logger.LogError("Form 5110.40 template does not contain AcroForm fields");
+                    throw new InvalidOperationException("Form template is missing expected form fields");
+                }
+
+                PopulateHeaderFields(form, company, reportData.Month, reportData.Year);
+
+                // TTB 5110.40 barrel movement metrics
+                // See docs/TTB_FORM_5110_28_MAPPING.md, Calculation Formulas
+                SetField(form, "opening_barrels", FormatGallons(reportData.OpeningBarrels));
+                SetField(form, "received_barrels", FormatGallons(reportData.BarrelsReceived));
+                SetField(form, "removed_barrels", FormatGallons(reportData.BarrelsRemoved));
+                SetField(form, "closing_barrels", FormatGallons(reportData.ClosingBarrels));
+
+                MapWarehouseSection(form, reportData.ProofGallonsByWarehouse);
+
+                form.FlattenFields();
+            }
+
+            var pdfBytes = ms.ToArray();
+            var storagePath = Path.Combine(
+                env.ContentRootPath,
+                "Storage",
+                "TTBReports",
+                reportData.CompanyId.ToString(CultureInfo.InvariantCulture),
+                reportData.Year.ToString("D4", CultureInfo.InvariantCulture),
+                reportData.Month.ToString("D2", CultureInfo.InvariantCulture));
+
+            Directory.CreateDirectory(storagePath);
+            var outputPath = Path.Combine(storagePath, "Form_5110_40.pdf");
+            await File.WriteAllBytesAsync(outputPath, pdfBytes, cancellationToken);
+
+            logger.LogInformation("Generated Form 5110.40 for Company {CompanyId} at {OutputPath}", reportData.CompanyId, outputPath);
+
+            return new PdfGenerationResult(outputPath, pdfBytes);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate Form 5110.40 for CompanyId {CompanyId}", reportData.CompanyId);
+            throw;
+        }
+    }
+
+    private void PopulateHeaderFields(PdfAcroForm form, Company company, int month, int year)
     {
         SetField(form, "company_name", company.CompanyName);
         SetField(form, "permit_number", company.TtbPermitNumber);
-        SetField(form, "report_month", reportData.Month.ToString("D2", CultureInfo.InvariantCulture));
-        SetField(form, "report_year", reportData.Year.ToString(CultureInfo.InvariantCulture));
+        SetField(form, "report_month", month.ToString("D2", CultureInfo.InvariantCulture));
+        SetField(form, "report_year", year.ToString(CultureInfo.InvariantCulture));
 
         var address = BuildFullAddress(company);
         if (!string.IsNullOrWhiteSpace(address))
@@ -137,6 +234,20 @@ public sealed class TtbPdfGeneratorService(
 
         SetField(form, $"{sectionKey}_total_proof_gallons", FormatGallons(totalProof));
         SetField(form, $"{sectionKey}_total_wine_gallons", FormatGallons(totalWine));
+    }
+
+    private void MapWarehouseSection(PdfAcroForm form, IReadOnlyCollection<WarehouseProofGallons> warehouses)
+    {
+        var index = 1;
+        foreach (var warehouse in warehouses)
+        {
+            SetField(form, $"warehouse_{index}_name", warehouse.WarehouseName);
+            SetField(form, $"warehouse_{index}_proof_gallons", FormatGallons(warehouse.ProofGallons));
+            index++;
+        }
+
+        var totalProof = warehouses.Sum(w => w.ProofGallons);
+        SetField(form, "warehouse_total_proof_gallons", FormatGallons(totalProof));
     }
 
     private static Dictionary<TtbSpiritsType, GallonTotals> AggregateBySpiritsType(IEnumerable<TtbSectionTotal> rows)

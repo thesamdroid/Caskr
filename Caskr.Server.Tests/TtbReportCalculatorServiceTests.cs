@@ -228,4 +228,114 @@ public class TtbReportCalculatorServiceTests
         Assert.Equal(26m, closing.ProofGallons);
         Assert.Equal(13m, closing.WineGallons);
     }
+
+    [Fact]
+    public async Task CalculateForm5110_40Async_ComputesStorageBalances()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        using var context = new CaskrDbContext(options);
+        var companyId = 5;
+        var month = 6;
+        var year = 2024;
+
+        context.Rickhouses.Add(new Rickhouse
+        {
+            Id = 1,
+            CompanyId = companyId,
+            Name = "Rickhouse A",
+            Address = "123 Rick St"
+        });
+
+        context.TtbInventorySnapshots.AddRange(
+            new TtbInventorySnapshot
+            {
+                CompanyId = companyId,
+                SnapshotDate = new DateTime(2024, 5, 31),
+                ProductType = "Whiskey",
+                SpiritsType = TtbSpiritsType.Under190Proof,
+                ProofGallons = 120m,
+                WineGallons = 106m,
+                TaxStatus = TtbTaxStatus.Bonded
+            },
+            new TtbInventorySnapshot
+            {
+                CompanyId = companyId,
+                SnapshotDate = new DateTime(2024, 6, 30),
+                ProductType = "Whiskey",
+                SpiritsType = TtbSpiritsType.Under190Proof,
+                ProofGallons = 180m,
+                WineGallons = 159m,
+                TaxStatus = TtbTaxStatus.Bonded
+            });
+
+        context.TtbTransactions.Add(new TtbTransaction
+        {
+            CompanyId = companyId,
+            TransactionDate = new DateTime(2024, 6, 10),
+            TransactionType = TtbTransactionType.Production,
+            ProductType = "Whiskey",
+            SpiritsType = TtbSpiritsType.Under190Proof,
+            ProofGallons = 60m,
+            WineGallons = 53m
+        });
+
+        await context.SaveChangesAsync();
+
+        var logger = new LoggerFactory().CreateLogger<TtbReportCalculatorService>();
+        var service = new TtbReportCalculatorService(context, logger);
+
+        var result = await service.CalculateForm5110_40Async(companyId, month, year);
+
+        Assert.Equal(2m, result.OpeningBarrels);
+        Assert.Equal(1m, result.BarrelsReceived);
+        Assert.Equal(0m, result.BarrelsRemoved);
+        Assert.Equal(3m, result.ClosingBarrels);
+
+        var warehouseTotals = Assert.Single(result.ProofGallonsByWarehouse);
+        Assert.Equal("Rickhouse A", warehouseTotals.WarehouseName);
+        Assert.Equal(180m, warehouseTotals.ProofGallons);
+    }
+
+    [Fact]
+    public async Task CalculateForm5110_40Async_WhenClosingSnapshotMismatches_Throws()
+    {
+        var options = new DbContextOptionsBuilder<CaskrDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        using var context = new CaskrDbContext(options);
+        var companyId = 8;
+
+        context.TtbInventorySnapshots.Add(new TtbInventorySnapshot
+        {
+            CompanyId = companyId,
+            SnapshotDate = new DateTime(2024, 4, 30),
+            ProductType = "Bourbon",
+            SpiritsType = TtbSpiritsType.Under190Proof,
+            ProofGallons = 106m,
+            WineGallons = 53m,
+            TaxStatus = TtbTaxStatus.Bonded
+        });
+
+        context.TtbInventorySnapshots.Add(new TtbInventorySnapshot
+        {
+            CompanyId = companyId,
+            SnapshotDate = new DateTime(2024, 5, 31),
+            ProductType = "Bourbon",
+            SpiritsType = TtbSpiritsType.Under190Proof,
+            ProofGallons = 200m,
+            WineGallons = 100m,
+            TaxStatus = TtbTaxStatus.Bonded
+        });
+
+        await context.SaveChangesAsync();
+
+        var logger = new LoggerFactory().CreateLogger<TtbReportCalculatorService>();
+        var service = new TtbReportCalculatorService(context, logger);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.CalculateForm5110_40Async(companyId, 5, 2024));
+    }
 }
