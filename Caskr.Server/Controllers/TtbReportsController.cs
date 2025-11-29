@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Caskr.server.Controllers;
 
 /// <summary>
-/// Generates TTB Form 5110.28 monthly reports and returns PDF output.
+/// Generates TTB Form 5110.28 and Form 5110.40 monthly reports and returns PDF output.
 ///
 /// COMPLIANCE REFERENCE: docs/TTB_FORM_5110_28_MAPPING.md
 /// REGULATORY AUTHORITY: 27 CFR Part 19 Subpart V - Records and Reports
@@ -38,6 +38,7 @@ public sealed class TtbReportsController(
     public async Task<IActionResult> List(
         [FromQuery] int companyId,
         [FromQuery] int year,
+        [FromQuery] TtbFormType? formType = null,
         [FromQuery] TtbReportStatus? status = null,
         CancellationToken cancellationToken = default)
     {
@@ -71,6 +72,11 @@ public sealed class TtbReportsController(
             query = query.Where(r => r.Status == status);
         }
 
+        if (formType is not null)
+        {
+            query = query.Where(r => r.FormType == formType);
+        }
+
         var results = await query
             .OrderByDescending(r => r.ReportMonth)
             .Select(r => new TtbReportSummaryResponse
@@ -79,6 +85,7 @@ public sealed class TtbReportsController(
                 CompanyId = r.CompanyId,
                 ReportMonth = r.ReportMonth,
                 ReportYear = r.ReportYear,
+                FormType = r.FormType,
                 Status = r.Status,
                 GeneratedAt = r.GeneratedAt
             })
@@ -128,7 +135,7 @@ public sealed class TtbReportsController(
             return StatusCode(StatusCodes.Status500InternalServerError, CreateProblem("Failed to read TTB report PDF."));
         }
 
-        var fileName = $"Form_5110_28_{report.ReportMonth:D2}_{report.ReportYear}.pdf";
+        var fileName = GetFileName(report.FormType, report.ReportMonth, report.ReportYear);
         return File(pdfBytes, "application/pdf", fileName);
     }
 
@@ -179,7 +186,10 @@ public sealed class TtbReportsController(
         }
 
         var existingReport = await dbContext.TtbMonthlyReports
-            .Where(r => r.CompanyId == request.CompanyId && r.ReportMonth == request.Month && r.ReportYear == request.Year)
+            .Where(r => r.CompanyId == request.CompanyId
+                        && r.ReportMonth == request.Month
+                        && r.ReportYear == request.Year
+                        && r.FormType == request.FormType)
             .OrderByDescending(r => r.GeneratedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -196,15 +206,38 @@ public sealed class TtbReportsController(
         }
 
         TtbMonthlyReportData reportData;
+        TtbForm5110_40Data? storageReportData = null;
         try
         {
-            // TTB Formula: Proof Gallons = Wine Gallons × (ABV × 2) / 100
-            // See docs/TTB_FORM_5110_28_MAPPING.md (Calculation Formulas)
-            reportData = await ttbReportCalculator.CalculateMonthlyReportAsync(
-                request.CompanyId,
-                request.Month,
-                request.Year,
-                cancellationToken);
+            if (request.FormType == TtbFormType.Form5110_40)
+            {
+                storageReportData = await ttbReportCalculator.CalculateForm5110_40Async(
+                    request.CompanyId,
+                    request.Month,
+                    request.Year,
+                    cancellationToken);
+
+                // Storage report uses barrel counts aggregated from inventory balance equation
+                // See docs/TTB_FORM_5110_28_MAPPING.md (Calculation Formulas)
+                reportData = new TtbMonthlyReportData
+                {
+                    CompanyId = request.CompanyId,
+                    Month = request.Month,
+                    Year = request.Year,
+                    StartDate = new DateTime(request.Year, request.Month, 1),
+                    EndDate = new DateTime(request.Year, request.Month, 1).AddMonths(1).AddDays(-1)
+                };
+            }
+            else
+            {
+                // TTB Formula: Proof Gallons = Wine Gallons × (ABV × 2) / 100
+                // See docs/TTB_FORM_5110_28_MAPPING.md (Calculation Formulas)
+                reportData = await ttbReportCalculator.CalculateMonthlyReportAsync(
+                    request.CompanyId,
+                    request.Month,
+                    request.Year,
+                    cancellationToken);
+            }
         }
         catch (ArgumentOutOfRangeException ex)
         {
@@ -212,7 +245,19 @@ public sealed class TtbReportsController(
             return BadRequest(CreateProblem(ex.Message));
         }
 
-        if (!HasReportContent(reportData))
+        if (request.FormType == TtbFormType.Form5110_40)
+        {
+            if (!HasStorageReportContent(storageReportData))
+            {
+                logger.LogWarning(
+                    "No TTB storage data found for company {CompanyId} month {Month} year {Year} when generating report.",
+                    request.CompanyId,
+                    request.Month,
+                    request.Year);
+                return BadRequest(CreateProblem("No TTB storage data found for the specified month."));
+            }
+        }
+        else if (!HasReportContent(reportData))
         {
             logger.LogWarning(
                 "No TTB data found for company {CompanyId} month {Month} year {Year} when generating report.",
@@ -225,7 +270,9 @@ public sealed class TtbReportsController(
         PdfGenerationResult pdfResult;
         try
         {
-            pdfResult = await ttbPdfGenerator.GenerateForm5110_28Async(reportData, cancellationToken);
+            pdfResult = request.FormType == TtbFormType.Form5110_40
+                ? await ttbPdfGenerator.GenerateForm5110_40Async(storageReportData!, cancellationToken)
+                : await ttbPdfGenerator.GenerateForm5110_28Async(reportData, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -254,6 +301,7 @@ public sealed class TtbReportsController(
             ReportMonth = request.Month,
             ReportYear = request.Year,
             Status = TtbReportStatus.Draft,
+            FormType = request.FormType,
             GeneratedAt = DateTime.UtcNow,
             PdfPath = pdfResult.FilePath,
             CreatedByUserId = user.Id
@@ -268,7 +316,7 @@ public sealed class TtbReportsController(
             TryDeletePdf(existingReportPdfPath);
         }
 
-        var fileName = $"Form_5110_28_{request.Month:D2}_{request.Year}.pdf";
+        var fileName = GetFileName(request.FormType, request.Month, request.Year);
         return File(pdfResult.Content, "application/pdf", fileName);
     }
 
@@ -288,6 +336,20 @@ public sealed class TtbReportsController(
                || reportData.Transfers.TransfersOut.Any()
                || reportData.Losses.Rows.Any()
                || reportData.ClosingInventory.Rows.Any();
+    }
+
+    private static bool HasStorageReportContent(TtbForm5110_40Data? reportData)
+    {
+        if (reportData is null)
+        {
+            return false;
+        }
+
+        return reportData.OpeningBarrels > 0
+               || reportData.BarrelsReceived > 0
+               || reportData.BarrelsRemoved > 0
+               || reportData.ClosingBarrels > 0
+               || (reportData.ProofGallonsByWarehouse?.Any() == true);
     }
 
     private static ProblemDetails CreateProblem(string detail) => new()
@@ -315,6 +377,12 @@ public sealed class TtbReportsController(
             logger.LogWarning(ex, "Failed to delete existing TTB report PDF at {Path}", path);
         }
     }
+
+    private static string GetFileName(TtbFormType formType, int month, int year)
+    {
+        var formNumber = formType == TtbFormType.Form5110_40 ? "5110_40" : "5110_28";
+        return $"Form_{formNumber}_{month:D2}_{year}.pdf";
+    }
 }
 
 /// <summary>
@@ -339,6 +407,11 @@ public sealed class TtbReportGenerationRequest
     /// </summary>
     [Range(2020, int.MaxValue)]
     public int Year { get; set; }
+
+    /// <summary>
+    /// TTB form type (5110.28 or 5110.40).
+    /// </summary>
+    public TtbFormType FormType { get; set; } = TtbFormType.Form5110_28;
 }
 
 public sealed class TtbReportSummaryResponse
@@ -350,6 +423,8 @@ public sealed class TtbReportSummaryResponse
     public int ReportMonth { get; set; }
 
     public int ReportYear { get; set; }
+
+    public TtbFormType FormType { get; set; }
 
     public TtbReportStatus Status { get; set; }
 

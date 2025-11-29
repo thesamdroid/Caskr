@@ -1,10 +1,12 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { TtbFormType } from '../features/ttbReportsSlice'
 
 interface TtbReportGenerationModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (month: number, year: number) => Promise<void>
+  onSubmit: (month: number, year: number, formType: TtbFormType) => Promise<void>
   defaultYear: number
+  defaultFormType: TtbFormType
   isSubmitting: boolean
   errorMessage?: string | null
 }
@@ -19,20 +21,23 @@ export default function TtbReportGenerationModal({
   onClose,
   onSubmit,
   defaultYear,
+  defaultFormType,
   isSubmitting,
   errorMessage
 }: TtbReportGenerationModalProps) {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState<number>(defaultYear)
+  const [selectedFormType, setSelectedFormType] = useState<TtbFormType>(defaultFormType)
   const [localError, setLocalError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen) {
       setSelectedMonth(new Date().getMonth() + 1)
       setSelectedYear(defaultYear)
+      setSelectedFormType(defaultFormType)
       setLocalError(null)
     }
-  }, [defaultYear, isOpen])
+  }, [defaultFormType, defaultYear, isOpen])
 
   const yearOptions = useMemo(() => {
     return Array.from({ length: 6 }, (_, index) => defaultYear - index)
@@ -44,17 +49,18 @@ export default function TtbReportGenerationModal({
     event.preventDefault()
     setLocalError(null)
 
-    if (!selectedMonth || !selectedYear) {
-      setLocalError('Please select a month and year to generate the report.')
+    if (!selectedMonth || !selectedYear || !selectedFormType) {
+      setLocalError('Please select a month, year, and form type to generate the report.')
       return
     }
 
     try {
-      await onSubmit(selectedMonth, selectedYear)
+      await onSubmit(selectedMonth, selectedYear, selectedFormType)
     } catch (error) {
       console.error('[TtbReportGenerationModal] Failed to generate report', {
         month: selectedMonth,
         year: selectedYear,
+        formType: selectedFormType,
         error
       })
       setLocalError('We were unable to generate this report. Please try again.')
@@ -66,7 +72,7 @@ export default function TtbReportGenerationModal({
       <form className='modal-content' onSubmit={handleSubmit}>
         <div className='modal-header'>
           <h3 id='generate-ttb-report-heading'>Generate TTB Report</h3>
-          <p className='modal-subtitle'>Select the reporting period to create a draft Form 5110.28 PDF.</p>
+          <p className='modal-subtitle'>Select the reporting period and form type to create a draft PDF.</p>
         </div>
 
         <div className='modal-grid'>
@@ -101,6 +107,20 @@ export default function TtbReportGenerationModal({
                   {option}
                 </option>
               ))}
+            </select>
+          </label>
+
+          <label className='form-label' htmlFor='report-form-type'>
+            Form type
+            <select
+              id='report-form-type'
+              value={selectedFormType}
+              onChange={event => setSelectedFormType(Number(event.target.value) as TtbFormType)}
+              required
+              aria-required='true'
+            >
+              <option value={TtbFormType.Form5110_28}>Form 5110.28 – Processing</option>
+              <option value={TtbFormType.Form5110_40}>Form 5110.40 – Storage</option>
             </select>
           </label>
         </div>

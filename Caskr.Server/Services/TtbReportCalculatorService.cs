@@ -12,10 +12,17 @@ namespace Caskr.server.Services;
 public interface ITtbReportCalculator
 {
     Task<TtbMonthlyReportData> CalculateMonthlyReportAsync(int companyId, int month, int year, CancellationToken cancellationToken = default);
+
+    Task<TtbForm5110_40Data> CalculateForm5110_40Async(
+        int companyId,
+        int month,
+        int year,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
-/// Calculates TTB Form 5110.28 (Monthly Report of Processing Operations) data.
+/// Calculates TTB Form 5110.28 (Monthly Report of Processing Operations) and
+/// Form 5110.40 (Monthly Report of Storage Operations) data.
 ///
 /// COMPLIANCE REFERENCE: docs/TTB_FORM_5110_28_MAPPING.md
 /// REGULATORY AUTHORITY: 27 CFR Part 19 Subpart V - Records and Reports
@@ -41,6 +48,10 @@ public sealed class TtbReportCalculatorService(
     // TTB regulation allows 0.01 proof gallon tolerance for rounding
     // See: docs/TTB_FORM_5110_28_MAPPING.md, Section "Calculation Formulas"
     private const decimal SnapshotTolerance = 0.01m;
+
+    // TTB regulation standard barrel size
+    // See docs/TTB_COMPLIANCE_GUIDE.md, Section "Critical Compliance Rules"
+    private const decimal StandardBarrelWineGallons = 53m;
 
     public async Task<TtbMonthlyReportData> CalculateMonthlyReportAsync(int companyId, int month, int year, CancellationToken cancellationToken = default)
     {
@@ -79,6 +90,100 @@ public sealed class TtbReportCalculatorService(
             },
             Losses = new LossSection { Rows = ToTotals(losses) },
             ClosingInventory = new InventorySection { Rows = ToTotals(closingInventory) }
+        };
+    }
+
+    public async Task<TtbForm5110_40Data> CalculateForm5110_40Async(
+        int companyId,
+        int month,
+        int year,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateMonthAndYear(month, year);
+
+        var startDate = new DateTime(year, month, 1);
+        var endDate = startDate.AddMonths(1).AddDays(-1);
+
+        var openingInventory = await LoadOpeningInventoryAsync(companyId, startDate, cancellationToken);
+        var openingTotals = SumAggregate(openingInventory);
+
+        var monthlyTransactions = await dbContext.TtbTransactions
+            .AsNoTracking()
+            .Where(t => t.CompanyId == companyId && t.TransactionDate >= startDate && t.TransactionDate <= endDate)
+            .ToListAsync(cancellationToken);
+
+        var receivedTransactions = monthlyTransactions
+            .Where(t => t.TransactionType is TtbTransactionType.Production or TtbTransactionType.TransferIn)
+            .ToList();
+        var removedTransactions = monthlyTransactions
+            .Where(t => t.TransactionType is TtbTransactionType.TransferOut or TtbTransactionType.Bottling)
+            .ToList();
+
+        var receivedAggregate = AggregateTransactions(receivedTransactions, applyDirectionalMultipliers: false);
+        var removedAggregate = AggregateTransactions(removedTransactions, applyDirectionalMultipliers: false);
+
+        var calculatedClosing = CalculateClosingInventory(
+            openingInventory,
+            receivedAggregate,
+            new Dictionary<SectionKey, SectionAggregate>(new SectionKeyComparer()),
+            removedAggregate,
+            new Dictionary<SectionKey, SectionAggregate>(new SectionKeyComparer()));
+
+        var closingSnapshots = await dbContext.TtbInventorySnapshots
+            .AsNoTracking()
+            .Where(snapshot => snapshot.CompanyId == companyId && snapshot.SnapshotDate == endDate)
+            .ToListAsync(cancellationToken);
+
+        var closingInventory = closingSnapshots.Count > 0
+            ? AggregateSnapshots(closingSnapshots)
+            : calculatedClosing;
+
+        await ValidateAgainstClosingSnapshotAsync(companyId, endDate, calculatedClosing, cancellationToken);
+
+        var closingTotals = SumAggregate(closingInventory);
+        var expectedClosingWineGallons = openingTotals.WineGallons
+                                         + SumAggregate(receivedAggregate).WineGallons
+                                         - SumAggregate(removedAggregate).WineGallons;
+
+        if (Math.Abs(closingTotals.WineGallons - expectedClosingWineGallons) > SnapshotTolerance)
+        {
+            logger.LogError(
+                "TTB COMPLIANCE ERROR: Storage inventory balance mismatch for {CompanyId} {Month}/{Year}. " +
+                "Calculated closing = {Calculated}, Expected = {Expected}. See docs/TTB_FORM_5110_28_MAPPING.md Calculation Formulas section.",
+                companyId,
+                month,
+                year,
+                closingTotals.WineGallons,
+                expectedClosingWineGallons);
+            throw new InvalidOperationException("Inventory balance validation failed for storage report.");
+        }
+
+        if (closingTotals.WineGallons < 0 || closingTotals.ProofGallons < 0)
+        {
+            throw new InvalidOperationException("Negative inventory is not permitted for TTB storage reports.");
+        }
+
+        var openingBarrels = CalculateBarrelsFromWineGallons(openingTotals.WineGallons);
+        var receivedBarrels = CalculateBarrelsFromWineGallons(SumAggregate(receivedAggregate).WineGallons);
+        var removedBarrels = CalculateBarrelsFromWineGallons(SumAggregate(removedAggregate).WineGallons);
+        var closingBarrels = CalculateBarrelsFromWineGallons(closingTotals.WineGallons);
+
+        var warehouseProofGallons = await BuildWarehouseProofGallonsAsync(
+            companyId,
+            closingInventory,
+            monthlyTransactions,
+            cancellationToken);
+
+        return new TtbForm5110_40Data
+        {
+            CompanyId = companyId,
+            Month = month,
+            Year = year,
+            OpeningBarrels = openingBarrels,
+            BarrelsReceived = receivedBarrels,
+            BarrelsRemoved = removedBarrels,
+            ClosingBarrels = closingBarrels,
+            ProofGallonsByWarehouse = warehouseProofGallons
         };
     }
 
@@ -278,6 +383,26 @@ public sealed class TtbReportCalculatorService(
         return closing;
     }
 
+    private static SectionAggregate SumAggregate(IReadOnlyDictionary<SectionKey, SectionAggregate> aggregate)
+    {
+        var total = new SectionAggregate();
+
+        foreach (var value in aggregate.Values)
+        {
+            total.ProofGallons += value.ProofGallons;
+            total.WineGallons += value.WineGallons;
+        }
+
+        return total;
+    }
+
+    private static decimal CalculateBarrelsFromWineGallons(decimal wineGallons)
+    {
+        // TTB standard barrel conversion
+        // See docs/TTB_COMPLIANCE_GUIDE.md (Never Modify These Constants)
+        return Math.Round(wineGallons / StandardBarrelWineGallons, 2, MidpointRounding.AwayFromZero);
+    }
+
     private static void ApplyAggregate(
         IDictionary<SectionKey, SectionAggregate> target,
         IReadOnlyDictionary<SectionKey, SectionAggregate> source,
@@ -307,6 +432,71 @@ public sealed class TtbReportCalculatorService(
         value.WineGallons += wineGallons;
     }
 
+    private async Task<IReadOnlyCollection<WarehouseProofGallons>> BuildWarehouseProofGallonsAsync(
+        int companyId,
+        IReadOnlyDictionary<SectionKey, SectionAggregate> closing,
+        IReadOnlyCollection<TtbTransaction> monthlyTransactions,
+        CancellationToken cancellationToken)
+    {
+        var closingProofGallons = Math.Round(SumAggregate(closing).ProofGallons, 2, MidpointRounding.AwayFromZero);
+
+        var warehouseTransactions = monthlyTransactions
+            .Where(t => string.Equals(t.SourceEntityType, nameof(Rickhouse), StringComparison.OrdinalIgnoreCase)
+                        && t.SourceEntityId.HasValue)
+            .GroupBy(t => t.SourceEntityId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => Math.Round(group.Sum(t => t.ProofGallons * (decimal)GetTransactionMultiplier(t.TransactionType)), 2, MidpointRounding.AwayFromZero));
+
+        var warehouses = await dbContext.Rickhouses
+            .AsNoTracking()
+            .Where(r => r.CompanyId == companyId)
+            .ToDictionaryAsync(r => r.Id, r => r.Name, cancellationToken);
+
+        if (warehouseTransactions.Count > 0)
+        {
+            var warehouseTotals = new List<WarehouseProofGallons>();
+
+            foreach (var (rickhouseId, proofGallons) in warehouseTransactions)
+            {
+                var warehouseName = warehouses.TryGetValue(rickhouseId, out var resolvedName)
+                    ? resolvedName
+                    : $"Warehouse {rickhouseId}";
+
+                warehouseTotals.Add(new WarehouseProofGallons
+                {
+                    WarehouseName = warehouseName,
+                    ProofGallons = proofGallons
+                });
+            }
+
+            var unspecifiedProof = closingProofGallons - warehouseTotals.Sum(w => w.ProofGallons);
+            if (Math.Abs(unspecifiedProof) > SnapshotTolerance)
+            {
+                warehouseTotals.Add(new WarehouseProofGallons
+                {
+                    WarehouseName = "Unspecified Warehouse",
+                    ProofGallons = Math.Round(unspecifiedProof, 2, MidpointRounding.AwayFromZero)
+                });
+            }
+
+            return warehouseTotals;
+        }
+
+        var label = warehouses.Count > 1
+            ? "All Warehouses"
+            : warehouses.Values.FirstOrDefault() ?? "Storage";
+
+        return new[]
+        {
+            new WarehouseProofGallons
+            {
+                WarehouseName = label,
+                ProofGallons = closingProofGallons
+            }
+        };
+    }
+
     private static decimal GetTransactionMultiplier(TtbTransactionType transactionType) => transactionType switch
     {
         TtbTransactionType.Production => 1m,
@@ -316,6 +506,7 @@ public sealed class TtbReportCalculatorService(
         TtbTransactionType.Gain => 1m,
         TtbTransactionType.Destruction => -1m,
         TtbTransactionType.Bottling => -1m,
+        TtbTransactionType.TaxDetermination => -1m,
         _ => 0m
     };
 

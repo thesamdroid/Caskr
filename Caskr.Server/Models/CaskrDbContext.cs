@@ -632,6 +632,9 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasConversion<string>()
                 .HasColumnName("status");
+            entity.Property(e => e.FormType)
+                .HasConversion<string>()
+                .HasColumnName("form_type");
             entity.Property(e => e.GeneratedAt).HasColumnName("generated_at");
             entity.Property(e => e.SubmittedAt).HasColumnName("submitted_at");
             entity.Property(e => e.TtbConfirmationNumber).HasColumnName("ttb_confirmation_number");

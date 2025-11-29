@@ -8,6 +8,12 @@ public enum TtbReportStatus
     Rejected = 3
 }
 
+public enum TtbFormType
+{
+    Form5110_28 = 0,
+    Form5110_40 = 1
+}
+
 public enum TtbTransactionType
 {
     Production = 0,
