@@ -5,7 +5,8 @@ public enum TtbReportStatus
     Draft = 0,
     Submitted = 1,
     Approved = 2,
-    Rejected = 3
+    Rejected = 3,
+    ValidationFailed = 4
 }
 
 public enum TtbFormType

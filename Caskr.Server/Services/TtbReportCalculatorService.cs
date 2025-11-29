@@ -74,6 +74,16 @@ public sealed class TtbReportCalculatorService(
         var closingInventory = CalculateClosingInventory(openingInventory, production, transfersIn, transfersOut, losses);
         await ValidateAgainstClosingSnapshotAsync(companyId, endDate, closingInventory, cancellationToken);
 
+        var validation = await ValidateReportDataAsync(
+            companyId,
+            openingInventory,
+            production,
+            transfersIn,
+            transfersOut,
+            losses,
+            closingInventory,
+            cancellationToken);
+
         return new TtbMonthlyReportData
         {
             CompanyId = companyId,
@@ -89,7 +99,8 @@ public sealed class TtbReportCalculatorService(
                 TransfersOut = ToTotals(transfersOut)
             },
             Losses = new LossSection { Rows = ToTotals(losses) },
-            ClosingInventory = new InventorySection { Rows = ToTotals(closingInventory) }
+            ClosingInventory = new InventorySection { Rows = ToTotals(closingInventory) },
+            Validation = validation
         };
     }
 
@@ -198,6 +209,110 @@ public sealed class TtbReportCalculatorService(
         {
             throw new ArgumentOutOfRangeException(nameof(year), year, "Year must be 2000 or later.");
         }
+    }
+
+    /// <summary>
+    /// Validates TTB report data for consistency and compliance.
+    /// Checks inventory reconciliation, loss percentages, negative values, and required fields.
+    /// </summary>
+    private async Task<ValidationResult> ValidateReportDataAsync(
+        int companyId,
+        IReadOnlyDictionary<SectionKey, SectionAggregate> openingInventory,
+        IReadOnlyDictionary<SectionKey, SectionAggregate> production,
+        IReadOnlyDictionary<SectionKey, SectionAggregate> transfersIn,
+        IReadOnlyDictionary<SectionKey, SectionAggregate> transfersOut,
+        IReadOnlyDictionary<SectionKey, SectionAggregate> losses,
+        IReadOnlyDictionary<SectionKey, SectionAggregate> closingInventory,
+        CancellationToken cancellationToken)
+    {
+        var validation = new ValidationResult();
+
+        // Get company info for TTB permit number check
+        var company = await dbContext.Companies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == companyId, cancellationToken);
+
+        // Check for missing TTB permit number
+        if (company is null || string.IsNullOrWhiteSpace(company.TtbPermitNumber))
+        {
+            validation.AddError("TTB permit number is missing. Please configure the permit number in company settings.");
+        }
+
+        // Get all unique keys across all sections
+        var allKeys = openingInventory.Keys
+            .Union(production.Keys)
+            .Union(transfersIn.Keys)
+            .Union(transfersOut.Keys)
+            .Union(losses.Keys)
+            .Union(closingInventory.Keys)
+            .Distinct(new SectionKeyComparer())
+            .ToList();
+
+        foreach (var key in allKeys)
+        {
+            var opening = GetAggregateOrZero(openingInventory, key);
+            var prod = GetAggregateOrZero(production, key);
+            var transIn = GetAggregateOrZero(transfersIn, key);
+            var transOut = GetAggregateOrZero(transfersOut, key);
+            var loss = GetAggregateOrZero(losses, key);
+            var closing = GetAggregateOrZero(closingInventory, key);
+
+            // 1. Validate inventory reconciliation
+            // Formula: Closing = Opening + Production + TransfersIn - TransfersOut - Losses
+            var expectedClosingProof = opening.ProofGallons + prod.ProofGallons + transIn.ProofGallons
+                                      - transOut.ProofGallons - loss.ProofGallons;
+            var expectedClosingWine = opening.WineGallons + prod.WineGallons + transIn.WineGallons
+                                     - transOut.WineGallons - loss.WineGallons;
+
+            // Calculate 0.1% tolerance
+            var toleranceProof = Math.Abs(expectedClosingProof) * 0.001m;
+            var toleranceWine = Math.Abs(expectedClosingWine) * 0.001m;
+
+            var proofDiff = Math.Abs(closing.ProofGallons - expectedClosingProof);
+            var wineDiff = Math.Abs(closing.WineGallons - expectedClosingWine);
+
+            if (proofDiff > Math.Max(toleranceProof, 0.01m) || wineDiff > Math.Max(toleranceWine, 0.01m))
+            {
+                validation.AddError(
+                    $"Inventory reconciliation failed for {key.ProductType}/{key.SpiritsType}. " +
+                    $"Expected closing: {expectedClosingProof:F2} PG / {expectedClosingWine:F2} WG, " +
+                    $"Calculated: {closing.ProofGallons:F2} PG / {closing.WineGallons:F2} WG. " +
+                    "Check transaction logs.");
+            }
+
+            // 2. Check for negative inventory values
+            if (closing.ProofGallons < 0 || closing.WineGallons < 0)
+            {
+                validation.AddError(
+                    $"Negative inventory detected for {key.ProductType}/{key.SpiritsType}. " +
+                    $"Proof Gallons: {closing.ProofGallons:F2}, Wine Gallons: {closing.WineGallons:F2}. " +
+                    "Check data.");
+            }
+
+            // 3. Check loss percentage
+            if (opening.ProofGallons > 0 && loss.ProofGallons > 0)
+            {
+                var lossPercentage = (loss.ProofGallons / opening.ProofGallons) * 100m;
+
+                if (lossPercentage > 15m)
+                {
+                    validation.AddWarning(
+                        $"Loss percentage ({lossPercentage:F2}%) is unusually high for {key.ProductType}/{key.SpiritsType}. " +
+                        "Review loss entries.");
+                }
+            }
+        }
+
+        return validation;
+    }
+
+    private static SectionAggregate GetAggregateOrZero(
+        IReadOnlyDictionary<SectionKey, SectionAggregate> dictionary,
+        SectionKey key)
+    {
+        return dictionary.TryGetValue(key, out var value)
+            ? value
+            : new SectionAggregate();
     }
 
     private async Task<Dictionary<SectionKey, SectionAggregate>> LoadOpeningInventoryAsync(
