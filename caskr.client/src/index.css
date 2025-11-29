@@ -270,6 +270,20 @@ button:disabled,
   box-shadow: var(--shadow-md);
 }
 
+/* Ghost Button */
+.button-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-secondary);
+  padding: var(--space-sm) var(--space-lg);
+}
+
+.button-ghost:hover {
+  color: var(--text-gold);
+  border-color: var(--border-gold);
+  background: var(--bg-hover);
+}
+
 /* Button Sizes */
 .button-sm {
   padding: var(--space-xs) var(--space-md);
@@ -687,6 +701,12 @@ label {
   cursor: pointer;
 }
 
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
 .table tbody tr.clickable-row:hover {
   background: var(--bg-elevated);
   box-shadow: inset 0 0 0 2px var(--border-gold);
@@ -763,6 +783,30 @@ label {
   border-color: var(--error-border);
 }
 
+.status-badge.draft {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border-color: var(--border-secondary);
+}
+
+.status-badge.submitted {
+  background: var(--info-bg);
+  color: var(--info);
+  border-color: var(--info-border);
+}
+
+.status-badge.approved {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.status-badge.rejected {
+  background: var(--error-bg);
+  color: var(--error);
+  border-color: var(--error-border);
+}
+
 /* Status Pills */
 .status-pill {
   padding: var(--space-sm) var(--space-lg);
@@ -824,6 +868,26 @@ label {
   box-shadow: var(--shadow-xl), var(--shadow-gold);
   animation: modal-slide-up var(--transition-slow);
   position: relative;
+}
+
+.modal-content.wide {
+  max-width: 960px;
+}
+
+.modal-header {
+  margin-bottom: var(--space-md);
+}
+
+.modal-subtitle {
+  color: var(--text-secondary);
+  margin-top: -var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.modal-grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 @keyframes modal-slide-up {
@@ -1182,6 +1246,49 @@ label {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+}
+
+.alert-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: var(--space-lg) 0;
+}
+
+.alert {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-secondary);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.alert.alert-error {
+  border-color: var(--error-border);
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.alert.alert-success {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.pdf-frame {
+  margin-top: var(--space-md);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  min-height: 60vh;
+}
+
+.pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--bg-tertiary);
 }
 
 /* Sync Status Badges */

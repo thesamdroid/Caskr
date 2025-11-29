@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage'
 import BarrelsPage from './pages/BarrelsPage'
 import AccountingSettingsPage from './pages/AccountingSettingsPage'
 import AccountingSyncHistoryPage from './pages/AccountingSyncHistoryPage'
+import TtbReportsPage from './pages/TtbReportsPage'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route index element={<DashboardPage />} />
         <Route path='orders' element={<OrdersPage />} />
         <Route path='barrels' element={<BarrelsPage />} />
+        <Route path='ttb-reports' element={<TtbReportsPage />} />
         <Route path='products' element={<ProductsPage />} />
         <Route path='accounting' element={<AccountingSettingsPage />} />
         <Route path='accounting/sync-history' element={<AccountingSyncHistoryPage />} />

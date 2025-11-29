@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using Caskr.server.Models;
@@ -29,6 +31,107 @@ public sealed class TtbReportsController(
     IUsersService usersService,
     ILogger<TtbReportsController> logger) : AuthorizedApiControllerBase
 {
+    [HttpGet("/api/ttb/reports")]
+    [ProducesResponseType(typeof(IEnumerable<TtbReportSummaryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> List(
+        [FromQuery] int companyId,
+        [FromQuery] int year,
+        [FromQuery] TtbReportStatus? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (companyId <= 0)
+        {
+            return BadRequest(CreateProblem("CompanyId must be provided for TTB report queries."));
+        }
+
+        if (year < 2020)
+        {
+            return BadRequest(CreateProblem("Year must be 2020 or later for TTB report queries."));
+        }
+
+        var user = await GetCurrentUserAsync(cancellationToken);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
+        if (!isAdmin && user.CompanyId != companyId)
+        {
+            return Forbid();
+        }
+
+        var query = dbContext.TtbMonthlyReports
+            .Where(r => r.CompanyId == companyId && r.ReportYear == year);
+
+        if (status is not null)
+        {
+            query = query.Where(r => r.Status == status);
+        }
+
+        var results = await query
+            .OrderByDescending(r => r.ReportMonth)
+            .Select(r => new TtbReportSummaryResponse
+            {
+                Id = r.Id,
+                CompanyId = r.CompanyId,
+                ReportMonth = r.ReportMonth,
+                ReportYear = r.ReportYear,
+                Status = r.Status,
+                GeneratedAt = r.GeneratedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return Ok(results);
+    }
+
+    [HttpGet("/api/ttb/reports/{id:int}/download")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Download(int id, CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserAsync(cancellationToken);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var report = await dbContext.TtbMonthlyReports.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        if (report is null)
+        {
+            return NotFound(CreateProblem("TTB report was not found."));
+        }
+
+        var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
+        if (!isAdmin && user.CompanyId != report.CompanyId)
+        {
+            return Forbid();
+        }
+
+        if (string.IsNullOrWhiteSpace(report.PdfPath) || !System.IO.File.Exists(report.PdfPath))
+        {
+            return NotFound(CreateProblem("TTB report PDF is unavailable for download."));
+        }
+
+        byte[] pdfBytes;
+        try
+        {
+            pdfBytes = await System.IO.File.ReadAllBytesAsync(report.PdfPath, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to read TTB report PDF for report {ReportId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, CreateProblem("Failed to read TTB report PDF."));
+        }
+
+        var fileName = $"Form_5110_28_{report.ReportMonth:D2}_{report.ReportYear}.pdf";
+        return File(pdfBytes, "application/pdf", fileName);
+    }
+
     /// <summary>
     /// Generates a draft TTB monthly report (Form 5110.28) for the specified company and period.
     /// </summary>
@@ -236,4 +339,19 @@ public sealed class TtbReportGenerationRequest
     /// </summary>
     [Range(2020, int.MaxValue)]
     public int Year { get; set; }
+}
+
+public sealed class TtbReportSummaryResponse
+{
+    public int Id { get; set; }
+
+    public int CompanyId { get; set; }
+
+    public int ReportMonth { get; set; }
+
+    public int ReportYear { get; set; }
+
+    public TtbReportStatus Status { get; set; }
+
+    public DateTime? GeneratedAt { get; set; }
 }

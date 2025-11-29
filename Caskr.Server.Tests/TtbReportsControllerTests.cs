@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using Caskr.server;
@@ -297,6 +299,103 @@ public sealed class TtbReportsControllerTests : IDisposable
             if (File.Exists(existingPdfPath))
             {
                 File.Delete(existingPdfPath);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task List_WithStatusFilter_ReturnsCompanyReportsForYear()
+    {
+        dbContext.TtbMonthlyReports.AddRange(
+            new TtbMonthlyReport
+            {
+                CompanyId = 10,
+                ReportMonth = 8,
+                ReportYear = 2024,
+                Status = TtbReportStatus.Draft,
+                GeneratedAt = DateTime.UtcNow.AddDays(-2),
+                CreatedByUserId = 25
+            },
+            new TtbMonthlyReport
+            {
+                CompanyId = 10,
+                ReportMonth = 7,
+                ReportYear = 2024,
+                Status = TtbReportStatus.Submitted,
+                GeneratedAt = DateTime.UtcNow.AddDays(-10),
+                CreatedByUserId = 25
+            },
+            new TtbMonthlyReport
+            {
+                CompanyId = 10,
+                ReportMonth = 6,
+                ReportYear = 2023,
+                Status = TtbReportStatus.Approved,
+                GeneratedAt = DateTime.UtcNow.AddDays(-40),
+                CreatedByUserId = 25
+            },
+            new TtbMonthlyReport
+            {
+                CompanyId = 22,
+                ReportMonth = 8,
+                ReportYear = 2024,
+                Status = TtbReportStatus.Submitted,
+                GeneratedAt = DateTime.UtcNow.AddDays(-3),
+                CreatedByUserId = 30
+            });
+
+        await dbContext.SaveChangesAsync();
+
+        var controller = CreateController(25);
+
+        var actionResult = await controller.List(10, 2024, TtbReportStatus.Submitted);
+
+        var ok = Assert.IsType<OkObjectResult>(actionResult);
+        var response = Assert.IsAssignableFrom<IEnumerable<TtbReportSummaryResponse>>(ok.Value);
+        var reports = response.ToList();
+
+        var submittedReport = Assert.Single(reports);
+        Assert.Equal(7, submittedReport.ReportMonth);
+        Assert.Equal(TtbReportStatus.Submitted, submittedReport.Status);
+        Assert.Equal(10, submittedReport.CompanyId);
+        Assert.Equal(2024, submittedReport.ReportYear);
+    }
+
+    [Fact]
+    public async Task Download_WhenPdfExists_ReturnsFileContents()
+    {
+        var pdfPath = Path.GetTempFileName();
+        var pdfBytes = new byte[] { 5, 4, 3, 2 };
+        await File.WriteAllBytesAsync(pdfPath, pdfBytes);
+
+        dbContext.TtbMonthlyReports.Add(new TtbMonthlyReport
+        {
+            CompanyId = 10,
+            ReportMonth = 9,
+            ReportYear = 2024,
+            Status = TtbReportStatus.Draft,
+            GeneratedAt = DateTime.UtcNow,
+            PdfPath = pdfPath,
+            CreatedByUserId = 25
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        try
+        {
+            var controller = CreateController(25);
+            var actionResult = await controller.Download(dbContext.TtbMonthlyReports.Single().Id);
+
+            var fileResult = Assert.IsType<FileContentResult>(actionResult);
+            Assert.Equal("application/pdf", fileResult.ContentType);
+            Assert.Equal("Form_5110_28_09_2024.pdf", fileResult.FileDownloadName);
+            Assert.Equal(pdfBytes, fileResult.FileContents);
+        }
+        finally
+        {
+            if (File.Exists(pdfPath))
+            {
+                File.Delete(pdfPath);
             }
         }
     }

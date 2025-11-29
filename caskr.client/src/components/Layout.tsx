@@ -58,6 +58,15 @@ export default function Layout() {
               </li>
               <li className="nav-item">
                 <Link
+                  to="/ttb-reports"
+                  className={isActive('/ttb-reports') ? 'active' : ''}
+                  aria-current={isActive('/ttb-reports') ? 'page' : undefined}
+                >
+                  TTB Reports
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link
                   to="/products"
                   className={isActive('/products') ? 'active' : ''}
                   aria-current={isActive('/products') ? 'page' : undefined}
