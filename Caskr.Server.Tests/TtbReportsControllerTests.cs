@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Security.Claims;
 using System.Threading;
@@ -85,6 +86,23 @@ public sealed class TtbReportsControllerTests : IDisposable
         Assert.IsType<ConflictObjectResult>(result);
         calculator.Verify(c => c.CalculateMonthlyReportAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), default),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task Generate_WhenYearBefore2020_ReturnsBadRequest()
+    {
+        var controller = CreateController(25);
+
+        var actionResult = await controller.Generate(new TtbReportGenerationRequest
+        {
+            CompanyId = 10,
+            Month = 9,
+            Year = 2019
+        });
+
+        var problem = Assert.IsType<BadRequestObjectResult>(actionResult);
+        var problemDetails = Assert.IsType<ProblemDetails>(problem.Value);
+        Assert.Contains("2020 or later", problemDetails.Detail, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

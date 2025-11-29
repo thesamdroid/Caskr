@@ -12,7 +12,15 @@ using Microsoft.Extensions.Logging;
 namespace Caskr.server.Controllers;
 
 /// <summary>
-/// API endpoints for generating TTB monthly reports (Form 5110.28).
+/// Generates TTB Form 5110.28 monthly reports and returns PDF output.
+///
+/// COMPLIANCE REFERENCE: docs/TTB_FORM_5110_28_MAPPING.md
+/// REGULATORY AUTHORITY: 27 CFR Part 19 Subpart V - Records and Reports
+///
+/// This controller enforces TTB validation rules, including the official
+/// inventory balance equation and proof gallon calculations implemented in
+/// the calculator service. Any modification must be reviewed against TTB
+/// regulations and the mapping document.
 /// </summary>
 public sealed class TtbReportsController(
     CaskrDbContext dbContext,
@@ -43,9 +51,16 @@ public sealed class TtbReportsController(
             return ValidationProblem(ModelState);
         }
 
+        if (request.Month is < 1 or > 12)
+        {
+            return BadRequest(CreateProblem(
+                "Month must be between 1 and 12. See docs/TTB_FORM_5110_28_MAPPING.md for reporting periods."));
+        }
+
         if (request.Year < 2020)
         {
-            return BadRequest(CreateProblem("Year must be 2020 or later."));
+            return BadRequest(CreateProblem(
+                "Year must be 2020 or later per TTB reporting requirements."));
         }
 
         var user = await GetCurrentUserAsync(cancellationToken);
@@ -80,6 +95,8 @@ public sealed class TtbReportsController(
         TtbMonthlyReportData reportData;
         try
         {
+            // TTB Formula: Proof Gallons = Wine Gallons × (ABV × 2) / 100
+            // See docs/TTB_FORM_5110_28_MAPPING.md (Calculation Formulas)
             reportData = await ttbReportCalculator.CalculateMonthlyReportAsync(
                 request.CompanyId,
                 request.Month,
