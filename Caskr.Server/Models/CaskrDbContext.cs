@@ -68,6 +68,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<TtbAuditLog> TtbAuditLogs { get; set; } = null!;
 
+    public virtual DbSet<ReportTemplate> ReportTemplates { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -907,6 +909,69 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.ChangedByUserId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_ttb_audit_logs_user");
+        });
+
+        modelBuilder.Entity<ReportTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("report_templates_pkey");
+
+            entity.ToTable("report_templates");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_report_templates_company_id");
+            entity.HasIndex(e => e.CreatedByUserId).HasDatabaseName("idx_report_templates_created_by");
+            entity.HasIndex(e => e.IsActive).HasDatabaseName("idx_report_templates_is_active");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .HasColumnName("description");
+            entity.Property(e => e.DataSources)
+                .HasColumnType("jsonb")
+                .HasDefaultValue("[]")
+                .HasColumnName("data_sources");
+            entity.Property(e => e.Columns)
+                .HasColumnType("jsonb")
+                .HasDefaultValue("[]")
+                .HasColumnName("columns");
+            entity.Property(e => e.Filters)
+                .HasColumnType("jsonb")
+                .HasColumnName("filters");
+            entity.Property(e => e.Groupings)
+                .HasColumnType("jsonb")
+                .HasColumnName("groupings");
+            entity.Property(e => e.SortOrder)
+                .HasColumnType("jsonb")
+                .HasColumnName("sort_order");
+            entity.Property(e => e.DefaultPageSize)
+                .HasDefaultValue(50)
+                .HasColumnName("default_page_size");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.IsSystemTemplate)
+                .HasDefaultValue(false)
+                .HasColumnName("is_system_template");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_report_templates_company");
+
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_report_templates_created_by");
         });
 
         OnModelCreatingPartial(modelBuilder);
