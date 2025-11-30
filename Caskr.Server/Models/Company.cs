@@ -82,4 +82,6 @@ public partial class Company
     public virtual ICollection<TtbInventorySnapshot> TtbInventorySnapshots { get; set; } = new List<TtbInventorySnapshot>();
 
     public virtual ICollection<TtbTransaction> TtbTransactions { get; set; } = new List<TtbTransaction>();
+
+    public virtual ICollection<WebhookSubscription> WebhookSubscriptions { get; set; } = new List<WebhookSubscription>();
 }
