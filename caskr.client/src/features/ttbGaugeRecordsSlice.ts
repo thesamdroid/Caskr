@@ -55,7 +55,22 @@ interface TtbGaugeRecordsState {
   selectedBarrelId: number | null
 }
 
-const normalizeGaugeRecord = (payload: any): TtbGaugeRecord => ({
+interface TtbGaugeRecordPayload {
+  id: number
+  barrelId: number
+  barrelSku?: string | null
+  gaugeDate: string
+  gaugeType: TtbGaugeType
+  proof: number
+  temperature: number
+  wineGallons: number
+  proofGallons: number
+  gaugedByUserId?: number | null
+  gaugedByUserName?: string | null
+  notes?: string | null
+}
+
+const normalizeGaugeRecord = (payload: TtbGaugeRecordPayload): TtbGaugeRecord => ({
   id: payload.id,
   barrelId: payload.barrelId,
   barrelSku: payload.barrelSku ?? null,
