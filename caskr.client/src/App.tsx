@@ -12,6 +12,7 @@ import AccountingSyncHistoryPage from './pages/AccountingSyncHistoryPage'
 import TtbReportsPage from './pages/TtbReportsPage'
 import TtbAutoReportPreviewPage from './pages/TtbAutoReportPreviewPage'
 import TtbTransactionsPage from './pages/TtbTransactionsPage'
+import TtbGaugeRecordsPage from './pages/TtbGaugeRecordsPage'
 import PermissionGuard from './components/PermissionGuard'
 import { TTB_COMPLIANCE_PERMISSION, TTB_EDIT_PERMISSION } from './features/authSlice'
 
@@ -37,6 +38,14 @@ function App() {
             element={
               <PermissionGuard requiredPermission={TTB_EDIT_PERMISSION}>
                 <TtbTransactionsPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path='ttb-gauge-records'
+            element={
+              <PermissionGuard requiredPermission={TTB_EDIT_PERMISSION}>
+                <TtbGaugeRecordsPage />
               </PermissionGuard>
             }
           />

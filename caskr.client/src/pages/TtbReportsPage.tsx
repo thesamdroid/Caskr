@@ -14,10 +14,32 @@ const statusBadges: Record<TtbReportStatus, string> = {
   Draft: 'draft',
   Submitted: 'submitted',
   Approved: 'approved',
-  Rejected: 'rejected'
+  Rejected: 'rejected',
+  ValidationFailed: 'validation-failed',
+  PendingReview: 'pending-review',
+  Archived: 'archived'
 }
 
-const statusOptions: Array<TtbReportStatus | 'All'> = ['All', 'Draft', 'Submitted', 'Approved', 'Rejected']
+const statusLabels: Record<TtbReportStatus, string> = {
+  Draft: 'Draft',
+  Submitted: 'Submitted',
+  Approved: 'Approved',
+  Rejected: 'Rejected',
+  ValidationFailed: 'Validation Failed',
+  PendingReview: 'Pending Review',
+  Archived: 'Archived'
+}
+
+const statusOptions: Array<TtbReportStatus | 'All'> = [
+  'All',
+  'Draft',
+  'PendingReview',
+  'Approved',
+  'Submitted',
+  'Archived',
+  'Rejected',
+  'ValidationFailed'
+]
 
 const formTypeOptions: Array<TtbFormType | 'All'> = ['All', TtbFormType.Form5110_28, TtbFormType.Form5110_40]
 
@@ -64,6 +86,9 @@ function TtbReportsPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionSuccess, setActionSuccess] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isProcessingWorkflow, setIsProcessingWorkflow] = useState(false)
+  const [submitToTtbReportId, setSubmitToTtbReportId] = useState<number | null>(null)
+  const [confirmationNumber, setConfirmationNumber] = useState('')
 
   const companyId = authUser?.companyId ?? 1
 
@@ -152,8 +177,220 @@ function TtbReportsPage() {
     setPdfPreviewUrl(null)
   }
 
-  const handleSubmitPlaceholder = () => {
-    setActionSuccess('Manual submission required: finalize the selected TTB form and submit via TTB systems.')
+  const refreshReports = () => {
+    dispatch(fetchTtbReports({ companyId, year: yearFilter, status: statusFilter, formType: formTypeFilter }))
+  }
+
+  const handleSubmitForReview = async (report: TtbReport) => {
+    setActionError(null)
+    setActionSuccess(null)
+    setIsProcessingWorkflow(true)
+
+    try {
+      const response = await authorizedFetch(`/api/ttb/reports/${report.id}/submit-for-review`, {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Failed to submit for review')
+      }
+
+      setActionSuccess(`Report for ${formatMonthYear(report.reportMonth, report.reportYear)} submitted for review.`)
+      refreshReports()
+    } catch (error) {
+      console.error('[TtbReportsPage] Error submitting for review', { reportId: report.id, error })
+      setActionError(error instanceof Error ? error.message : 'Failed to submit for review.')
+    } finally {
+      setIsProcessingWorkflow(false)
+    }
+  }
+
+  const handleApprove = async (report: TtbReport) => {
+    setActionError(null)
+    setActionSuccess(null)
+    setIsProcessingWorkflow(true)
+
+    try {
+      const response = await authorizedFetch(`/api/ttb/reports/${report.id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Failed to approve report')
+      }
+
+      setActionSuccess(`Report for ${formatMonthYear(report.reportMonth, report.reportYear)} approved.`)
+      refreshReports()
+    } catch (error) {
+      console.error('[TtbReportsPage] Error approving report', { reportId: report.id, error })
+      setActionError(error instanceof Error ? error.message : 'Failed to approve report.')
+    } finally {
+      setIsProcessingWorkflow(false)
+    }
+  }
+
+  const handleReject = async (report: TtbReport) => {
+    setActionError(null)
+    setActionSuccess(null)
+    setIsProcessingWorkflow(true)
+
+    try {
+      const response = await authorizedFetch(`/api/ttb/reports/${report.id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Failed to reject report')
+      }
+
+      setActionSuccess(`Report for ${formatMonthYear(report.reportMonth, report.reportYear)} rejected and returned to draft.`)
+      refreshReports()
+    } catch (error) {
+      console.error('[TtbReportsPage] Error rejecting report', { reportId: report.id, error })
+      setActionError(error instanceof Error ? error.message : 'Failed to reject report.')
+    } finally {
+      setIsProcessingWorkflow(false)
+    }
+  }
+
+  const handleSubmitToTtb = async () => {
+    if (!submitToTtbReportId || !confirmationNumber.trim()) {
+      setActionError('TTB confirmation number is required.')
+      return
+    }
+
+    setActionError(null)
+    setActionSuccess(null)
+    setIsProcessingWorkflow(true)
+
+    try {
+      const response = await authorizedFetch(`/api/ttb/reports/${submitToTtbReportId}/submit-to-ttb`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmationNumber: confirmationNumber.trim() })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Failed to submit to TTB')
+      }
+
+      setActionSuccess(`Report submitted to TTB with confirmation number: ${confirmationNumber.trim()}`)
+      setSubmitToTtbReportId(null)
+      setConfirmationNumber('')
+      refreshReports()
+    } catch (error) {
+      console.error('[TtbReportsPage] Error submitting to TTB', { reportId: submitToTtbReportId, error })
+      setActionError(error instanceof Error ? error.message : 'Failed to submit to TTB.')
+    } finally {
+      setIsProcessingWorkflow(false)
+    }
+  }
+
+  const handleArchive = async (report: TtbReport) => {
+    setActionError(null)
+    setActionSuccess(null)
+    setIsProcessingWorkflow(true)
+
+    try {
+      const response = await authorizedFetch(`/api/ttb/reports/${report.id}/archive`, {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Failed to archive report')
+      }
+
+      setActionSuccess(`Report for ${formatMonthYear(report.reportMonth, report.reportYear)} archived.`)
+      refreshReports()
+    } catch (error) {
+      console.error('[TtbReportsPage] Error archiving report', { reportId: report.id, error })
+      setActionError(error instanceof Error ? error.message : 'Failed to archive report.')
+    } finally {
+      setIsProcessingWorkflow(false)
+    }
+  }
+
+  const getWorkflowActions = (report: TtbReport) => {
+    const actions: JSX.Element[] = []
+
+    switch (report.status) {
+      case 'Draft':
+      case 'ValidationFailed':
+        actions.push(
+          <button
+            key='submit-review'
+            type='button'
+            className='button-primary'
+            onClick={() => handleSubmitForReview(report)}
+            disabled={isProcessingWorkflow}
+          >
+            Submit for Review
+          </button>
+        )
+        break
+      case 'PendingReview':
+        actions.push(
+          <button
+            key='approve'
+            type='button'
+            className='button-primary'
+            onClick={() => handleApprove(report)}
+            disabled={isProcessingWorkflow}
+          >
+            Approve
+          </button>,
+          <button
+            key='reject'
+            type='button'
+            className='button-ghost'
+            onClick={() => handleReject(report)}
+            disabled={isProcessingWorkflow}
+          >
+            Reject
+          </button>
+        )
+        break
+      case 'Approved':
+        actions.push(
+          <button
+            key='submit-ttb'
+            type='button'
+            className='button-primary'
+            onClick={() => setSubmitToTtbReportId(report.id)}
+            disabled={isProcessingWorkflow}
+          >
+            Submit to TTB
+          </button>
+        )
+        break
+      case 'Submitted':
+        actions.push(
+          <button
+            key='archive'
+            type='button'
+            className='button-ghost'
+            onClick={() => handleArchive(report)}
+            disabled={isProcessingWorkflow}
+          >
+            Archive
+          </button>
+        )
+        break
+      case 'Archived':
+        // No workflow actions for archived reports
+        break
+    }
+
+    return actions
   }
 
   return (
@@ -284,7 +521,7 @@ function TtbReportsPage() {
                     <td>{formatDate(report.generatedAt)}</td>
                     <td>
                       <span className={`status-badge ${statusBadges[report.status]}`}>
-                        {report.status}
+                        {statusLabels[report.status]}
                       </span>
                   </td>
                   <td>
@@ -295,7 +532,7 @@ function TtbReportsPage() {
                         onClick={() => handleDownload(report)}
                         aria-label={`Download PDF for ${formatMonthYear(report.reportMonth, report.reportYear)}`}
                       >
-                        Download PDF
+                        Download
                       </button>
                       <button
                         type='button'
@@ -305,14 +542,7 @@ function TtbReportsPage() {
                       >
                         View
                       </button>
-                      <button
-                        type='button'
-                        className='button-ghost'
-                        onClick={handleSubmitPlaceholder}
-                        aria-label={`Submit ${formatMonthYear(report.reportMonth, report.reportYear)} report`}
-                      >
-                        Submit
-                      </button>
+                      {getWorkflowActions(report)}
                     </div>
                   </td>
                 </tr>
@@ -335,6 +565,49 @@ function TtbReportsPage() {
       />
 
       <PdfViewerModal isOpen={Boolean(pdfPreviewUrl)} title={pdfTitle} pdfUrl={pdfPreviewUrl} onClose={handleClosePdf} />
+
+      {/* Submit to TTB Modal */}
+      {submitToTtbReportId && (
+        <div className='modal-overlay' onClick={() => setSubmitToTtbReportId(null)}>
+          <div className='modal-content' onClick={e => e.stopPropagation()}>
+            <h2 className='modal-title'>Submit to TTB</h2>
+            <p className='modal-description'>
+              Enter the confirmation number received from the TTB after submitting this report through the TTB online system.
+            </p>
+            <div className='form-group'>
+              <label htmlFor='confirmation-number'>TTB Confirmation Number</label>
+              <input
+                id='confirmation-number'
+                type='text'
+                value={confirmationNumber}
+                onChange={e => setConfirmationNumber(e.target.value)}
+                placeholder='e.g., TTB-2024-12345'
+                className='form-control'
+              />
+            </div>
+            <div className='modal-actions'>
+              <button
+                type='button'
+                className='button-ghost'
+                onClick={() => {
+                  setSubmitToTtbReportId(null)
+                  setConfirmationNumber('')
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type='button'
+                className='button-primary'
+                onClick={handleSubmitToTtb}
+                disabled={isProcessingWorkflow || !confirmationNumber.trim()}
+              >
+                {isProcessingWorkflow ? 'Submitting...' : 'Confirm Submission'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

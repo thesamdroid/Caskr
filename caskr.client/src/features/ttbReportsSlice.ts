@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { authorizedFetch } from '../api/authorizedFetch'
 
-export type TtbReportStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected'
+export type TtbReportStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected' | 'ValidationFailed' | 'PendingReview' | 'Archived'
 
 export enum TtbFormType {
   Form5110_28 = 0,
@@ -47,7 +47,10 @@ const statusLookup: Record<number, TtbReportStatus> = {
   0: 'Draft',
   1: 'Submitted',
   2: 'Approved',
-  3: 'Rejected'
+  3: 'Rejected',
+  4: 'ValidationFailed',
+  5: 'PendingReview',
+  6: 'Archived'
 }
 
 const toStatus = (value: TtbReportStatus | number | string): TtbReportStatus => {
@@ -58,10 +61,13 @@ const toStatus = (value: TtbReportStatus | number | string): TtbReportStatus => 
   const normalized = value.toString().trim()
   if (normalized.length === 0) return 'Draft'
 
-  const upper = normalized.toLowerCase()
-  if (upper === 'submitted') return 'Submitted'
-  if (upper === 'approved') return 'Approved'
-  if (upper === 'rejected') return 'Rejected'
+  const lower = normalized.toLowerCase()
+  if (lower === 'submitted') return 'Submitted'
+  if (lower === 'approved') return 'Approved'
+  if (lower === 'rejected') return 'Rejected'
+  if (lower === 'validationfailed') return 'ValidationFailed'
+  if (lower === 'pendingreview') return 'PendingReview'
+  if (lower === 'archived') return 'Archived'
   return 'Draft'
 }
 
