@@ -66,6 +66,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<TtbTaxDetermination> TtbTaxDeterminations { get; set; } = null!;
 
+    public virtual DbSet<TtbAuditLog> TtbAuditLogs { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -829,6 +831,56 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_ttb_tax_determinations_order");
+        });
+
+        modelBuilder.Entity<TtbAuditLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ttb_audit_logs_pkey");
+
+            entity.ToTable("ttb_audit_logs");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_ttb_audit_logs_company_id");
+            entity.HasIndex(e => e.EntityType).HasDatabaseName("idx_ttb_audit_logs_entity_type");
+            entity.HasIndex(e => e.EntityId).HasDatabaseName("idx_ttb_audit_logs_entity_id");
+            entity.HasIndex(e => e.ChangeTimestamp).HasDatabaseName("idx_ttb_audit_logs_timestamp");
+            entity.HasIndex(e => e.ChangedByUserId).HasDatabaseName("idx_ttb_audit_logs_user_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.EntityType)
+                .HasMaxLength(50)
+                .HasColumnName("entity_type");
+            entity.Property(e => e.EntityId).HasColumnName("entity_id");
+            entity.Property(e => e.Action)
+                .HasConversion<string>()
+                .HasColumnName("action");
+            entity.Property(e => e.ChangedByUserId).HasColumnName("changed_by_user_id");
+            entity.Property(e => e.ChangeTimestamp)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("change_timestamp");
+            entity.Property(e => e.OldValues)
+                .HasColumnType("jsonb")
+                .HasColumnName("old_values");
+            entity.Property(e => e.NewValues)
+                .HasColumnType("jsonb")
+                .HasColumnName("new_values");
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(45)
+                .HasColumnName("ip_address");
+            entity.Property(e => e.UserAgent).HasColumnName("user_agent");
+            entity.Property(e => e.ChangeDescription).HasColumnName("change_description");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_ttb_audit_logs_company");
+
+            entity.HasOne(d => d.ChangedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.ChangedByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_ttb_audit_logs_user");
         });
 
         OnModelCreatingPartial(modelBuilder);

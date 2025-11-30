@@ -14,10 +14,12 @@ namespace Caskr.server.Controllers;
 
 /// <summary>
 /// Manages TTB transactions for manual entry, editing, and deletion.
+/// All changes are logged to the TTB audit trail for compliance purposes.
 /// </summary>
 public sealed class TtbTransactionsController(
     CaskrDbContext dbContext,
     IUsersService usersService,
+    ITtbAuditLogger auditLogger,
     ILogger<TtbTransactionsController> logger) : AuthorizedApiControllerBase
 {
     [HttpGet("/api/ttb/transactions")]
@@ -123,6 +125,15 @@ public sealed class TtbTransactionsController(
             return BadRequest(CreateProblem("WineGallons cannot be negative."));
         }
 
+        // Check if the month is locked (report submitted or approved)
+        var transactionMonth = request.TransactionDate.Month;
+        var transactionYear = request.TransactionDate.Year;
+        if (await auditLogger.IsMonthLockedAsync(request.CompanyId, transactionMonth, transactionYear))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+        }
+
         var transaction = new TtbTransaction
         {
             CompanyId = request.CompanyId,
@@ -139,6 +150,9 @@ public sealed class TtbTransactionsController(
 
         dbContext.TtbTransactions.Add(transaction);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Log the audit trail
+        await auditLogger.LogChangeAsync(TtbAuditAction.Create, transaction, null, user.Id, request.CompanyId);
 
         logger.LogInformation(
             "User {UserId} created manual TTB transaction {TransactionId} for company {CompanyId}",
@@ -244,6 +258,25 @@ public sealed class TtbTransactionsController(
             return BadRequest(CreateProblem("Only manual transactions can be edited."));
         }
 
+        // Check if the current month or new month is locked
+        var currentMonth = transaction.TransactionDate.Month;
+        var currentYear = transaction.TransactionDate.Year;
+        var newMonth = request.TransactionDate.Month;
+        var newYear = request.TransactionDate.Year;
+
+        if (await auditLogger.IsMonthLockedAsync(transaction.CompanyId, currentMonth, currentYear))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+        }
+
+        if ((newMonth != currentMonth || newYear != currentYear) &&
+            await auditLogger.IsMonthLockedAsync(transaction.CompanyId, newMonth, newYear))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                CreateProblem("Cannot move transaction to a month with submitted reports. Contact administrator."));
+        }
+
         // Validate proof gallons and wine gallons
         if (request.ProofGallons < 0)
         {
@@ -255,6 +288,22 @@ public sealed class TtbTransactionsController(
             return BadRequest(CreateProblem("WineGallons cannot be negative."));
         }
 
+        // Capture old values for audit
+        var oldTransaction = new TtbTransaction
+        {
+            Id = transaction.Id,
+            CompanyId = transaction.CompanyId,
+            TransactionDate = transaction.TransactionDate,
+            TransactionType = transaction.TransactionType,
+            ProductType = transaction.ProductType,
+            SpiritsType = transaction.SpiritsType,
+            ProofGallons = transaction.ProofGallons,
+            WineGallons = transaction.WineGallons,
+            SourceEntityType = transaction.SourceEntityType,
+            SourceEntityId = transaction.SourceEntityId,
+            Notes = transaction.Notes
+        };
+
         transaction.TransactionDate = request.TransactionDate;
         transaction.TransactionType = request.TransactionType;
         transaction.ProductType = request.ProductType;
@@ -264,6 +313,9 @@ public sealed class TtbTransactionsController(
         transaction.Notes = request.Notes;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Log the audit trail
+        await auditLogger.LogChangeAsync(TtbAuditAction.Update, transaction, oldTransaction, user.Id, transaction.CompanyId);
 
         logger.LogInformation(
             "User {UserId} updated manual TTB transaction {TransactionId}",
@@ -321,12 +373,41 @@ public sealed class TtbTransactionsController(
             return BadRequest(CreateProblem("Only manual transactions can be deleted."));
         }
 
+        // Check if the month is locked
+        var transactionMonth = transaction.TransactionDate.Month;
+        var transactionYear = transaction.TransactionDate.Year;
+        if (await auditLogger.IsMonthLockedAsync(transaction.CompanyId, transactionMonth, transactionYear))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+        }
+
+        // Capture for audit before deleting
+        var companyId = transaction.CompanyId;
+        var deletedTransaction = new TtbTransaction
+        {
+            Id = transaction.Id,
+            CompanyId = transaction.CompanyId,
+            TransactionDate = transaction.TransactionDate,
+            TransactionType = transaction.TransactionType,
+            ProductType = transaction.ProductType,
+            SpiritsType = transaction.SpiritsType,
+            ProofGallons = transaction.ProofGallons,
+            WineGallons = transaction.WineGallons,
+            SourceEntityType = transaction.SourceEntityType,
+            SourceEntityId = transaction.SourceEntityId,
+            Notes = transaction.Notes
+        };
+
         dbContext.TtbTransactions.Remove(transaction);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        // Log the audit trail
+        await auditLogger.LogChangeAsync(TtbAuditAction.Delete, null, deletedTransaction, user.Id, companyId);
+
         logger.LogInformation(
             "User {UserId} deleted manual TTB transaction {TransactionId}",
-            user.Id, transaction.Id);
+            user.Id, deletedTransaction.Id);
 
         return NoContent();
     }
