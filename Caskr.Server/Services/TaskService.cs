@@ -1,4 +1,5 @@
 using Caskr.server.Models;
+using Caskr.Server.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Caskr.server.Services
@@ -17,11 +18,13 @@ namespace Caskr.server.Services
     {
         private readonly CaskrDbContext _dbContext;
         private readonly ILogger<TaskService> _logger;
+        private readonly IWebhookService _webhookService;
 
-        public TaskService(CaskrDbContext dbContext, ILogger<TaskService> logger)
+        public TaskService(CaskrDbContext dbContext, ILogger<TaskService> logger, IWebhookService webhookService)
         {
             _dbContext = dbContext;
             _logger = logger;
+            _webhookService = webhookService;
         }
 
         public async Task<IEnumerable<OrderTask>> GetTasksByOrderIdAsync(int orderId)
@@ -84,6 +87,26 @@ namespace Caskr.server.Services
                 task.Name,
                 task.OrderId);
 
+            // Trigger webhook for task creation
+            var order = await _dbContext.Orders.FindAsync(orderId);
+            if (order != null)
+            {
+                await _webhookService.TriggerEventAsync(
+                    WebhookEventTypes.TaskCreated,
+                    task.Id,
+                    new
+                    {
+                        id = task.Id,
+                        order_id = task.OrderId,
+                        name = task.Name,
+                        assignee_id = task.AssigneeId,
+                        due_date = task.DueDate,
+                        is_complete = task.IsComplete,
+                        created_at = task.CreatedAt
+                    },
+                    order.CompanyId);
+            }
+
             return task;
         }
 
@@ -144,6 +167,29 @@ namespace Caskr.server.Services
                 "Task {TaskId} marked as {Status}",
                 taskId,
                 isComplete ? "complete" : "incomplete");
+
+            // Trigger webhook for task completion
+            if (isComplete)
+            {
+                var order = await _dbContext.Orders.FindAsync(task.OrderId);
+                if (order != null)
+                {
+                    await _webhookService.TriggerEventAsync(
+                        WebhookEventTypes.TaskCompleted,
+                        task.Id,
+                        new
+                        {
+                            id = task.Id,
+                            order_id = task.OrderId,
+                            name = task.Name,
+                            assignee_id = task.AssigneeId,
+                            due_date = task.DueDate,
+                            is_complete = task.IsComplete,
+                            completed_at = task.CompletedAt
+                        },
+                        order.CompanyId);
+                }
+            }
 
             return task;
         }

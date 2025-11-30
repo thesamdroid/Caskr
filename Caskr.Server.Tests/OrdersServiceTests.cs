@@ -6,6 +6,7 @@ using Caskr.Server.Events;
 using Caskr.server.Models;
 using Caskr.server.Repos;
 using Caskr.server.Services;
+using Caskr.Server.Services;
 using MediatR;
 using Moq;
 using UserTypeEnum = Caskr.server.UserType;
@@ -18,12 +19,14 @@ public class OrdersServiceTests
     private readonly Mock<IUsersRepository> _usersRepo = new();
     private readonly Mock<IEmailService> _email = new();
     private readonly Mock<IMediator> _mediator = new();
+    private readonly Mock<IWebhookService> _webhookService = new();
     private readonly IOrdersService _service;
 
     public OrdersServiceTests()
     {
         _repo.Setup(r => r.AddTasksForStatusAsync(It.IsAny<int>(), It.IsAny<int>())).Returns(Task.CompletedTask);
-        _service = new OrdersService(_repo.Object, _usersRepo.Object, _email.Object, _mediator.Object);
+        _webhookService.Setup(w => w.TriggerEventAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<object>(), It.IsAny<int>())).Returns(Task.CompletedTask);
+        _service = new OrdersService(_repo.Object, _usersRepo.Object, _email.Object, _mediator.Object, _webhookService.Object);
     }
 
     [Fact]
@@ -83,6 +86,36 @@ public class OrdersServiceTests
         var result = await _service.AddOrderAsync(order);
 
         Assert.Equal(order, result);
+    }
+
+    [Fact]
+    public async Task AddOrderAsync_WithCompanyId_TriggersWebhook()
+    {
+        var order = new Order { Id = 5, StatusId = (int)StatusType.TtbApproval, SpiritTypeId = 1, CompanyId = 10, Name = "Test Order" };
+        _repo.Setup(r => r.AddOrderAsync(order)).ReturnsAsync(order);
+
+        await _service.AddOrderAsync(order);
+
+        _webhookService.Verify(w => w.TriggerEventAsync(
+            WebhookEventTypes.OrderCreated,
+            order.Id,
+            It.IsAny<object>(),
+            order.CompanyId), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddOrderAsync_WithoutCompanyId_DoesNotTriggerWebhook()
+    {
+        var order = new Order { Id = 6, StatusId = (int)StatusType.TtbApproval, SpiritTypeId = 1, CompanyId = 0 };
+        _repo.Setup(r => r.AddOrderAsync(order)).ReturnsAsync(order);
+
+        await _service.AddOrderAsync(order);
+
+        _webhookService.Verify(w => w.TriggerEventAsync(
+            It.IsAny<string>(),
+            It.IsAny<int>(),
+            It.IsAny<object>(),
+            It.IsAny<int>()), Times.Never);
     }
 
     [Fact]

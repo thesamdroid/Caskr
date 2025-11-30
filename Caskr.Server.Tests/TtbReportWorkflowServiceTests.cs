@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Caskr.server;
 using Caskr.server.Models;
 using Caskr.server.Services;
+using Caskr.Server.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -20,6 +21,7 @@ public sealed class TtbReportWorkflowServiceTests : IDisposable
     private readonly Mock<IEmailService> emailService = new();
     private readonly Mock<ITtbAuditLogger> auditLogger = new();
     private readonly Mock<IUsersService> usersService = new();
+    private readonly Mock<IWebhookService> webhookService = new();
 
     public TtbReportWorkflowServiceTests()
     {
@@ -85,11 +87,15 @@ public sealed class TtbReportWorkflowServiceTests : IDisposable
 
     private TtbReportWorkflowService CreateService()
     {
+        webhookService.Setup(w => w.TriggerEventAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<object>(), It.IsAny<int>()))
+            .Returns(Task.CompletedTask);
+
         return new TtbReportWorkflowService(
             dbContext,
             emailService.Object,
             auditLogger.Object,
             usersService.Object,
+            webhookService.Object,
             NullLogger<TtbReportWorkflowService>.Instance);
     }
 

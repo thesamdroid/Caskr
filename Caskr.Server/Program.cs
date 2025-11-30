@@ -30,6 +30,8 @@ builder.Services.AddScoped<ITtbInventorySnapshotCalculator, TtbInventorySnapshot
 builder.Services.AddSingleton<TtbInventorySnapshotService>();
 builder.Services.AddSingleton<ITtbInventorySnapshotBackfillService>(sp => sp.GetRequiredService<TtbInventorySnapshotService>());
 builder.Services.AddHostedService(sp => sp.GetRequiredService<TtbInventorySnapshotService>());
+builder.Services.AddHttpClient("WebhookClient");
+builder.Services.AddHostedService<WebhookDeliveryWorker>();
 var rawSigningKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(rawSigningKey))
 {

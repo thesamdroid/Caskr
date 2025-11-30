@@ -5,6 +5,7 @@ using Caskr.server.Models;
 using Caskr.server.Repos;
 using Caskr.server;
 using Caskr.Server.Events;
+using Caskr.Server.Services;
 using MediatR;
 
 namespace Caskr.server.Services
@@ -24,7 +25,8 @@ namespace Caskr.server.Services
         IOrdersRepository ordersRepository,
         IUsersRepository usersRepository,
         IEmailService emailService,
-        IMediator mediator) : IOrdersService
+        IMediator mediator,
+        IWebhookService webhookService) : IOrdersService
     {
         public async Task<IEnumerable<Order>> GetOrdersAsync()
         {
@@ -83,7 +85,28 @@ namespace Caskr.server.Services
 
         public async Task<Order> AddOrderAsync(Order? order)
         {
-            return await ordersRepository.AddOrderAsync(order);
+            var created = await ordersRepository.AddOrderAsync(order);
+
+            // Trigger webhook for order creation
+            if (created?.CompanyId > 0)
+            {
+                await webhookService.TriggerEventAsync(
+                    WebhookEventTypes.OrderCreated,
+                    created.Id,
+                    new
+                    {
+                        id = created.Id,
+                        name = created.Name,
+                        status_id = created.StatusId,
+                        owner_id = created.OwnerId,
+                        batch_id = created.BatchId,
+                        quantity = created.Quantity,
+                        company_id = created.CompanyId
+                    },
+                    created.CompanyId);
+            }
+
+            return created!;
         }
 
         public async Task<Order> UpdateOrderAsync(Order order)

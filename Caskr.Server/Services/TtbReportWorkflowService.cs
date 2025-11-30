@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Caskr.server.Models;
+using Caskr.Server.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -77,6 +78,7 @@ public class TtbReportWorkflowService : ITtbReportWorkflowService
     private readonly IEmailService _emailService;
     private readonly ITtbAuditLogger _auditLogger;
     private readonly IUsersService _usersService;
+    private readonly IWebhookService _webhookService;
     private readonly ILogger<TtbReportWorkflowService> _logger;
 
     public TtbReportWorkflowService(
@@ -84,12 +86,14 @@ public class TtbReportWorkflowService : ITtbReportWorkflowService
         IEmailService emailService,
         ITtbAuditLogger auditLogger,
         IUsersService usersService,
+        IWebhookService webhookService,
         ILogger<TtbReportWorkflowService> logger)
     {
         _context = context;
         _emailService = emailService;
         _auditLogger = auditLogger;
         _usersService = usersService;
+        _webhookService = webhookService;
         _logger = logger;
     }
 
@@ -305,6 +309,23 @@ public class TtbReportWorkflowService : ITtbReportWorkflowService
 
         // Send confirmation notification
         await SendSubmissionConfirmedNotificationAsync(report, userId, cancellationToken);
+
+        // Trigger webhook for TTB report submission
+        await _webhookService.TriggerEventAsync(
+            WebhookEventTypes.TtbReportSubmitted,
+            report.Id,
+            new
+            {
+                id = report.Id,
+                company_id = report.CompanyId,
+                report_month = report.ReportMonth,
+                report_year = report.ReportYear,
+                form_type = report.FormType.ToString(),
+                status = report.Status.ToString(),
+                ttb_confirmation_number = report.TtbConfirmationNumber,
+                submitted_at = report.SubmittedAt
+            },
+            report.CompanyId);
 
         return WorkflowTransitionResult.Succeeded(report);
     }

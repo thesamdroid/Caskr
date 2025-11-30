@@ -72,6 +72,10 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<SavedReport> SavedReports { get; set; } = null!;
 
+    public virtual DbSet<WebhookSubscription> WebhookSubscriptions { get; set; } = null!;
+
+    public virtual DbSet<WebhookDelivery> WebhookDeliveries { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -1028,6 +1032,100 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.ReportTemplateId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_saved_reports_template");
+        });
+
+        modelBuilder.Entity<WebhookSubscription>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("webhook_subscriptions_pkey");
+
+            entity.ToTable("webhook_subscriptions");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_webhook_subscriptions_company_id");
+            entity.HasIndex(e => e.IsActive).HasDatabaseName("idx_webhook_subscriptions_is_active");
+            entity.HasIndex(e => e.CreatedByUserId).HasDatabaseName("idx_webhook_subscriptions_created_by");
+            entity.HasIndex(e => e.EventTypes)
+                .HasMethod("gin")
+                .HasDatabaseName("idx_webhook_subscriptions_event_types");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(200)
+                .HasColumnName("name");
+            entity.Property(e => e.TargetUrl)
+                .HasMaxLength(500)
+                .HasColumnName("target_url");
+            entity.Property(e => e.EventTypes)
+                .HasColumnType("jsonb")
+                .HasColumnName("event_types");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.SecretKey)
+                .HasMaxLength(100)
+                .HasColumnName("secret_key");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany(p => p.WebhookSubscriptions)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_webhook_subscriptions_company");
+
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_webhook_subscriptions_created_by");
+        });
+
+        modelBuilder.Entity<WebhookDelivery>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("webhook_deliveries_pkey");
+
+            entity.ToTable("webhook_deliveries");
+
+            entity.HasIndex(e => e.SubscriptionId).HasDatabaseName("idx_webhook_deliveries_subscription_id");
+            entity.HasIndex(e => e.DeliveryStatus).HasDatabaseName("idx_webhook_deliveries_status");
+            entity.HasIndex(e => e.NextRetryAt).HasDatabaseName("idx_webhook_deliveries_next_retry");
+            entity.HasIndex(e => e.CreatedAt).HasDatabaseName("idx_webhook_deliveries_created_at");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.SubscriptionId).HasColumnName("subscription_id");
+            entity.Property(e => e.EventType)
+                .HasMaxLength(100)
+                .HasColumnName("event_type");
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+            entity.Property(e => e.Payload)
+                .HasColumnType("jsonb")
+                .HasColumnName("payload");
+            entity.Property(e => e.DeliveryStatus)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(WebhookDeliveryStatus.Pending)
+                .HasColumnName("delivery_status");
+            entity.Property(e => e.HttpStatusCode).HasColumnName("http_status_code");
+            entity.Property(e => e.ResponseBody).HasColumnName("response_body");
+            entity.Property(e => e.RetryCount)
+                .HasDefaultValue(0)
+                .HasColumnName("retry_count");
+            entity.Property(e => e.NextRetryAt).HasColumnName("next_retry_at");
+            entity.Property(e => e.DeliveredAt).HasColumnName("delivered_at");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.Subscription)
+                .WithMany(p => p.Deliveries)
+                .HasForeignKey(d => d.SubscriptionId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_webhook_deliveries_subscription");
         });
 
         OnModelCreatingPartial(modelBuilder);
