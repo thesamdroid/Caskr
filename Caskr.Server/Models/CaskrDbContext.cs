@@ -70,6 +70,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<ReportTemplate> ReportTemplates { get; set; } = null!;
 
+    public virtual DbSet<SavedReport> SavedReports { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -972,6 +974,60 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_report_templates_created_by");
+        });
+
+        modelBuilder.Entity<SavedReport>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("saved_reports_pkey");
+
+            entity.ToTable("saved_reports");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_saved_reports_company_id");
+            entity.HasIndex(e => e.UserId).HasDatabaseName("idx_saved_reports_user_id");
+            entity.HasIndex(e => e.ReportTemplateId).HasDatabaseName("idx_saved_reports_template_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ReportTemplateId).HasColumnName("report_template_id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .HasColumnName("description");
+            entity.Property(e => e.FilterValues)
+                .HasColumnType("jsonb")
+                .HasColumnName("filter_values");
+            entity.Property(e => e.IsFavorite)
+                .HasDefaultValue(false)
+                .HasColumnName("is_favorite");
+            entity.Property(e => e.LastRunAt).HasColumnName("last_run_at");
+            entity.Property(e => e.RunCount)
+                .HasDefaultValue(0)
+                .HasColumnName("run_count");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_saved_reports_company");
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_saved_reports_user");
+
+            entity.HasOne(d => d.ReportTemplate)
+                .WithMany()
+                .HasForeignKey(d => d.ReportTemplateId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_saved_reports_template");
         });
 
         OnModelCreatingPartial(modelBuilder);

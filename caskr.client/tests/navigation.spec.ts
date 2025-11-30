@@ -25,6 +25,7 @@ test.describe('navigation links', () => {
     { link: 'Barrels', heading: 'Barrels', path: '/barrels' },
     { link: 'TTB Compliance', heading: 'TTB Monthly Reports (Form 5110.28)', path: '/ttb-reports' },
     { link: 'Products', heading: 'Products', path: '/products' },
+    { link: 'Reports', heading: 'Report Builder', path: '/reports' },
     { link: 'Accounting', heading: 'Accounting Settings', path: '/accounting' },
     { link: 'Sync History', heading: 'Accounting Sync History', path: '/accounting/sync-history' },
     { link: 'Login', heading: 'Welcome to CASKr', path: '/login' }

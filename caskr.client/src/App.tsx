@@ -13,6 +13,7 @@ import TtbReportsPage from './pages/TtbReportsPage'
 import TtbAutoReportPreviewPage from './pages/TtbAutoReportPreviewPage'
 import TtbTransactionsPage from './pages/TtbTransactionsPage'
 import TtbGaugeRecordsPage from './pages/TtbGaugeRecordsPage'
+import ReportsPage from './pages/ReportsPage'
 import PermissionGuard from './components/PermissionGuard'
 import { TTB_COMPLIANCE_PERMISSION, TTB_EDIT_PERMISSION } from './features/authSlice'
 
@@ -50,6 +51,7 @@ function App() {
             }
           />
           <Route path='products' element={<ProductsPage />} />
+          <Route path='reports' element={<ReportsPage />} />
           <Route path='accounting' element={<AccountingSettingsPage />} />
         <Route path='accounting/sync-history' element={<AccountingSyncHistoryPage />} />
         <Route path='login' element={<LoginPage />} />
