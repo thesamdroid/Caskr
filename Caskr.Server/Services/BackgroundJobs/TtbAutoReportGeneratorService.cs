@@ -298,10 +298,20 @@ public sealed class TtbAutoReportProcessor : ITtbAutoReportProcessor
                 CreatedByUserId = createdByUserId
             };
 
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            dbContext.TtbMonthlyReports.Add(report);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            // Only use transactions with relational databases; in-memory provider
+            // throws NotSupportedException for BeginTransactionAsync.
+            if (dbContext.Database.IsRelational())
+            {
+                await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+                dbContext.TtbMonthlyReports.Add(report);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            else
+            {
+                dbContext.TtbMonthlyReports.Add(report);
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
 
             await NotifyComplianceAsync(emailService, company, report, runTime);
             _logger.LogInformation(
