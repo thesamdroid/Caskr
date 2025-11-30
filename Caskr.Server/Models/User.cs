@@ -14,6 +14,16 @@ public partial class User
 
     public bool IsPrimaryContact { get; set; }
 
+    public bool IsTtbContact { get; set; }
+
+    public bool IsActive { get; set; } = true;
+
+    public string? KeycloakUserId { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public DateTime? LastLoginAt { get; set; }
+
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public string CompanyName { get; set; } = string.Empty;
 

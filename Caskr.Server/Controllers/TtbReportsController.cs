@@ -29,6 +29,7 @@ public sealed class TtbReportsController(
     CaskrDbContext dbContext,
     ITtbReportCalculator ttbReportCalculator,
     ITtbPdfGenerator ttbPdfGenerator,
+    ITtbReportWorkflowService workflowService,
     IUsersService usersService,
     ILogger<TtbReportsController> logger) : AuthorizedApiControllerBase
 {
@@ -338,12 +339,291 @@ public sealed class TtbReportsController(
         return File(pdfResult.Content, "application/pdf", fileName);
     }
 
+    /// <summary>
+    /// Submits a report for review (Draft → PendingReview).
+    /// </summary>
+    [HttpPost("/api/ttb/reports/{id:int}/submit-for-review")]
+    [ProducesResponseType(typeof(TtbReportDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SubmitForReview(int id, CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserAsync(cancellationToken);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var report = await dbContext.TtbMonthlyReports.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        if (report is null)
+        {
+            return NotFound(CreateProblem("TTB report was not found."));
+        }
+
+        var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
+        if (!isAdmin && user.CompanyId != report.CompanyId)
+        {
+            return Forbid();
+        }
+
+        var result = await workflowService.SubmitForReviewAsync(id, user.Id, cancellationToken);
+
+        if (!result.Success)
+        {
+            return BadRequest(CreateProblem(result.ErrorMessage ?? "Failed to submit report for review."));
+        }
+
+        return Ok(MapToDetailResponse(result.Report!));
+    }
+
+    /// <summary>
+    /// Approves a report for TTB submission (PendingReview → Approved).
+    /// Requires ComplianceManager role or higher.
+    /// </summary>
+    [HttpPost("/api/ttb/reports/{id:int}/approve")]
+    [ProducesResponseType(typeof(TtbReportDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Approve(
+        int id,
+        [FromBody] TtbReportReviewRequest? request = null,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserAsync(cancellationToken);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var report = await dbContext.TtbMonthlyReports.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        if (report is null)
+        {
+            return NotFound(CreateProblem("TTB report was not found."));
+        }
+
+        var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
+        if (!isAdmin && user.CompanyId != report.CompanyId)
+        {
+            return Forbid();
+        }
+
+        var result = await workflowService.ApproveReportAsync(id, user.Id, request?.ReviewNotes, cancellationToken);
+
+        if (!result.Success)
+        {
+            return BadRequest(CreateProblem(result.ErrorMessage ?? "Failed to approve report."));
+        }
+
+        return Ok(MapToDetailResponse(result.Report!));
+    }
+
+    /// <summary>
+    /// Rejects a report back to draft status (PendingReview → Draft).
+    /// Requires ComplianceManager role or higher.
+    /// </summary>
+    [HttpPost("/api/ttb/reports/{id:int}/reject")]
+    [ProducesResponseType(typeof(TtbReportDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Reject(
+        int id,
+        [FromBody] TtbReportReviewRequest? request = null,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserAsync(cancellationToken);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var report = await dbContext.TtbMonthlyReports.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        if (report is null)
+        {
+            return NotFound(CreateProblem("TTB report was not found."));
+        }
+
+        var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
+        if (!isAdmin && user.CompanyId != report.CompanyId)
+        {
+            return Forbid();
+        }
+
+        var result = await workflowService.RejectReportAsync(id, user.Id, request?.ReviewNotes, cancellationToken);
+
+        if (!result.Success)
+        {
+            return BadRequest(CreateProblem(result.ErrorMessage ?? "Failed to reject report."));
+        }
+
+        return Ok(MapToDetailResponse(result.Report!));
+    }
+
+    /// <summary>
+    /// Marks a report as submitted to TTB (Approved → Submitted).
+    /// Records the TTB confirmation number and locks all related data.
+    /// </summary>
+    [HttpPost("/api/ttb/reports/{id:int}/submit-to-ttb")]
+    [ProducesResponseType(typeof(TtbReportDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SubmitToTtb(
+        int id,
+        [FromBody] TtbSubmissionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var user = await GetCurrentUserAsync(cancellationToken);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var report = await dbContext.TtbMonthlyReports.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        if (report is null)
+        {
+            return NotFound(CreateProblem("TTB report was not found."));
+        }
+
+        var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
+        if (!isAdmin && user.CompanyId != report.CompanyId)
+        {
+            return Forbid();
+        }
+
+        var result = await workflowService.SubmitToTtbAsync(id, user.Id, request.ConfirmationNumber, cancellationToken);
+
+        if (!result.Success)
+        {
+            return BadRequest(CreateProblem(result.ErrorMessage ?? "Failed to submit report to TTB."));
+        }
+
+        return Ok(MapToDetailResponse(result.Report!));
+    }
+
+    /// <summary>
+    /// Archives a submitted report (Submitted → Archived).
+    /// </summary>
+    [HttpPost("/api/ttb/reports/{id:int}/archive")]
+    [ProducesResponseType(typeof(TtbReportDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Archive(int id, CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserAsync(cancellationToken);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var report = await dbContext.TtbMonthlyReports.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        if (report is null)
+        {
+            return NotFound(CreateProblem("TTB report was not found."));
+        }
+
+        var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
+        if (!isAdmin && user.CompanyId != report.CompanyId)
+        {
+            return Forbid();
+        }
+
+        var result = await workflowService.ArchiveReportAsync(id, user.Id, cancellationToken);
+
+        if (!result.Success)
+        {
+            return BadRequest(CreateProblem(result.ErrorMessage ?? "Failed to archive report."));
+        }
+
+        return Ok(MapToDetailResponse(result.Report!));
+    }
+
+    /// <summary>
+    /// Gets the detailed status of a report including workflow information.
+    /// </summary>
+    [HttpGet("/api/ttb/reports/{id:int}")]
+    [ProducesResponseType(typeof(TtbReportDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
+    {
+        var user = await GetCurrentUserAsync(cancellationToken);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var report = await dbContext.TtbMonthlyReports
+            .Include(r => r.CreatedByUser)
+            .Include(r => r.SubmittedForReviewByUser)
+            .Include(r => r.ReviewedByUser)
+            .Include(r => r.ApprovedByUser)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+        if (report is null)
+        {
+            return NotFound(CreateProblem("TTB report was not found."));
+        }
+
+        var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
+        if (!isAdmin && user.CompanyId != report.CompanyId)
+        {
+            return Forbid();
+        }
+
+        return Ok(MapToDetailResponse(report));
+    }
+
     private async Task<User?> GetCurrentUserAsync(CancellationToken cancellationToken)
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return int.TryParse(userIdValue, out var userId)
             ? await usersService.GetUserByIdAsync(userId)
             : null;
+    }
+
+    private static TtbReportDetailResponse MapToDetailResponse(TtbMonthlyReport report)
+    {
+        return new TtbReportDetailResponse
+        {
+            Id = report.Id,
+            CompanyId = report.CompanyId,
+            ReportMonth = report.ReportMonth,
+            ReportYear = report.ReportYear,
+            FormType = report.FormType,
+            Status = report.Status,
+            GeneratedAt = report.GeneratedAt,
+            SubmittedAt = report.SubmittedAt,
+            TtbConfirmationNumber = report.TtbConfirmationNumber,
+            ValidationErrors = report.ValidationErrors,
+            ValidationWarnings = report.ValidationWarnings,
+            CreatedByUserId = report.CreatedByUserId,
+            CreatedByUserName = report.CreatedByUser?.Name,
+            SubmittedForReviewByUserId = report.SubmittedForReviewByUserId,
+            SubmittedForReviewByUserName = report.SubmittedForReviewByUser?.Name,
+            SubmittedForReviewAt = report.SubmittedForReviewAt,
+            ReviewedByUserId = report.ReviewedByUserId,
+            ReviewedByUserName = report.ReviewedByUser?.Name,
+            ReviewedAt = report.ReviewedAt,
+            ApprovedByUserId = report.ApprovedByUserId,
+            ApprovedByUserName = report.ApprovedByUser?.Name,
+            ApprovedAt = report.ApprovedAt,
+            ReviewNotes = report.ReviewNotes
+        };
     }
 
     private static bool HasReportContent(TtbMonthlyReportData reportData)
@@ -451,4 +731,79 @@ public sealed class TtbReportSummaryResponse
     public string? ValidationErrors { get; set; }
 
     public string? ValidationWarnings { get; set; }
+}
+
+/// <summary>
+/// Detailed response including workflow tracking information.
+/// </summary>
+public sealed class TtbReportDetailResponse
+{
+    public int Id { get; set; }
+
+    public int CompanyId { get; set; }
+
+    public int ReportMonth { get; set; }
+
+    public int ReportYear { get; set; }
+
+    public TtbFormType FormType { get; set; }
+
+    public TtbReportStatus Status { get; set; }
+
+    public DateTime? GeneratedAt { get; set; }
+
+    public DateTime? SubmittedAt { get; set; }
+
+    public string? TtbConfirmationNumber { get; set; }
+
+    public string? ValidationErrors { get; set; }
+
+    public string? ValidationWarnings { get; set; }
+
+    public int CreatedByUserId { get; set; }
+
+    public string? CreatedByUserName { get; set; }
+
+    public int? SubmittedForReviewByUserId { get; set; }
+
+    public string? SubmittedForReviewByUserName { get; set; }
+
+    public DateTime? SubmittedForReviewAt { get; set; }
+
+    public int? ReviewedByUserId { get; set; }
+
+    public string? ReviewedByUserName { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
+    public int? ApprovedByUserId { get; set; }
+
+    public string? ApprovedByUserName { get; set; }
+
+    public DateTime? ApprovedAt { get; set; }
+
+    public string? ReviewNotes { get; set; }
+}
+
+/// <summary>
+/// Request payload for reviewing a report.
+/// </summary>
+public sealed class TtbReportReviewRequest
+{
+    /// <summary>
+    /// Optional notes or feedback from the reviewer.
+    /// </summary>
+    public string? ReviewNotes { get; set; }
+}
+
+/// <summary>
+/// Request payload for submitting a report to TTB.
+/// </summary>
+public sealed class TtbSubmissionRequest
+{
+    /// <summary>
+    /// The confirmation number received from TTB after submission.
+    /// </summary>
+    [Required]
+    public string ConfirmationNumber { get; set; } = null!;
 }

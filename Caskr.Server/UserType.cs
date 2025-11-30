@@ -28,6 +28,11 @@ public enum UserType
     /// <summary>
     /// Retailer user type identifier.
     /// </summary>
-    Retailer = 5
+    Retailer = 5,
+
+    /// <summary>
+    /// Compliance Manager user type identifier for TTB regulatory approvals.
+    /// </summary>
+    ComplianceManager = 6
 }
 
