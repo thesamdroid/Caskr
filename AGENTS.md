@@ -5,6 +5,11 @@ All changes must ensure the .NET solution builds and **all tests run and pass**.
 Always ensure the environment loads both the .NET SDK and a Chromium-based browser so
 the server and client test suites can execute successfully.
 
+Treat every prompt as a trigger to run the full test protocol. Before finalizing a
+response, execute the restore/build/test commands listed below so regressions are
+caught early. When making changes, add automated tests that cover both positive and
+negative outcomes so error handling stays verified over time.
+
 Run this branch through the testing protocol. Make sure all objects are loaded
 into the execution environments to appropriately run the tasks. If any tests
 fail, make sure they get fixed. If they fail because of missing elements in the
