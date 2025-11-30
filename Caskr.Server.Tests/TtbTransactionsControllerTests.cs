@@ -21,6 +21,7 @@ namespace Caskr.Server.Tests;
 public sealed class TtbTransactionsControllerTests : IDisposable
 {
     private readonly Mock<IUsersService> usersService = new();
+    private readonly Mock<ITtbAuditLogger> auditLogger = new();
     private readonly CaskrDbContext dbContext;
 
     public TtbTransactionsControllerTests()
@@ -489,13 +490,158 @@ public sealed class TtbTransactionsControllerTests : IDisposable
         Assert.IsType<NotFoundObjectResult>(result);
     }
 
+    [Fact]
+    public async Task Create_WhenMonthIsLocked_ReturnsForbidden()
+    {
+        // Arrange
+        // Setup audit logger to indicate the month is locked
+        auditLogger.Setup(a => a.IsMonthLockedAsync(10, 9, 2024))
+            .ReturnsAsync(true);
+
+        var controller = CreateControllerWithLockedMonth(25, 10, 9, 2024);
+        var request = new CreateTtbTransactionRequest
+        {
+            CompanyId = 10,
+            TransactionDate = new DateTime(2024, 9, 15),
+            TransactionType = TtbTransactionType.Loss,
+            ProductType = "Bourbon",
+            SpiritsType = TtbSpiritsType.Under190Proof,
+            ProofGallons = 10.50m,
+            WineGallons = 5.25m,
+            Notes = "Manual entry for loss"
+        };
+
+        // Act
+        var result = await controller.Create(request);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, statusCodeResult.StatusCode);
+        var problemDetails = Assert.IsType<ProblemDetails>(statusCodeResult.Value);
+        Assert.Contains("Cannot modify data for submitted reports", problemDetails.Detail);
+    }
+
+    [Fact]
+    public async Task Update_WhenMonthIsLocked_ReturnsForbidden()
+    {
+        // Arrange
+        var transaction = new TtbTransaction
+        {
+            CompanyId = 10,
+            TransactionDate = new DateTime(2024, 9, 15),
+            TransactionType = TtbTransactionType.Loss,
+            ProductType = "Bourbon",
+            SpiritsType = TtbSpiritsType.Under190Proof,
+            ProofGallons = 10.50m,
+            WineGallons = 5.25m,
+            SourceEntityType = "Manual",
+            Notes = "Original notes"
+        };
+
+        dbContext.TtbTransactions.Add(transaction);
+        await dbContext.SaveChangesAsync();
+
+        var controller = CreateControllerWithLockedMonth(25, 10, 9, 2024);
+        var updateRequest = new UpdateTtbTransactionRequest
+        {
+            TransactionDate = new DateTime(2024, 9, 20),
+            TransactionType = TtbTransactionType.Destruction,
+            ProductType = "Bourbon Updated",
+            SpiritsType = TtbSpiritsType.Under190Proof,
+            ProofGallons = 15.00m,
+            WineGallons = 7.50m,
+            Notes = "Updated notes"
+        };
+
+        // Act
+        var result = await controller.Update(transaction.Id, updateRequest);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, statusCodeResult.StatusCode);
+        var problemDetails = Assert.IsType<ProblemDetails>(statusCodeResult.Value);
+        Assert.Contains("Cannot modify data for submitted reports", problemDetails.Detail);
+    }
+
+    [Fact]
+    public async Task Delete_WhenMonthIsLocked_ReturnsForbidden()
+    {
+        // Arrange
+        var transaction = new TtbTransaction
+        {
+            CompanyId = 10,
+            TransactionDate = new DateTime(2024, 9, 15),
+            TransactionType = TtbTransactionType.Loss,
+            ProductType = "Bourbon",
+            SpiritsType = TtbSpiritsType.Under190Proof,
+            ProofGallons = 10.50m,
+            WineGallons = 5.25m,
+            SourceEntityType = "Manual"
+        };
+
+        dbContext.TtbTransactions.Add(transaction);
+        await dbContext.SaveChangesAsync();
+
+        var controller = CreateControllerWithLockedMonth(25, 10, 9, 2024);
+
+        // Act
+        var result = await controller.Delete(transaction.Id);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, statusCodeResult.StatusCode);
+        var problemDetails = Assert.IsType<ProblemDetails>(statusCodeResult.Value);
+        Assert.Contains("Cannot modify data for submitted reports", problemDetails.Detail);
+    }
+
     private TtbTransactionsController CreateController(int userId)
     {
         usersService.Setup(u => u.GetUserByIdAsync(userId)).ReturnsAsync(dbContext.Users.Find(userId));
 
+        // Setup audit logger to allow all changes by default (month not locked)
+        auditLogger.Setup(a => a.IsMonthLockedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(false);
+
         var controller = new TtbTransactionsController(
             dbContext,
             usersService.Object,
+            auditLogger.Object,
+            NullLogger<TtbTransactionsController>.Instance)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+                    }, "TestAuth"))
+                }
+            }
+        };
+
+        return controller;
+    }
+
+    private TtbTransactionsController CreateControllerWithLockedMonth(int userId, int companyId, int month, int year)
+    {
+        usersService.Setup(u => u.GetUserByIdAsync(userId)).ReturnsAsync(dbContext.Users.Find(userId));
+
+        // Setup audit logger to indicate the month is locked
+        auditLogger.Setup(a => a.IsMonthLockedAsync(companyId, month, year))
+            .ReturnsAsync(true);
+        // Allow other months
+        auditLogger.Setup(a => a.IsMonthLockedAsync(It.Is<int>(c => c != companyId), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(false);
+        auditLogger.Setup(a => a.IsMonthLockedAsync(companyId, It.Is<int>(m => m != month), It.IsAny<int>()))
+            .ReturnsAsync(false);
+        auditLogger.Setup(a => a.IsMonthLockedAsync(companyId, month, It.Is<int>(y => y != year)))
+            .ReturnsAsync(false);
+
+        var controller = new TtbTransactionsController(
+            dbContext,
+            usersService.Object,
+            auditLogger.Object,
             NullLogger<TtbTransactionsController>.Instance)
         {
             ControllerContext = new ControllerContext

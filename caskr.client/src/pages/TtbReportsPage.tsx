@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import PdfViewerModal from '../components/PdfViewerModal'
 import TtbReportGenerationModal from '../components/TtbReportGenerationModal'
+import TtbAuditTrailTab from '../components/TtbAuditTrailTab'
 import { authorizedFetch } from '../api/authorizedFetch'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fetchTtbReports, TtbFormType, TtbReport, TtbReportStatus } from '../features/ttbReportsSlice'
+
+type TtbReportsTab = 'reports' | 'audit-trail'
 
 // TTB Compliance: This page surfaces Form 5110.28 artifacts per docs/TTB_FORM_5110_28_MAPPING.md
 // to ensure users can preview and download federally required reports without altering calculations.
@@ -51,6 +54,7 @@ function TtbReportsPage() {
   const fetchError = useAppSelector(state => state.ttbReports.error)
   const authUser = useAppSelector(state => state.auth.user)
 
+  const [activeTab, setActiveTab] = useState<TtbReportsTab>('reports')
   const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear())
   const [statusFilter, setStatusFilter] = useState<TtbReportStatus | 'All'>('All')
   const [formTypeFilter, setFormTypeFilter] = useState<TtbFormType | 'All'>('All')
@@ -156,23 +160,50 @@ function TtbReportsPage() {
     <section className='content-section' aria-labelledby='ttb-reports-title'>
       <div className='section-header'>
         <div>
-          <h1 id='ttb-reports-title' className='section-title'>TTB Monthly Reports</h1>
-          <p className='section-subtitle'>Monitor generated storage and processing reports and download official PDFs for submission.</p>
+          <h1 id='ttb-reports-title' className='section-title'>TTB Compliance</h1>
+          <p className='section-subtitle'>Monitor generated reports, transactions, and audit trail for TTB compliance.</p>
         </div>
-        <div className='section-actions'>
-          <button
-            type='button'
-            className='button-primary'
-            onClick={() => setIsGenerateModalOpen(true)}
-            aria-label='Generate a new TTB monthly report'
-            data-testid='generate-ttb-report-button'
-          >
-            Generate New Report
-          </button>
-        </div>
+        {activeTab === 'reports' && (
+          <div className='section-actions'>
+            <button
+              type='button'
+              className='button-primary'
+              onClick={() => setIsGenerateModalOpen(true)}
+              aria-label='Generate a new TTB monthly report'
+              data-testid='generate-ttb-report-button'
+            >
+              Generate New Report
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className='filter-panel' aria-label='TTB report filters'>
+      <div className='tab-navigation' role='tablist' aria-label='TTB compliance tabs'>
+        <button
+          type='button'
+          role='tab'
+          aria-selected={activeTab === 'reports'}
+          className={`tab-button ${activeTab === 'reports' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reports')}
+        >
+          Monthly Reports
+        </button>
+        <button
+          type='button'
+          role='tab'
+          aria-selected={activeTab === 'audit-trail'}
+          className={`tab-button ${activeTab === 'audit-trail' ? 'active' : ''}`}
+          onClick={() => setActiveTab('audit-trail')}
+        >
+          Audit Trail
+        </button>
+      </div>
+
+      {activeTab === 'audit-trail' ? (
+        <TtbAuditTrailTab companyId={companyId} />
+      ) : (
+        <>
+          <div className='filter-panel' aria-label='TTB report filters'>
         <label>
           <span>Year</span>
           <select value={yearFilter} onChange={event => setYearFilter(Number(event.target.value))}>
@@ -289,6 +320,8 @@ function TtbReportsPage() {
             </tbody>
           </table>
         </div>
+      )}
+        </>
       )}
 
       <TtbReportGenerationModal

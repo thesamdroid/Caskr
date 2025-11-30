@@ -14,11 +14,13 @@ namespace Caskr.server.Controllers;
 
 /// <summary>
 /// Manages TTB gauge records for barrels, including manual entry and retrieval.
+/// All changes are logged to the TTB audit trail for compliance purposes.
 /// </summary>
 public sealed class TtbGaugeRecordsController(
     ITtbGaugeRecordService gaugeRecordService,
     CaskrDbContext dbContext,
     IUsersService usersService,
+    ITtbAuditLogger auditLogger,
     ILogger<TtbGaugeRecordsController> logger) : AuthorizedApiControllerBase
 {
     [HttpGet("/api/ttb/gauge-records/barrel/{barrelId:int}")]
@@ -210,6 +212,15 @@ public sealed class TtbGaugeRecordsController(
             return BadRequest(CreateProblem("WineGallons must be greater than 0."));
         }
 
+        // Check if the month is locked (report submitted or approved)
+        var gaugeMonth = DateTime.UtcNow.Month;
+        var gaugeYear = DateTime.UtcNow.Year;
+        if (await auditLogger.IsMonthLockedAsync(barrel.CompanyId, gaugeMonth, gaugeYear))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+        }
+
         var record = await gaugeRecordService.CreateGaugeRecordAsync(
             request.BarrelId,
             request.GaugeType,
@@ -218,6 +229,9 @@ public sealed class TtbGaugeRecordsController(
             request.WineGallons,
             user.Id,
             request.Notes);
+
+        // Log the audit trail
+        await auditLogger.LogChangeAsync(TtbAuditAction.Create, record, null, user.Id, barrel.CompanyId);
 
         logger.LogInformation(
             "User {UserId} created gauge record {GaugeRecordId} for barrel {BarrelId}",
@@ -288,12 +302,39 @@ public sealed class TtbGaugeRecordsController(
             return BadRequest(CreateProblem("WineGallons must be greater than 0."));
         }
 
+        // Check if the month is locked
+        var gaugeMonth = existingRecord.GaugeDate.Month;
+        var gaugeYear = existingRecord.GaugeDate.Year;
+        if (await auditLogger.IsMonthLockedAsync(existingRecord.Barrel.CompanyId, gaugeMonth, gaugeYear))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+        }
+
+        // Capture old values for audit
+        var oldRecord = new TtbGaugeRecord
+        {
+            Id = existingRecord.Id,
+            BarrelId = existingRecord.BarrelId,
+            GaugeDate = existingRecord.GaugeDate,
+            GaugeType = existingRecord.GaugeType,
+            Proof = existingRecord.Proof,
+            Temperature = existingRecord.Temperature,
+            WineGallons = existingRecord.WineGallons,
+            ProofGallons = existingRecord.ProofGallons,
+            GaugedByUserId = existingRecord.GaugedByUserId,
+            Notes = existingRecord.Notes
+        };
+
         var record = await gaugeRecordService.UpdateGaugeRecordAsync(
             id,
             request.Proof,
             request.Temperature,
             request.WineGallons,
             request.Notes);
+
+        // Log the audit trail
+        await auditLogger.LogChangeAsync(TtbAuditAction.Update, record, oldRecord, user.Id, existingRecord.Barrel.CompanyId);
 
         logger.LogInformation(
             "User {UserId} updated gauge record {GaugeRecordId}",
@@ -344,11 +385,39 @@ public sealed class TtbGaugeRecordsController(
             return Forbid();
         }
 
+        // Check if the month is locked
+        var gaugeMonth = record.GaugeDate.Month;
+        var gaugeYear = record.GaugeDate.Year;
+        if (await auditLogger.IsMonthLockedAsync(record.Barrel.CompanyId, gaugeMonth, gaugeYear))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+        }
+
+        // Capture for audit before deleting
+        var companyId = record.Barrel.CompanyId;
+        var deletedRecord = new TtbGaugeRecord
+        {
+            Id = record.Id,
+            BarrelId = record.BarrelId,
+            GaugeDate = record.GaugeDate,
+            GaugeType = record.GaugeType,
+            Proof = record.Proof,
+            Temperature = record.Temperature,
+            WineGallons = record.WineGallons,
+            ProofGallons = record.ProofGallons,
+            GaugedByUserId = record.GaugedByUserId,
+            Notes = record.Notes
+        };
+
         await gaugeRecordService.DeleteGaugeRecordAsync(id);
+
+        // Log the audit trail
+        await auditLogger.LogChangeAsync(TtbAuditAction.Delete, null, deletedRecord, user.Id, companyId);
 
         logger.LogInformation(
             "User {UserId} deleted gauge record {GaugeRecordId}",
-            user.Id, record.Id);
+            user.Id, deletedRecord.Id);
 
         return NoContent();
     }
