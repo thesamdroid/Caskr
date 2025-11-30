@@ -68,7 +68,21 @@ interface TtbTransactionsState {
   selectedYear: number
 }
 
-const normalizeTransaction = (payload: any): TtbTransaction => ({
+interface TtbTransactionPayload {
+  id: number
+  companyId: number
+  transactionDate: string
+  transactionType: TtbTransactionType
+  productType: string
+  spiritsType: TtbSpiritsType
+  proofGallons: number
+  wineGallons: number
+  sourceEntityType?: string | null
+  sourceEntityId?: number | null
+  notes?: string | null
+}
+
+const normalizeTransaction = (payload: TtbTransactionPayload): TtbTransaction => ({
   id: payload.id,
   companyId: payload.companyId,
   transactionDate: payload.transactionDate,

@@ -19,13 +19,15 @@ const certificateName = "caskr.client";
 const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
 const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
 
+let httpsEnabled = useHttps;
+
 if (useHttps) {
     if (!fs.existsSync(baseFolder)) {
         fs.mkdirSync(baseFolder, { recursive: true });
     }
 
     if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
-        if (0 !== child_process.spawnSync('dotnet', [
+        const result = child_process.spawnSync('dotnet', [
             'dev-certs',
             'https',
             '--export-path',
@@ -33,8 +35,11 @@ if (useHttps) {
             '--format',
             'Pem',
             '--no-password',
-        ], { stdio: 'inherit', }).status) {
-            throw new Error("Could not create certificate.");
+        ], { stdio: 'inherit', });
+
+        if (result.status !== 0) {
+            console.warn("Could not create certificate. Falling back to HTTP.");
+            httpsEnabled = false;
         }
     }
 }
@@ -53,7 +58,7 @@ export default defineConfig({
     server: (() => {
         const serverConfig: Record<string, unknown> = {
             port: 51844,
-            ...(useHttps ? {
+            ...(httpsEnabled && fs.existsSync(keyFilePath) && fs.existsSync(certFilePath) ? {
                 https: {
                     key: fs.readFileSync(keyFilePath),
                     cert: fs.readFileSync(certFilePath),

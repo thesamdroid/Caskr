@@ -30,7 +30,7 @@ interface TtbReportsState {
   error: string | null
 }
 
-const normalizeFormType = (value: any): TtbFormType => {
+const normalizeFormType = (value: TtbFormType | number | string | undefined): TtbFormType => {
   if (value === TtbFormType.Form5110_40 || value === 1 || value === '1') return TtbFormType.Form5110_40
 
   if (typeof value === 'string') {
@@ -65,12 +65,32 @@ const toStatus = (value: TtbReportStatus | number | string): TtbReportStatus => 
   return 'Draft'
 }
 
-const normalizeReport = (payload: any): TtbReport => ({
+interface TtbReportPayload {
+  id: number
+  reportMonth?: number
+  month?: number
+  report_month?: number
+  ReportMonth?: number
+  reportYear?: number
+  year?: number
+  report_year?: number
+  ReportYear?: number
+  formType?: TtbFormType | number | string
+  form_type?: TtbFormType | number | string
+  FormType?: TtbFormType | number | string
+  status?: TtbReportStatus | number | string
+  Status?: TtbReportStatus | number | string
+  generatedAt?: string | null
+  generated_at?: string | null
+  GeneratedAt?: string | null
+}
+
+const normalizeReport = (payload: TtbReportPayload): TtbReport => ({
   id: payload.id,
-  reportMonth: payload.reportMonth ?? payload.month ?? payload.report_month ?? payload.ReportMonth,
-  reportYear: payload.reportYear ?? payload.year ?? payload.report_year ?? payload.ReportYear,
+  reportMonth: payload.reportMonth ?? payload.month ?? payload.report_month ?? payload.ReportMonth ?? 1,
+  reportYear: payload.reportYear ?? payload.year ?? payload.report_year ?? payload.ReportYear ?? new Date().getFullYear(),
   formType: normalizeFormType(payload.formType ?? payload.form_type ?? payload.FormType ?? TtbFormType.Form5110_28),
-  status: toStatus(payload.status ?? payload.Status),
+  status: toStatus(payload.status ?? payload.Status ?? 'Draft'),
   generatedAt: payload.generatedAt ?? payload.generated_at ?? payload.GeneratedAt ?? null
 })
 
