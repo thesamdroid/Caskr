@@ -90,13 +90,28 @@ function TtbGaugeRecordsPage() {
     setEndDate('')
   }
 
+  const handleAddRecord = () => {
+    setEditingRecord(null)
+    setSelectedBarrelId(0)
+    setIsModalOpen(true)
+  }
+
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">TTB Gauge Records</h1>
-        <p className="text-gray-600">
-          Track proof, temperature, and volume measurements for barrels as required by TTB.
-        </p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">TTB Gauge Records</h1>
+          <p className="text-gray-600">
+            Track proof, temperature, and volume measurements for barrels as required by TTB.
+          </p>
+        </div>
+        <button
+          onClick={handleAddRecord}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
+          data-testid="add-gauge-record-button"
+        >
+          Add Gauge Record
+        </button>
       </div>
 
       {/* Filters */}

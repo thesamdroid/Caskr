@@ -828,6 +828,24 @@ label {
   border-color: var(--error-border);
 }
 
+.status-badge.validation-failed {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-color: var(--warning-border);
+}
+
+.status-badge.pending-review {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.status-badge.archived {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  border-color: var(--border-secondary);
+}
+
 /* Status Pills */
 .status-pill {
   padding: var(--space-sm) var(--space-lg);
