@@ -64,6 +64,8 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<TtbGaugeRecord> TtbGaugeRecords { get; set; } = null!;
 
+    public virtual DbSet<TtbTaxDetermination> TtbTaxDeterminations { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -228,6 +230,14 @@ public partial class CaskrDbContext : DbContext
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.AnnualProductionProofGallons)
+                .HasColumnType("decimal(12,2)")
+                .HasColumnName("annual_production_proof_gallons");
+            entity.Property(e => e.IsEligibleForReducedExciseTaxRate)
+                .HasDefaultValue(true)
+                .HasColumnName("is_eligible_for_reduced_excise_tax_rate");
+            entity.Property(e => e.ExciseTaxEligibilityNotes)
+                .HasColumnName("excise_tax_eligibility_notes");
         });
 
         modelBuilder.Entity<Status>(entity =>
@@ -776,6 +786,49 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.GaugedByUserId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("fk_ttb_gauge_records_user");
+        });
+
+        modelBuilder.Entity<TtbTaxDetermination>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ttb_tax_determinations_pkey");
+
+            entity.ToTable("ttb_tax_determinations");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_ttb_tax_determinations_company_id");
+            entity.HasIndex(e => e.OrderId).HasDatabaseName("idx_ttb_tax_determinations_order_id");
+            entity.HasIndex(e => e.DeterminationDate).HasDatabaseName("idx_ttb_tax_determinations_date");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.ProofGallons)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("proof_gallons");
+            entity.Property(e => e.TaxRate)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("tax_rate");
+            entity.Property(e => e.TaxAmount)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("tax_amount");
+            entity.Property(e => e.DeterminationDate)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("determination_date");
+            entity.Property(e => e.PaidDate).HasColumnName("paid_date");
+            entity.Property(e => e.PaymentReference).HasColumnName("payment_reference");
+            entity.Property(e => e.QuickBooksJournalEntryId).HasColumnName("quickbooks_journal_entry_id");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_ttb_tax_determinations_company");
+
+            entity.HasOne(d => d.Order)
+                .WithMany()
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_ttb_tax_determinations_order");
         });
 
         OnModelCreatingPartial(modelBuilder);

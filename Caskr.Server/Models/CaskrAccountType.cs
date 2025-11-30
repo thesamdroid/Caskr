@@ -9,5 +9,7 @@ public enum CaskrAccountType
     Barrels,
     Ingredients,
     Labor,
-    Overhead
+    Overhead,
+    ExciseTaxExpense,
+    ExciseTaxPayable
 }
