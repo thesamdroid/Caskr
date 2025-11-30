@@ -20,13 +20,13 @@ public class TransfersService(
 {
     public async Task<byte[]> GenerateTtbFormAsync(TransferRequest request)
     {
-        logger.LogInformation("Generating TTB Transfer Form for FromCompanyId: {FromCompanyId}", request.FromCompanyId);
-
         // Validate request
         if (request == null)
         {
             throw new ArgumentNullException(nameof(request), "Transfer request cannot be null");
         }
+
+        logger.LogInformation("Generating TTB Transfer Form for FromCompanyId: {FromCompanyId}", request.FromCompanyId);
 
         if (string.IsNullOrWhiteSpace(request.ToCompanyName))
         {
@@ -94,66 +94,66 @@ public class TransfersService(
                 logger.LogInformation("PDF template has {FieldCount} form fields", fields.Count);
 
                 // Fill basic transfer information
-                SetFieldSafe(form, "from_company", company.CompanyName, logger);
-                SetFieldSafe(form, "shipper_name", company.CompanyName, logger);
-                SetFieldSafe(form, "to_company", request.ToCompanyName, logger);
-                SetFieldSafe(form, "consignee_name", request.ToCompanyName, logger);
-                SetFieldSafe(form, "barrel_count", request.BarrelCount.ToString(), logger);
-                SetFieldSafe(form, "quantity", request.BarrelCount.ToString(), logger);
+                PdfFormHelper.SetFieldSafe(form, "from_company", company.CompanyName, logger);
+                PdfFormHelper.SetFieldSafe(form, "shipper_name", company.CompanyName, logger);
+                PdfFormHelper.SetFieldSafe(form, "to_company", request.ToCompanyName, logger);
+                PdfFormHelper.SetFieldSafe(form, "consignee_name", request.ToCompanyName, logger);
+                PdfFormHelper.SetFieldSafe(form, "barrel_count", request.BarrelCount.ToString(), logger);
+                PdfFormHelper.SetFieldSafe(form, "quantity", request.BarrelCount.ToString(), logger);
 
                 // Fill permit information
                 if (!string.IsNullOrWhiteSpace(request.PermitNumber))
                 {
-                    SetFieldSafe(form, "permit_number", request.PermitNumber, logger);
-                    SetFieldSafe(form, "consignee_permit", request.PermitNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "permit_number", request.PermitNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "consignee_permit", request.PermitNumber, logger);
                 }
 
                 if (!string.IsNullOrWhiteSpace(company.TtbPermitNumber))
                 {
-                    SetFieldSafe(form, "shipper_permit", company.TtbPermitNumber, logger);
-                    SetFieldSafe(form, "ttb_permit", company.TtbPermitNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "shipper_permit", company.TtbPermitNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "ttb_permit", company.TtbPermitNumber, logger);
                 }
 
                 // Fill addresses
                 if (!string.IsNullOrWhiteSpace(request.Address))
                 {
-                    SetFieldSafe(form, "address", request.Address, logger);
-                    SetFieldSafe(form, "consignee_address", request.Address, logger);
+                    PdfFormHelper.SetFieldSafe(form, "address", request.Address, logger);
+                    PdfFormHelper.SetFieldSafe(form, "consignee_address", request.Address, logger);
                 }
 
                 if (!string.IsNullOrWhiteSpace(company.AddressLine1))
                 {
-                    var fullAddress = BuildFullAddress(company);
-                    SetFieldSafe(form, "shipper_address", fullAddress, logger);
-                    SetFieldSafe(form, "from_address", fullAddress, logger);
+                    var fullAddress = PdfFormHelper.BuildFullAddress(company);
+                    PdfFormHelper.SetFieldSafe(form, "shipper_address", fullAddress, logger);
+                    PdfFormHelper.SetFieldSafe(form, "from_address", fullAddress, logger);
                 }
 
                 // Fill contact information
                 if (!string.IsNullOrWhiteSpace(company.PhoneNumber))
                 {
-                    SetFieldSafe(form, "phone", company.PhoneNumber, logger);
-                    SetFieldSafe(form, "shipper_phone", company.PhoneNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "phone", company.PhoneNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "shipper_phone", company.PhoneNumber, logger);
                 }
 
                 // Fill barrel details if available
                 if (barrels != null && barrels.Count > 0)
                 {
                     var barrelSkus = string.Join(", ", barrels.Select(b => b.Sku));
-                    SetFieldSafe(form, "barrel_numbers", barrelSkus, logger);
-                    SetFieldSafe(form, "serial_numbers", barrelSkus, logger);
+                    PdfFormHelper.SetFieldSafe(form, "barrel_numbers", barrelSkus, logger);
+                    PdfFormHelper.SetFieldSafe(form, "serial_numbers", barrelSkus, logger);
 
                     // If we have batch/mash bill information
                     var mashBill = barrels.FirstOrDefault()?.Batch?.MashBill;
                     if (mashBill != null)
                     {
-                        SetFieldSafe(form, "product_type", mashBill.Name, logger);
-                        SetFieldSafe(form, "mash_bill", mashBill.Name, logger);
+                        PdfFormHelper.SetFieldSafe(form, "product_type", mashBill.Name, logger);
+                        PdfFormHelper.SetFieldSafe(form, "mash_bill", mashBill.Name, logger);
                     }
                 }
 
                 // Add current date
-                SetFieldSafe(form, "date", DateTime.Now.ToString("MM/dd/yyyy"), logger);
-                SetFieldSafe(form, "transfer_date", DateTime.Now.ToString("MM/dd/yyyy"), logger);
+                PdfFormHelper.SetFieldSafe(form, "date", DateTime.Now.ToString("MM/dd/yyyy"), logger);
+                PdfFormHelper.SetFieldSafe(form, "transfer_date", DateTime.Now.ToString("MM/dd/yyyy"), logger);
 
                 // Flatten the form to make it non-editable
                 form.FlattenFields();
@@ -168,52 +168,6 @@ public class TransfersService(
             logger.LogError(ex, "Error generating TTB Transfer Form for FromCompanyId: {FromCompanyId}", request.FromCompanyId);
             throw new InvalidOperationException("Failed to generate PDF document. See logs for details.", ex);
         }
-    }
-
-    private static void SetFieldSafe(PdfAcroForm form, string fieldName, string? value, ILogger logger)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return;
-        }
-
-        var field = form.GetField(fieldName);
-        if (field != null)
-        {
-            field.SetValue(value);
-            logger.LogDebug("Set field '{FieldName}' to '{Value}'", fieldName, value);
-        }
-        else
-        {
-            logger.LogDebug("Field '{FieldName}' not found in PDF template", fieldName);
-        }
-    }
-
-    private static string BuildFullAddress(Company company)
-    {
-        var parts = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(company.AddressLine1))
-            parts.Add(company.AddressLine1);
-
-        if (!string.IsNullOrWhiteSpace(company.AddressLine2))
-            parts.Add(company.AddressLine2);
-
-        var cityStateZip = new List<string>();
-        if (!string.IsNullOrWhiteSpace(company.City))
-            cityStateZip.Add(company.City);
-        if (!string.IsNullOrWhiteSpace(company.State))
-            cityStateZip.Add(company.State);
-        if (!string.IsNullOrWhiteSpace(company.PostalCode))
-            cityStateZip.Add(company.PostalCode);
-
-        if (cityStateZip.Count > 0)
-            parts.Add(string.Join(", ", cityStateZip));
-
-        if (!string.IsNullOrWhiteSpace(company.Country))
-            parts.Add(company.Country);
-
-        return string.Join("\n", parts);
     }
 
     private async Task<byte[]> CreateSimplePdfAsync(Company company, TransferRequest request, List<Barrel>? barrels)
@@ -241,7 +195,7 @@ public class TransfersService(
 
             if (!string.IsNullOrWhiteSpace(company.AddressLine1))
             {
-                document.Add(new iText.Layout.Element.Paragraph($"Address: {BuildFullAddress(company)}")
+                document.Add(new iText.Layout.Element.Paragraph($"Address: {PdfFormHelper.BuildFullAddress(company)}")
                     .SetFontSize(12));
             }
 

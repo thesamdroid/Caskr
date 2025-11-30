@@ -368,6 +368,35 @@ public sealed class TtbReportWorkflowServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SubmitToTtbAsync_WithValidationErrors_Fails()
+    {
+        // Arrange
+        var report = new TtbMonthlyReport
+        {
+            Id = 214,
+            CompanyId = 1,
+            ReportMonth = 11,
+            ReportYear = 2024,
+            Status = TtbReportStatus.Approved,
+            FormType = TtbFormType.Form5110_28,
+            CreatedByUserId = 1,
+            ApprovedByUserId = 2,
+            ValidationErrors = "[\"Storage data missing\"]"
+        };
+        dbContext.TtbMonthlyReports.Add(report);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService();
+
+        // Act
+        var result = await service.SubmitToTtbAsync(214, 1, "TTB-99999");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("validation error", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task SubmitToTtbAsync_NonApprovedReport_Fails()
     {
         // Arrange

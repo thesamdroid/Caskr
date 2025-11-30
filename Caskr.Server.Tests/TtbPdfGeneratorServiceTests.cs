@@ -4,9 +4,7 @@ using Caskr.server.Models;
 using Caskr.server.Services;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Caskr.Server.Tests;
@@ -134,7 +132,7 @@ public class TtbPdfGeneratorServiceTests
         var formsDirectory = Path.Combine(tempRoot, "Forms");
         Directory.CreateDirectory(formsDirectory);
 
-        var projectRoot = FindSolutionRoot();
+        var projectRoot = TestEnvironmentHelper.FindSolutionRoot();
         var sourceTemplate = Path.Combine(projectRoot, "Caskr.Server", "Forms", "ttb_form_5110_28.pdf");
         var testTemplate = Path.Combine(formsDirectory, "ttb_form_5110_28.pdf");
         File.Copy(sourceTemplate, testTemplate, true);
@@ -216,7 +214,7 @@ public class TtbPdfGeneratorServiceTests
         var formsDirectory = Path.Combine(tempRoot, "Forms");
         Directory.CreateDirectory(formsDirectory);
 
-        var projectRoot = FindSolutionRoot();
+        var projectRoot = TestEnvironmentHelper.FindSolutionRoot();
         File.Copy(Path.Combine(projectRoot, "Caskr.Server", "Forms", "ttb_form_5110_40.pdf"),
             Path.Combine(formsDirectory, "ttb_form_5110_40.pdf"), true);
 
@@ -292,40 +290,4 @@ public class TtbPdfGeneratorServiceTests
         await Assert.ThrowsAsync<FileNotFoundException>(() => service.GenerateForm5110_40Async(reportData));
     }
 
-    private sealed class TestWebHostEnvironment : IWebHostEnvironment
-    {
-        public TestWebHostEnvironment(string contentRootPath)
-        {
-            ContentRootPath = contentRootPath;
-            WebRootPath = contentRootPath;
-        }
-
-        public string ApplicationName { get; set; } = "Caskr.server";
-
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
-
-        public string WebRootPath { get; set; }
-
-        public string EnvironmentName { get; set; } = "Development";
-
-        public string ContentRootPath { get; set; }
-
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-    }
-
-    private static string FindSolutionRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Caskr.sln")))
-        {
-            directory = directory.Parent;
-        }
-
-        if (directory is null)
-        {
-            throw new DirectoryNotFoundException("Unable to locate solution root containing Caskr.sln");
-        }
-
-        return directory.FullName;
-    }
 }
