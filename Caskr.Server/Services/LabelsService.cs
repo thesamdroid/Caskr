@@ -20,13 +20,13 @@ public class LabelsService(
 {
     public async Task<byte[]> GenerateTtbFormAsync(LabelRequest request)
     {
-        logger.LogInformation("Generating TTB Label Form for CompanyId: {CompanyId}", request.CompanyId);
-
         // Validate request
         if (request == null)
         {
             throw new ArgumentNullException(nameof(request), "Label request cannot be null");
         }
+
+        logger.LogInformation("Generating TTB Label Form for CompanyId: {CompanyId}", request.CompanyId);
 
         if (string.IsNullOrWhiteSpace(request.BrandName))
         {
@@ -80,32 +80,32 @@ public class LabelsService(
                 logger.LogInformation("PDF template has {FieldCount} form fields", fields.Count);
 
                 // Fill form fields with validation
-                SetFieldSafe(form, "applicant_name", company.CompanyName, logger);
-                SetFieldSafe(form, "company_name", company.CompanyName, logger);
-                SetFieldSafe(form, "brand_name", request.BrandName, logger);
-                SetFieldSafe(form, "product_name", request.ProductName, logger);
-                SetFieldSafe(form, "alcohol_content", request.AlcoholContent, logger);
+                PdfFormHelper.SetFieldSafe(form, "applicant_name", company.CompanyName, logger);
+                PdfFormHelper.SetFieldSafe(form, "company_name", company.CompanyName, logger);
+                PdfFormHelper.SetFieldSafe(form, "brand_name", request.BrandName, logger);
+                PdfFormHelper.SetFieldSafe(form, "product_name", request.ProductName, logger);
+                PdfFormHelper.SetFieldSafe(form, "alcohol_content", request.AlcoholContent, logger);
 
                 // Add company address if available
                 if (!string.IsNullOrWhiteSpace(company.AddressLine1))
                 {
-                    var fullAddress = BuildFullAddress(company);
-                    SetFieldSafe(form, "address", fullAddress, logger);
-                    SetFieldSafe(form, "applicant_address", fullAddress, logger);
+                    var fullAddress = PdfFormHelper.BuildFullAddress(company);
+                    PdfFormHelper.SetFieldSafe(form, "address", fullAddress, logger);
+                    PdfFormHelper.SetFieldSafe(form, "applicant_address", fullAddress, logger);
                 }
 
                 // Add TTB permit number if available
                 if (!string.IsNullOrWhiteSpace(company.TtbPermitNumber))
                 {
-                    SetFieldSafe(form, "permit_number", company.TtbPermitNumber, logger);
-                    SetFieldSafe(form, "ttb_permit", company.TtbPermitNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "permit_number", company.TtbPermitNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "ttb_permit", company.TtbPermitNumber, logger);
                 }
 
                 // Add contact info if available
                 if (!string.IsNullOrWhiteSpace(company.PhoneNumber))
                 {
-                    SetFieldSafe(form, "phone", company.PhoneNumber, logger);
-                    SetFieldSafe(form, "phone_number", company.PhoneNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "phone", company.PhoneNumber, logger);
+                    PdfFormHelper.SetFieldSafe(form, "phone_number", company.PhoneNumber, logger);
                 }
 
                 // Flatten the form to make it non-editable
@@ -121,52 +121,6 @@ public class LabelsService(
             logger.LogError(ex, "Error generating TTB Label Form for CompanyId: {CompanyId}", request.CompanyId);
             throw new InvalidOperationException("Failed to generate PDF document. See logs for details.", ex);
         }
-    }
-
-    private static void SetFieldSafe(PdfAcroForm form, string fieldName, string? value, ILogger logger)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return;
-        }
-
-        var field = form.GetField(fieldName);
-        if (field != null)
-        {
-            field.SetValue(value);
-            logger.LogDebug("Set field '{FieldName}' to '{Value}'", fieldName, value);
-        }
-        else
-        {
-            logger.LogDebug("Field '{FieldName}' not found in PDF template", fieldName);
-        }
-    }
-
-    private static string BuildFullAddress(Company company)
-    {
-        var parts = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(company.AddressLine1))
-            parts.Add(company.AddressLine1);
-
-        if (!string.IsNullOrWhiteSpace(company.AddressLine2))
-            parts.Add(company.AddressLine2);
-
-        var cityStateZip = new List<string>();
-        if (!string.IsNullOrWhiteSpace(company.City))
-            cityStateZip.Add(company.City);
-        if (!string.IsNullOrWhiteSpace(company.State))
-            cityStateZip.Add(company.State);
-        if (!string.IsNullOrWhiteSpace(company.PostalCode))
-            cityStateZip.Add(company.PostalCode);
-
-        if (cityStateZip.Count > 0)
-            parts.Add(string.Join(", ", cityStateZip));
-
-        if (!string.IsNullOrWhiteSpace(company.Country))
-            parts.Add(company.Country);
-
-        return string.Join("\n", parts);
     }
 
     private async Task<byte[]> CreateSimplePdfAsync(Company company, LabelRequest request)
@@ -191,7 +145,7 @@ public class LabelsService(
 
             if (!string.IsNullOrWhiteSpace(company.AddressLine1))
             {
-                document.Add(new iText.Layout.Element.Paragraph($"Address: {BuildFullAddress(company)}")
+                document.Add(new iText.Layout.Element.Paragraph($"Address: {PdfFormHelper.BuildFullAddress(company)}")
                     .SetFontSize(12));
             }
 
