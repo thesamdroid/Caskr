@@ -20,7 +20,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome', launchOptions: { args: ['--no-sandbox'] } },
+      use: { ...devices['Desktop Chrome'], launchOptions: { args: ['--no-sandbox'] } },
     },
   ],
 });

@@ -45,6 +45,7 @@ export default function Layout() {
       icon: <ClipboardIcon />
     },
     { label: 'Products', path: '/products' },
+    { label: 'Reports', path: '/reports', ariaLabel: 'Report Builder' },
     { label: 'Accounting', path: '/accounting' },
     { label: 'Sync History', path: '/accounting/sync-history' },
     { label: 'Login', path: '/login' }
