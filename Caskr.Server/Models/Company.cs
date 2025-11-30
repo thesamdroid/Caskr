@@ -26,6 +26,43 @@ public partial class Company
 
     public DayOfWeek TtbAutoReportDayOfWeek { get; set; } = DayOfWeek.Monday;
 
+    public string? TtbPermitNumber { get; set; }
+
+    public string? AddressLine1 { get; set; }
+
+    public string? AddressLine2 { get; set; }
+
+    public string? City { get; set; }
+
+    public string? State { get; set; }
+
+    public string? PostalCode { get; set; }
+
+    public string? Country { get; set; }
+
+    public string? PhoneNumber { get; set; }
+
+    public string? Website { get; set; }
+
+    public bool IsActive { get; set; } = true;
+
+    public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Annual production limit in proof gallons for determining excise tax eligibility
+    /// </summary>
+    public decimal? AnnualProductionProofGallons { get; set; }
+
+    /// <summary>
+    /// Whether the company is eligible for reduced excise tax rate under Craft Beverage Modernization Act
+    /// </summary>
+    public bool IsEligibleForReducedExciseTaxRate { get; set; } = true;
+
+    /// <summary>
+    /// Reason for excise tax rate eligibility or ineligibility
+    /// </summary>
+    public string? ExciseTaxEligibilityNotes { get; set; }
+
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 
     public virtual ICollection<Rickhouse> Rickhouses { get; set; } = new List<Rickhouse>();
