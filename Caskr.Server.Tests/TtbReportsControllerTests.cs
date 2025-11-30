@@ -21,6 +21,7 @@ public sealed class TtbReportsControllerTests : IDisposable
 {
     private readonly Mock<ITtbReportCalculator> calculator = new();
     private readonly Mock<ITtbPdfGenerator> pdfGenerator = new();
+    private readonly Mock<ITtbReportWorkflowService> workflowService = new();
     private readonly Mock<IUsersService> usersService = new();
     private readonly CaskrDbContext dbContext;
 
@@ -520,6 +521,7 @@ public sealed class TtbReportsControllerTests : IDisposable
             dbContext,
             calculator.Object,
             pdfGenerator.Object,
+            workflowService.Object,
             usersService.Object,
             NullLogger<TtbReportsController>.Instance)
         {

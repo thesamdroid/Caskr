@@ -6,7 +6,15 @@ public enum TtbReportStatus
     Submitted = 1,
     Approved = 2,
     Rejected = 3,
-    ValidationFailed = 4
+    ValidationFailed = 4,
+    /// <summary>
+    /// Report has been submitted for internal review before TTB submission.
+    /// </summary>
+    PendingReview = 5,
+    /// <summary>
+    /// Report has been submitted to TTB and archived for record keeping.
+    /// </summary>
+    Archived = 6
 }
 
 public enum TtbFormType

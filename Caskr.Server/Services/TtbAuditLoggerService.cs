@@ -152,11 +152,15 @@ public class TtbAuditLoggerService : ITtbAuditLogger
 
     public async Task<bool> IsMonthLockedAsync(int companyId, int month, int year)
     {
+        // A month is locked when its report has been submitted to TTB or archived
+        // This prevents any modifications to transactions for that period
         return await _context.TtbMonthlyReports
             .AnyAsync(r => r.CompanyId == companyId
                 && r.ReportMonth == month
                 && r.ReportYear == year
-                && (r.Status == TtbReportStatus.Submitted || r.Status == TtbReportStatus.Approved));
+                && (r.Status == TtbReportStatus.Submitted
+                    || r.Status == TtbReportStatus.Approved
+                    || r.Status == TtbReportStatus.Archived));
     }
 
     private static string GetEntityTypeName<T>()
@@ -234,7 +238,14 @@ public class TtbAuditLoggerService : ITtbAuditLogger
                 r.PdfPath,
                 r.ValidationErrors,
                 r.ValidationWarnings,
-                r.CreatedByUserId
+                r.CreatedByUserId,
+                r.SubmittedForReviewByUserId,
+                r.SubmittedForReviewAt,
+                r.ReviewedByUserId,
+                r.ReviewedAt,
+                r.ApprovedByUserId,
+                r.ApprovedAt,
+                r.ReviewNotes
             },
             TtbGaugeRecord g => new
             {

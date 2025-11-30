@@ -689,6 +689,32 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_ttb_monthly_reports_created_by");
+
+            entity.Property(e => e.SubmittedForReviewByUserId).HasColumnName("submitted_for_review_by_user_id");
+            entity.Property(e => e.SubmittedForReviewAt).HasColumnName("submitted_for_review_at");
+            entity.Property(e => e.ReviewedByUserId).HasColumnName("reviewed_by_user_id");
+            entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
+            entity.Property(e => e.ApprovedByUserId).HasColumnName("approved_by_user_id");
+            entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
+            entity.Property(e => e.ReviewNotes).HasColumnName("review_notes");
+
+            entity.HasOne(d => d.SubmittedForReviewByUser)
+                .WithMany()
+                .HasForeignKey(d => d.SubmittedForReviewByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_ttb_monthly_reports_submitted_for_review_by");
+
+            entity.HasOne(d => d.ReviewedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.ReviewedByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_ttb_monthly_reports_reviewed_by");
+
+            entity.HasOne(d => d.ApprovedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.ApprovedByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_ttb_monthly_reports_approved_by");
         });
 
         modelBuilder.Entity<TtbInventorySnapshot>(entity =>

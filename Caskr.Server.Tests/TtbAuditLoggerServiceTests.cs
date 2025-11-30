@@ -264,6 +264,55 @@ public sealed class TtbAuditLoggerServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task IsMonthLockedAsync_WithArchivedReport_ReturnsTrue()
+    {
+        // Arrange
+        dbContext.TtbMonthlyReports.Add(new TtbMonthlyReport
+        {
+            CompanyId = 1,
+            ReportMonth = 10,
+            ReportYear = 2024,
+            Status = TtbReportStatus.Archived,
+            FormType = TtbFormType.Form5110_28,
+            CreatedByUserId = 1,
+            TtbConfirmationNumber = "TTB-12345"
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService();
+
+        // Act
+        var isLocked = await service.IsMonthLockedAsync(1, 10, 2024);
+
+        // Assert
+        Assert.True(isLocked);
+    }
+
+    [Fact]
+    public async Task IsMonthLockedAsync_WithPendingReviewReport_ReturnsFalse()
+    {
+        // Arrange
+        dbContext.TtbMonthlyReports.Add(new TtbMonthlyReport
+        {
+            CompanyId = 1,
+            ReportMonth = 10,
+            ReportYear = 2024,
+            Status = TtbReportStatus.PendingReview,
+            FormType = TtbFormType.Form5110_28,
+            CreatedByUserId = 1
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService();
+
+        // Act
+        var isLocked = await service.IsMonthLockedAsync(1, 10, 2024);
+
+        // Assert
+        Assert.False(isLocked);
+    }
+
+    [Fact]
     public async Task ExportAuditLogsToCsvAsync_ReturnsValidCsv()
     {
         // Arrange
