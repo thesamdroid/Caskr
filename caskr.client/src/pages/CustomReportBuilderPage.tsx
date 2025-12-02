@@ -526,7 +526,7 @@ function CustomReportBuilderPage() {
     setDragOverTarget(targetId)
   }
 
-  const handleDragLeave = (_e: DragEvent) => {
+  const handleDragLeave = () => {
     setDragOverTarget(null)
   }
 
