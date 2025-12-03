@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Caskr.server.Models.Portal;
 using Caskr.server.Models.Crm;
 using Caskr.server.Models.SupplyChain;
+using Caskr.server.Models.Pricing;
 
 namespace Caskr.server.Models;
 
@@ -133,6 +134,19 @@ public partial class CaskrDbContext : DbContext
     public virtual DbSet<PushSubscription> PushSubscriptions { get; set; } = null!;
 
     public virtual DbSet<NotificationPreference> NotificationPreferences { get; set; } = null!;
+
+    // Pricing entities (public pricing page)
+    public virtual DbSet<PricingTier> PricingTiers { get; set; } = null!;
+
+    public virtual DbSet<PricingFeature> PricingFeatures { get; set; } = null!;
+
+    public virtual DbSet<PricingTierFeature> PricingTierFeatures { get; set; } = null!;
+
+    public virtual DbSet<PricingFaq> PricingFaqs { get; set; } = null!;
+
+    public virtual DbSet<PricingPromotion> PricingPromotions { get; set; } = null!;
+
+    public virtual DbSet<PricingAuditLog> PricingAuditLogs { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -2112,6 +2126,281 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.ResolvedByUserId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("fk_crm_sync_conflicts_resolved_by");
+        });
+
+        // PricingTier configuration
+        modelBuilder.Entity<PricingTier>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pricing_tiers_pkey");
+
+            entity.ToTable("pricing_tiers");
+
+            entity.HasIndex(e => e.Slug)
+                .IsUnique()
+                .HasDatabaseName("pricing_tiers_slug_key");
+
+            entity.HasIndex(e => e.SortOrder)
+                .HasDatabaseName("idx_pricing_tiers_sort_order");
+
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("idx_pricing_tiers_is_active");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.Slug)
+                .HasMaxLength(50)
+                .HasColumnName("slug");
+            entity.Property(e => e.Tagline)
+                .HasMaxLength(200)
+                .HasColumnName("tagline");
+            entity.Property(e => e.MonthlyPriceCents).HasColumnName("monthly_price_cents");
+            entity.Property(e => e.AnnualPriceCents).HasColumnName("annual_price_cents");
+            entity.Property(e => e.AnnualDiscountPercent)
+                .HasDefaultValue(0)
+                .HasColumnName("annual_discount_percent");
+            entity.Property(e => e.IsPopular)
+                .HasDefaultValue(false)
+                .HasColumnName("is_popular");
+            entity.Property(e => e.IsCustomPricing)
+                .HasDefaultValue(false)
+                .HasColumnName("is_custom_pricing");
+            entity.Property(e => e.CtaText)
+                .HasMaxLength(50)
+                .HasColumnName("cta_text");
+            entity.Property(e => e.CtaUrl)
+                .HasMaxLength(200)
+                .HasColumnName("cta_url");
+            entity.Property(e => e.SortOrder)
+                .HasDefaultValue(0)
+                .HasColumnName("sort_order");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+        });
+
+        // PricingFeature configuration
+        modelBuilder.Entity<PricingFeature>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pricing_features_pkey");
+
+            entity.ToTable("pricing_features");
+
+            entity.HasIndex(e => e.Category)
+                .HasDatabaseName("idx_pricing_features_category");
+
+            entity.HasIndex(e => e.SortOrder)
+                .HasDatabaseName("idx_pricing_features_sort_order");
+
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("idx_pricing_features_is_active");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .HasColumnName("description");
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .HasColumnName("category");
+            entity.Property(e => e.SortOrder)
+                .HasDefaultValue(0)
+                .HasColumnName("sort_order");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+        });
+
+        // PricingTierFeature configuration (junction table)
+        modelBuilder.Entity<PricingTierFeature>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pricing_tier_features_pkey");
+
+            entity.ToTable("pricing_tier_features");
+
+            entity.HasIndex(e => new { e.TierId, e.FeatureId })
+                .IsUnique()
+                .HasDatabaseName("uq_pricing_tier_features");
+
+            entity.HasIndex(e => e.TierId)
+                .HasDatabaseName("idx_pricing_tier_features_tier_id");
+
+            entity.HasIndex(e => e.FeatureId)
+                .HasDatabaseName("idx_pricing_tier_features_feature_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.TierId).HasColumnName("tier_id");
+            entity.Property(e => e.FeatureId).HasColumnName("feature_id");
+            entity.Property(e => e.IsIncluded)
+                .HasDefaultValue(true)
+                .HasColumnName("is_included");
+            entity.Property(e => e.LimitValue)
+                .HasMaxLength(50)
+                .HasColumnName("limit_value");
+            entity.Property(e => e.LimitDescription)
+                .HasMaxLength(100)
+                .HasColumnName("limit_description");
+
+            entity.HasOne(d => d.Tier)
+                .WithMany(p => p.TierFeatures)
+                .HasForeignKey(d => d.TierId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_pricing_tier_features_tier");
+
+            entity.HasOne(d => d.Feature)
+                .WithMany(p => p.TierFeatures)
+                .HasForeignKey(d => d.FeatureId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_pricing_tier_features_feature");
+        });
+
+        // PricingFaq configuration
+        modelBuilder.Entity<PricingFaq>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pricing_faqs_pkey");
+
+            entity.ToTable("pricing_faqs");
+
+            entity.HasIndex(e => e.SortOrder)
+                .HasDatabaseName("idx_pricing_faqs_sort_order");
+
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("idx_pricing_faqs_is_active");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Question)
+                .HasMaxLength(500)
+                .HasColumnName("question");
+            entity.Property(e => e.Answer).HasColumnName("answer");
+            entity.Property(e => e.SortOrder)
+                .HasDefaultValue(0)
+                .HasColumnName("sort_order");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+        });
+
+        // PricingPromotion configuration
+        modelBuilder.Entity<PricingPromotion>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pricing_promotions_pkey");
+
+            entity.ToTable("pricing_promotions");
+
+            entity.HasIndex(e => e.Code)
+                .IsUnique()
+                .HasDatabaseName("pricing_promotions_code_key");
+
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("idx_pricing_promotions_is_active");
+
+            entity.HasIndex(e => new { e.ValidFrom, e.ValidUntil })
+                .HasDatabaseName("idx_pricing_promotions_validity");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Code)
+                .HasMaxLength(50)
+                .HasColumnName("code");
+            entity.Property(e => e.Description)
+                .HasMaxLength(200)
+                .HasColumnName("description");
+            entity.Property(e => e.DiscountType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasColumnName("discount_type");
+            entity.Property(e => e.DiscountValue)
+                .HasDefaultValue(0)
+                .HasColumnName("discount_value");
+            entity.Property(e => e.AppliesToTiersJson)
+                .HasColumnType("jsonb")
+                .HasColumnName("applies_to_tiers");
+            entity.Property(e => e.ValidFrom).HasColumnName("valid_from");
+            entity.Property(e => e.ValidUntil).HasColumnName("valid_until");
+            entity.Property(e => e.MaxRedemptions).HasColumnName("max_redemptions");
+            entity.Property(e => e.CurrentRedemptions)
+                .HasDefaultValue(0)
+                .HasColumnName("current_redemptions");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+        });
+
+        // PricingAuditLog configuration
+        modelBuilder.Entity<PricingAuditLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pricing_audit_logs_pkey");
+
+            entity.ToTable("pricing_audit_logs");
+
+            entity.HasIndex(e => e.EntityType)
+                .HasDatabaseName("idx_pricing_audit_logs_entity_type");
+
+            entity.HasIndex(e => e.EntityId)
+                .HasDatabaseName("idx_pricing_audit_logs_entity_id");
+
+            entity.HasIndex(e => e.ChangeTimestamp)
+                .HasDatabaseName("idx_pricing_audit_logs_timestamp");
+
+            entity.HasIndex(e => e.ChangedByUserId)
+                .HasDatabaseName("idx_pricing_audit_logs_user_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EntityType)
+                .HasMaxLength(50)
+                .HasColumnName("entity_type");
+            entity.Property(e => e.EntityId).HasColumnName("entity_id");
+            entity.Property(e => e.Action)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasColumnName("action");
+            entity.Property(e => e.ChangedByUserId).HasColumnName("changed_by_user_id");
+            entity.Property(e => e.ChangeTimestamp)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("change_timestamp");
+            entity.Property(e => e.OldValues)
+                .HasColumnType("jsonb")
+                .HasColumnName("old_values");
+            entity.Property(e => e.NewValues)
+                .HasColumnType("jsonb")
+                .HasColumnName("new_values");
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(45)
+                .HasColumnName("ip_address");
+            entity.Property(e => e.UserAgent).HasColumnName("user_agent");
+            entity.Property(e => e.ChangeDescription).HasColumnName("change_description");
+
+            entity.HasOne(d => d.ChangedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.ChangedByUserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_pricing_audit_logs_user");
         });
 
         OnModelCreatingPartial(modelBuilder);
