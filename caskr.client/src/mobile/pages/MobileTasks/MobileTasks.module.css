@@ -1,0 +1,253 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #f3f4f6;
+  position: relative;
+}
+
+/* Offline indicator */
+.offlineIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+}
+
+.offlineIcon {
+  width: 18px;
+  height: 18px;
+  color: #d97706;
+}
+
+.offlineIndicator span {
+  font-size: 13px;
+  color: #92400e;
+}
+
+/* Multi-select toolbar */
+.multiSelectBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.multiSelectButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.multiSelectButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.multiSelectButton:active {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.selectionCount {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.multiSelectActions {
+  display: flex;
+  gap: 8px;
+}
+
+.selectAllButton {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.selectAllButton:active {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.bulkCompleteButton,
+.bulkDeleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bulkCompleteButton svg,
+.bulkDeleteButton svg {
+  width: 20px;
+  height: 20px;
+  color: #ffffff;
+}
+
+.bulkCompleteButton:disabled,
+.bulkDeleteButton:disabled {
+  opacity: 0.5;
+}
+
+.bulkCompleteButton:not(:disabled):active,
+.bulkDeleteButton:not(:disabled):active {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* FAB */
+.fab {
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #2563eb;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 100;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fab svg {
+  width: 24px;
+  height: 24px;
+  color: #ffffff;
+}
+
+.fab:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+/* Undo toast */
+.undoToast {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background-color: #1f2937;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 90;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.undoToast span {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.undoButton {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #60a5fa;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.undoButton:active {
+  opacity: 0.7;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background-color: #111827;
+  }
+
+  .offlineIndicator {
+    background-color: #451a03;
+    border-bottom-color: #78350f;
+  }
+
+  .offlineIcon {
+    color: #fbbf24;
+  }
+
+  .offlineIndicator span {
+    color: #fef3c7;
+  }
+
+  .multiSelectBar {
+    background-color: #1d4ed8;
+  }
+
+  .fab {
+    background-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+
+  .fab:active {
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  }
+
+  .undoToast {
+    background-color: #374151;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .undoButton {
+    color: #93c5fd;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .fab {
+    transition: none;
+  }
+
+  .undoToast {
+    animation: none;
+  }
+}

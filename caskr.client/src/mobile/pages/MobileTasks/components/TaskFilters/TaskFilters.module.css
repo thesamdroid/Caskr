@@ -1,0 +1,364 @@
+.container {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.progressSection {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.progressInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progressLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.progressCount {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.progressBar {
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #10b981;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.viewModeSection {
+  display: flex;
+  padding: 8px;
+  gap: 4px;
+}
+
+.viewModeButton {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  background-color: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s ease;
+}
+
+.viewModeButton.active {
+  color: #2563eb;
+  background-color: #eff6ff;
+  font-weight: 600;
+}
+
+.viewModeButton:not(.active):active {
+  background-color: #f3f4f6;
+}
+
+.filterToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  background-color: transparent;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+.filterToggle:active {
+  background-color: #f9fafb;
+}
+
+.filterIcon {
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+}
+
+.activeIndicator {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #2563eb;
+  border-radius: 50%;
+  top: 12px;
+  margin-left: -58px;
+}
+
+.chevronIcon {
+  width: 18px;
+  height: 18px;
+  color: #9ca3af;
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.chevronIcon.rotated {
+  transform: rotate(180deg);
+}
+
+.filtersExpanded {
+  padding: 16px;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filterLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip:active {
+  background-color: #e5e7eb;
+}
+
+.chip.chipActive {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.chip.high.chipActive {
+  background-color: #dc2626;
+}
+
+.chip.medium.chipActive {
+  background-color: #d97706;
+}
+
+.chip.low.chipActive {
+  background-color: #2563eb;
+}
+
+.chip.overdue.chipActive {
+  background-color: #dc2626;
+}
+
+.sortChip {
+  padding-right: 10px;
+}
+
+.sortArrow {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.15s ease;
+}
+
+.sortArrow.desc {
+  transform: rotate(180deg);
+}
+
+.resetButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  background-color: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.resetButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.resetButton:active {
+  background-color: #f3f4f6;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background-color: #1f2937;
+    border-bottom-color: #374151;
+  }
+
+  .progressSection {
+    border-bottom-color: #374151;
+  }
+
+  .progressLabel {
+    color: #9ca3af;
+  }
+
+  .progressCount {
+    color: #f9fafb;
+  }
+
+  .progressBar {
+    background-color: #374151;
+  }
+
+  .progressFill {
+    background-color: #059669;
+  }
+
+  .viewModeButton {
+    color: #9ca3af;
+  }
+
+  .viewModeButton.active {
+    color: #3b82f6;
+    background-color: #1e3a5f;
+  }
+
+  .viewModeButton:not(.active):active {
+    background-color: #374151;
+  }
+
+  .filterToggle {
+    color: #d1d5db;
+    border-top-color: #374151;
+  }
+
+  .filterToggle:active {
+    background-color: #374151;
+  }
+
+  .filterIcon {
+    color: #9ca3af;
+  }
+
+  .activeIndicator {
+    background-color: #3b82f6;
+  }
+
+  .chevronIcon {
+    color: #6b7280;
+  }
+
+  .filtersExpanded {
+    border-top-color: #374151;
+  }
+
+  .filterLabel {
+    color: #9ca3af;
+  }
+
+  .chip {
+    color: #9ca3af;
+    background-color: #374151;
+  }
+
+  .chip:active {
+    background-color: #4b5563;
+  }
+
+  .chip.chipActive {
+    background-color: #3b82f6;
+    color: #ffffff;
+  }
+
+  .chip.high.chipActive {
+    background-color: #dc2626;
+  }
+
+  .chip.medium.chipActive {
+    background-color: #d97706;
+  }
+
+  .chip.low.chipActive {
+    background-color: #3b82f6;
+  }
+
+  .chip.overdue.chipActive {
+    background-color: #dc2626;
+  }
+
+  .resetButton {
+    color: #9ca3af;
+    background-color: #374151;
+    border-color: #4b5563;
+  }
+
+  .resetButton:active {
+    background-color: #4b5563;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .progressFill {
+    transition: none;
+  }
+
+  .viewModeButton {
+    transition: none;
+  }
+
+  .chevronIcon {
+    transition: none;
+  }
+
+  .chip {
+    transition: none;
+  }
+
+  .sortArrow {
+    transition: none;
+  }
+}

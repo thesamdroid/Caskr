@@ -1,0 +1,271 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.pullIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.pullIndicator.ready .pullIcon {
+  color: #2563eb;
+}
+
+.pullIndicator.refreshing {
+  transition: height 0.2s ease;
+}
+
+.pullIcon {
+  width: 24px;
+  height: 24px;
+  color: #9ca3af;
+  transition: transform 0.1s ease;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.list {
+  padding: 16px;
+}
+
+.group {
+  margin-bottom: 20px;
+}
+
+.group:last-child {
+  margin-bottom: 0;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+}
+
+.groupLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.overdueHeader .groupLabel {
+  color: #dc2626;
+}
+
+.groupCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  background-color: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.overdueHeader .groupCount {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.groupTasks {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading skeleton */
+.loadingContainer {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton {
+  height: 100px;
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 0%,
+    #e5e7eb 50%,
+    #f3f4f6 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 12px;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Empty state */
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 64px;
+  height: 64px;
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+.emptyText {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Error state */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.errorIcon {
+  width: 48px;
+  height: 48px;
+  color: #ef4444;
+  margin-bottom: 16px;
+}
+
+.errorText {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0 0 20px 0;
+}
+
+.retryButton {
+  padding: 12px 24px;
+  background-color: #2563eb;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.retryButton:active {
+  background-color: #1d4ed8;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .pullIndicator.ready .pullIcon {
+    color: #3b82f6;
+  }
+
+  .pullIcon {
+    color: #6b7280;
+  }
+
+  .spinner {
+    border-color: #374151;
+    border-top-color: #3b82f6;
+  }
+
+  .groupLabel {
+    color: #9ca3af;
+  }
+
+  .overdueHeader .groupLabel {
+    color: #f87171;
+  }
+
+  .groupCount {
+    background-color: #374151;
+    color: #9ca3af;
+  }
+
+  .overdueHeader .groupCount {
+    background-color: #450a0a;
+    color: #f87171;
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #1f2937 0%,
+      #374151 50%,
+      #1f2937 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  .emptyIcon {
+    color: #4b5563;
+  }
+
+  .emptyText {
+    color: #9ca3af;
+  }
+
+  .errorIcon {
+    color: #f87171;
+  }
+
+  .errorText {
+    color: #9ca3af;
+  }
+
+  .retryButton {
+    background-color: #3b82f6;
+  }
+
+  .retryButton:active {
+    background-color: #2563eb;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+
+  .skeleton {
+    animation: none;
+  }
+
+  .pullIcon {
+    transition: none;
+  }
+}

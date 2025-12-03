@@ -1,0 +1,149 @@
+.container {
+  padding: 0 16px;
+  margin-bottom: 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.actionButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 70px;
+  min-height: 70px;
+  max-width: 90px;
+  max-height: 90px;
+  padding: 12px 8px;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  margin: 0 auto;
+}
+
+.actionButton:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.actionButton:active {
+  transform: scale(0.95);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.iconWrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.icon {
+  width: 28px;
+  height: 28px;
+  color: #2563eb;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Landscape orientation - wider grid */
+@media (orientation: landscape) and (max-height: 500px) {
+  .grid {
+    gap: 16px;
+  }
+
+  .actionButton {
+    min-width: 60px;
+    min-height: 60px;
+    max-width: 80px;
+    max-height: 80px;
+    padding: 8px 6px;
+  }
+
+  .iconWrapper {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 4px;
+  }
+
+  .icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .label {
+    font-size: 10px;
+  }
+}
+
+/* Small devices */
+@media (max-width: 360px) {
+  .grid {
+    gap: 8px;
+  }
+
+  .actionButton {
+    min-width: 60px;
+    min-height: 60px;
+    padding: 10px 6px;
+    border-radius: 12px;
+  }
+
+  .iconWrapper {
+    width: 26px;
+    height: 26px;
+    margin-bottom: 4px;
+  }
+
+  .icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .label {
+    font-size: 10px;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .actionButton {
+    background-color: #1f2937;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .actionButton:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+
+  .actionButton:active {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .icon {
+    color: #60a5fa;
+  }
+
+  .label {
+    color: #e5e7eb;
+  }
+}

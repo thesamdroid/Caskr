@@ -1,0 +1,254 @@
+.dashboard {
+  min-height: 100dvh;
+  background-color: #f3f4f6;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Pull-to-refresh indicator */
+.pullIndicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+  transition: height 0.2s ease-out;
+}
+
+.pullIndicator.refreshing .refreshIconWrapper {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.refreshIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease-out;
+}
+
+.refreshIcon {
+  width: 24px;
+  height: 24px;
+  color: #2563eb;
+}
+
+.pullText {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Offline indicator */
+.offlineIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+}
+
+.offlineIcon {
+  width: 18px;
+  height: 18px;
+  color: #d97706;
+}
+
+.offlineIndicator span {
+  font-size: 13px;
+  color: #92400e;
+}
+
+/* Greeting section */
+.greeting {
+  padding: 20px 16px 16px;
+}
+
+.greetingText {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.dateText {
+  display: block;
+  font-size: 15px;
+  color: #6b7280;
+}
+
+.lastUpdated {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* Loading state */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loadingText {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Error state */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 24px;
+  gap: 8px;
+}
+
+.errorTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.errorMessage {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.retryButton {
+  padding: 10px 24px;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.retryButton:active {
+  background-color: #1d4ed8;
+}
+
+/* Bottom padding for navigation */
+.bottomPadding {
+  height: 80px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .dashboard {
+    background-color: #111827;
+  }
+
+  .refreshIcon {
+    color: #60a5fa;
+  }
+
+  .pullText {
+    color: #9ca3af;
+  }
+
+  .offlineIndicator {
+    background-color: #451a03;
+    border-bottom-color: #78350f;
+  }
+
+  .offlineIcon {
+    color: #fbbf24;
+  }
+
+  .offlineIndicator span {
+    color: #fef3c7;
+  }
+
+  .greetingText {
+    color: #f9fafb;
+  }
+
+  .dateText {
+    color: #9ca3af;
+  }
+
+  .lastUpdated {
+    color: #6b7280;
+  }
+
+  .loadingSpinner {
+    border-color: #374151;
+    border-top-color: #60a5fa;
+  }
+
+  .loadingText {
+    color: #9ca3af;
+  }
+
+  .errorTitle {
+    color: #f9fafb;
+  }
+
+  .errorMessage {
+    color: #9ca3af;
+  }
+
+  .retryButton {
+    background-color: #2563eb;
+  }
+
+  .retryButton:active {
+    background-color: #1d4ed8;
+  }
+}
+
+/* Landscape */
+@media (orientation: landscape) and (max-height: 500px) {
+  .greeting {
+    padding: 12px 16px;
+  }
+
+  .greetingText {
+    font-size: 22px;
+  }
+
+  .bottomPadding {
+    height: 60px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .loadingSpinner,
+  .pullIndicator.refreshing .refreshIconWrapper {
+    animation: none;
+  }
+
+  .pullIndicator {
+    transition: none;
+  }
+}
