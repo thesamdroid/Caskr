@@ -1,0 +1,186 @@
+/* ===================================
+   PRICING FAQ ACCORDION
+   Expandable FAQ section
+   =================================== */
+
+.pricing-faq-section {
+  padding: var(--space-3xl) var(--space-xl);
+  background: var(--bg-primary);
+}
+
+.pricing-faq-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.pricing-faq-header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+}
+
+.pricing-faq-header .section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.pricing-faq-header .section-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+}
+
+.pricing-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Individual FAQ item */
+.faq-item {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-secondary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color var(--transition-base);
+}
+
+.faq-item:hover {
+  border-color: var(--border-gold);
+}
+
+.faq-item.open {
+  border-color: var(--gold-primary);
+}
+
+/* Question button */
+.faq-question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-lg);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  min-height: 64px;
+}
+
+.faq-question:hover {
+  background: var(--bg-hover);
+}
+
+.faq-question:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: -3px;
+}
+
+.faq-question-text {
+  flex: 1;
+  padding-right: var(--space-md);
+}
+
+.faq-chevron {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: transform var(--transition-base);
+}
+
+.faq-chevron.open {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-chevron {
+    transition: none;
+  }
+}
+
+/* Answer wrapper for smooth height animation */
+.faq-answer-wrapper {
+  overflow: hidden;
+  transition: height 300ms ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-answer-wrapper {
+    transition: none;
+  }
+}
+
+.faq-answer {
+  padding: 0 var(--space-lg) var(--space-lg);
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.faq-answer p {
+  margin: 0;
+}
+
+.faq-answer strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.faq-answer em {
+  font-style: italic;
+}
+
+/* Contact link at bottom */
+.pricing-faq-contact {
+  text-align: center;
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--border-primary);
+}
+
+.pricing-faq-contact p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.pricing-faq-link {
+  color: var(--text-gold);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--transition-fast);
+}
+
+.pricing-faq-link:hover {
+  color: var(--gold-light);
+  text-decoration: underline;
+}
+
+.pricing-faq-link:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .pricing-faq-section {
+    padding: var(--space-xl) var(--space-md);
+  }
+
+  .pricing-faq-header .section-title {
+    font-size: 1.5rem;
+  }
+
+  .faq-question {
+    padding: var(--space-md);
+    font-size: 0.9375rem;
+  }
+
+  .faq-answer {
+    padding: 0 var(--space-md) var(--space-md);
+    font-size: 0.875rem;
+  }
+}
