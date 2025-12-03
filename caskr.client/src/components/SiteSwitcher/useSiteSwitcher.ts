@@ -106,17 +106,20 @@ export function useSiteSwitcher(): SiteSwitcherState {
   const [error, setError] = useState<string | null>(null)
   const [isBannerDismissed, setIsBannerDismissed] = useState(() => wasBannerDismissed())
 
-  // Calculate mismatch
-  const isMismatch =
+  // Check if detected device is known (not unknown)
+  const isKnownDevice = detectedDevice !== 'unknown' && detectedDevice !== 'tablet'
+
+  // Calculate mismatch (only for mobile/desktop, not tablet or unknown)
+  const isMismatch = isKnownDevice && (
     (detectedDevice === 'mobile' && currentSite === 'desktop') ||
     (detectedDevice === 'desktop' && currentSite === 'mobile')
+  )
 
   // Determine if banner should show
   const shouldShowBanner =
     !isBannerDismissed &&
     preference === 'auto' &&
-    isMismatch &&
-    detectedDevice !== 'unknown'
+    isMismatch
 
   // Load preference from API/localStorage
   const loadPreference = useCallback(async () => {

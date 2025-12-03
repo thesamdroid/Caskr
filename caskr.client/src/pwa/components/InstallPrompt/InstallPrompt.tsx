@@ -34,7 +34,7 @@ export function InstallPrompt({
   const {
     canShow,
     isIOS,
-    isAndroid,
+    isAndroid: _isAndroid, // Available for future Android-specific UI
     promptInstall,
     dismiss,
     dontAskAgain,

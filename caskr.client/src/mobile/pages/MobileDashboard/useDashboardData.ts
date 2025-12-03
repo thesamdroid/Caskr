@@ -88,8 +88,23 @@ interface FetchResourceResult<T> {
   error?: string
 }
 
+/**
+ * Format HTTP error status to user-friendly message
+ */
 function formatFetchError(status: number): string {
-  return status >= 500 ? 'Service unavailable' : 'Request failed'
+  if (status >= 500) {
+    return 'Our servers are temporarily unavailable. Please try again in a few moments.'
+  }
+  if (status === 401 || status === 403) {
+    return 'Your session has expired. Please sign in again.'
+  }
+  if (status === 404) {
+    return 'The requested data could not be found.'
+  }
+  if (status === 429) {
+    return 'Too many requests. Please wait a moment before trying again.'
+  }
+  return 'Unable to load data. Please check your connection and try again.'
 }
 
 async function fetchResource<T>(
@@ -131,6 +146,45 @@ async function fetchTodaysTasks(): Promise<FetchResourceResult<DashboardTask[]>>
 }
 
 /**
+ * Order API response shape
+ */
+interface OrderApiResponse {
+  id: number
+  name: string
+  statusId: number
+  quantity: number
+  filledBarrelCount?: number
+  completedBarrelCount?: number
+  dueDate?: string
+  progress?: number
+}
+
+/**
+ * Calculate order progress from API data
+ * Prefers server-provided progress, falls back to ratio calculation
+ */
+function calculateOrderProgress(order: OrderApiResponse): number {
+  // Use server-provided progress if available
+  if (typeof order.progress === 'number') {
+    return Math.min(100, Math.max(0, order.progress))
+  }
+
+  // Calculate from completed/filled barrel counts
+  const completed = order.completedBarrelCount ?? order.filledBarrelCount ?? 0
+  const total = order.quantity || 1
+
+  return Math.min(100, Math.round((completed / total) * 100))
+}
+
+/**
+ * Get barrel count from order data
+ * Uses filled count if available, otherwise completed count
+ */
+function getBarrelCount(order: OrderApiResponse): number {
+  return order.filledBarrelCount ?? order.completedBarrelCount ?? 0
+}
+
+/**
  * Fetch active orders from the API
  */
 async function fetchActiveOrders(): Promise<FetchResourceResult<DashboardOrder[]>> {
@@ -139,14 +193,14 @@ async function fetchActiveOrders(): Promise<FetchResourceResult<DashboardOrder[]
     {
       fallback: [],
       transform: orders =>
-        (orders as { id: number; name: string; statusId: number; quantity: number }[]).map(order => ({
+        (orders as OrderApiResponse[]).map(order => ({
           id: order.id,
           name: order.name,
-          progress: Math.floor(Math.random() * 100), // TODO: Calculate from actual data
-          barrelCount: Math.floor(order.quantity * 0.7), // TODO: Get actual count
+          progress: calculateOrderProgress(order),
+          barrelCount: getBarrelCount(order),
           totalBarrels: order.quantity,
           status: order.statusId === 1 ? 'In Progress' : 'Pending',
-          dueDate: undefined
+          dueDate: order.dueDate
         }))
     }
   )
