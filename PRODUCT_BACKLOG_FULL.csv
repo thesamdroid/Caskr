@@ -1,5 +1,5 @@
-"Work Item Type","Title 1","Title 2","Description","State","Priority","Tags"
-"User Story","Mobile-Friendly Web App","","As a warehouse staff member, I need a mobile-optimized web application at m.caskr.co so that I can perform barrel scanning, task management, and inventory operations from my phone without needing a native app. This includes automatic mobile detection and routing, touch-optimized interfaces, PWA capabilities for offline support, and camera-based barcode scanning.
+Work Item Type,Title,State,Priority,Tags,Description
+Product Backlog Item,Mobile-Friendly Web App (m.caskr.co),New,1,mobile;pwa;p1-critical,"As a warehouse staff member, I need a mobile-optimized web application at m.caskr.co so that I can perform barrel scanning, task management, and inventory operations from my phone without needing a native app.
 
 Acceptance Criteria:
 - Mobile devices automatically detected and redirected to m.caskr.co
@@ -8,8 +8,8 @@ Acceptance Criteria:
 - App installable on home screen (iOS and Android)
 - Offline support for viewing cached data and queuing actions
 - Camera-based barcode/QR scanning for barrel lookup
-- Push notifications for task assignments and compliance alerts","New","1","mobile;pwa;p1-critical"
-"Task","Mobile-Friendly Web App","Create Mobile Detection Service","TASK: Create Mobile Detection Service
+- Push notifications for task assignments and compliance alerts"
+Task,Create Mobile Detection Service,New,1,mobile;backend;frontend,"TASK: Create Mobile Detection Service
 
 You are working on the Caskr distillery management application. Your task is to create a comprehensive mobile detection service that will be used to route users between the main application (caskr.co) and the mobile-optimized version (m.caskr.co).
 
@@ -31,15 +31,15 @@ Create a migration to add user_site_preferences table with columns:
 - id (bigserial primary key)
 - user_id (foreign key to users, nullable for anonymous)
 - session_id (varchar for anonymous users)
-- preferred_site (enum: 'auto', 'desktop', 'mobile')
+- preferred_site (enum: auto, desktop, mobile)
 - last_detected_device (varchar)
 - created_at, updated_at timestamps
 
 3. API Endpoints:
 Create a new controller at Caskr.Server/Controllers/MobileDetectionController.cs with:
 - GET /api/mobile/detect - Returns device detection result and recommended site
-- POST /api/mobile/preference - Saves user's site preference
-- GET /api/mobile/preference - Gets current user's preference
+- POST /api/mobile/preference - Saves user site preference
+- GET /api/mobile/preference - Gets current user preference
 
 4. Frontend Integration:
 Create a React hook at caskr.client/src/hooks/useMobileDetection.ts that:
@@ -91,8 +91,8 @@ DELIVERABLES:
 3. Database migration file for user_site_preferences
 4. useMobileDetection.ts React hook
 5. Complete test suites for both backend and frontend
-6. Update to Caskr.Server/Program.cs to register new services","New","1","mobile;backend;frontend"
-"Task","Mobile-Friendly Web App","Implement Mobile Redirect Middleware","TASK: Implement Mobile Redirect Middleware
+6. Update to Caskr.Server/Program.cs to register new services"
+Task,Implement Mobile Redirect Middleware,New,1,mobile;backend;middleware,"TASK: Implement Mobile Redirect Middleware
 
 You are working on the Caskr distillery management application. Your task is to implement ASP.NET Core middleware that automatically redirects users between the desktop site (caskr.co) and mobile site (m.caskr.co) based on device detection.
 
@@ -107,7 +107,7 @@ Create Caskr.Server/Middleware/MobileRedirectMiddleware.cs that:
 - Uses MobileDetectionService to determine device type
 - Redirects mobile users on caskr.co to m.caskr.co (and vice versa for desktop)
 - Preserves the full URL path and query string during redirect
-- Respects user's explicit site preference (no redirect if user chose to stay)
+- Respects user explicit site preference (no redirect if user chose to stay)
 - Skips redirect for API calls (paths starting with /api/)
 - Skips redirect for static assets (.js, .css, .png, .jpg, .svg, .woff, etc.)
 - Skips redirect for health check endpoints
@@ -119,8 +119,8 @@ Create configuration class Caskr.Server/Configuration/MobileRedirectOptions.cs w
 - Enabled (bool) - Master switch to enable/disable redirects
 - MobileDomain (string) - The mobile site domain (m.caskr.co)
 - DesktopDomain (string) - The desktop site domain (caskr.co)
-- ExcludedPaths (List<string>) - Paths to never redirect
-- ExcludedExtensions (List<string>) - File extensions to skip
+- ExcludedPaths (List string) - Paths to never redirect
+- ExcludedExtensions (List string) - File extensions to skip
 - PreferenceOverrideParameter (string) - Query param to bypass redirect
 - RedirectStatusCode (int) - 301 permanent or 302 temporary (default 302)
 
@@ -132,7 +132,7 @@ Create extension method in Caskr.Server/Middleware/MobileRedirectMiddlewareExten
 - AddMobileRedirect(this IServiceCollection services, IConfiguration config) for DI setup
 
 4. Request Flow Logic:
-Request arrives -> Is path excluded? Skip -> Is extension excluded? Skip -> Has bypass parameter? Skip and set preference cookie -> Check user preference -> User prefers current site? Skip -> Detect device type -> Mobile on desktop domain? Redirect to mobile -> Desktop on mobile domain? Redirect to desktop -> Preserve path and query string in redirect URL -> Return redirect response
+Request arrives then Is path excluded? Skip then Is extension excluded? Skip then Has bypass parameter? Skip and set preference cookie then Check user preference then User prefers current site? Skip then Detect device type then Mobile on desktop domain? Redirect to mobile then Desktop on mobile domain? Redirect to desktop then Preserve path and query string in redirect URL then Return redirect response
 
 TESTING REQUIREMENTS:
 Create comprehensive tests at Caskr.Server.Tests/Middleware/MobileRedirectMiddlewareTests.cs
@@ -166,8 +166,8 @@ DELIVERABLES:
 3. MobileRedirectMiddlewareExtensions.cs
 4. Updated appsettings.json with MobileRedirect section
 5. Updated Program.cs to register middleware
-6. Complete unit and integration test suites","New","1","mobile;backend;middleware"
-"Task","Mobile-Friendly Web App","Create Mobile App Shell and Navigation","TASK: Create Mobile Application Shell and Navigation
+6. Complete unit and integration test suites"
+Task,Create Mobile App Shell and Navigation,New,1,mobile;frontend;navigation,"TASK: Create Mobile Application Shell and Navigation
 
 You are working on the Caskr distillery management application. Your task is to create the mobile application shell and navigation structure for the mobile-optimized site at m.caskr.co.
 
@@ -195,7 +195,7 @@ Create caskr.client/src/mobile/MobileAppShell.tsx that provides:
 Create caskr.client/src/mobile/components/BottomNav/BottomNav.tsx with primary tabs:
 - Home (Dashboard icon) - Quick stats and recent activity
 - Scan (Camera/QR icon) - Barrel scanning (most important action)
-- Tasks (Checklist icon) - Today's tasks with badge count
+- Tasks (Checklist icon) - Today tasks with badge count
 - Barrels (Barrel icon) - Barrel search and lookup
 - More (Hamburger icon) - Opens drawer with all other options
 
@@ -228,19 +228,14 @@ Create caskr.client/src/mobile/MobileRouter.tsx with mobile-specific routes, laz
 
 FILE STRUCTURE:
 caskr.client/src/mobile/
-├── MobileAppShell.tsx
-├── MobileRouter.tsx
-├── components/
-│   ├── BottomNav/
-│   ├── MobileHeader/
-│   ├── DrawerMenu/
-│   └── common/
-├── hooks/
-│   ├── useSafeArea.ts
-│   ├── useBottomNavHeight.ts
-│   ├── useHeaderCollapse.ts
-│   └── useDrawer.ts
-└── styles/
+- MobileAppShell.tsx
+- MobileRouter.tsx
+- components/BottomNav/
+- components/MobileHeader/
+- components/DrawerMenu/
+- components/common/
+- hooks/useSafeArea.ts, useBottomNavHeight.ts, useHeaderCollapse.ts, useDrawer.ts
+- styles/
 
 TESTING REQUIREMENTS:
 Create tests in caskr.client/src/mobile/__tests__/:
@@ -260,8 +255,8 @@ HOOK TESTS:
 - useDrawer manages open/close state
 
 INTEGRATION TESTS:
-- Full navigation flow: tap bottom nav -> page loads -> header updates
-- Drawer flow: tap More -> drawer opens -> tap item -> drawer closes -> page loads
+- Full navigation flow: tap bottom nav then page loads then header updates
+- Drawer flow: tap More then drawer opens then tap item then drawer closes then page loads
 - Deep link handling: external URL loads correct page
 
 ACCESSIBILITY TESTS:
@@ -275,8 +270,8 @@ DELIVERABLES:
 3. CSS modules for all components
 4. Custom hooks for responsive utilities
 5. Full test suite
-6. Integration with existing auth context","New","1","mobile;frontend;navigation"
-"Task","Mobile-Friendly Web App","Implement Mobile Dashboard Page","TASK: Implement Mobile Dashboard Page
+6. Integration with existing auth context"
+Task,Implement Mobile Dashboard Page,New,1,mobile;frontend;dashboard,"TASK: Implement Mobile Dashboard Page
 
 You are working on the Caskr distillery management application. Your task is to implement a mobile-optimized dashboard page for the m.caskr.co mobile web application.
 
@@ -287,10 +282,10 @@ REQUIREMENTS:
 
 1. Mobile Dashboard Page:
 Create caskr.client/src/mobile/pages/MobileDashboard/MobileDashboard.tsx with layout (top to bottom):
-- Greeting section: ""Good morning, [Name]"" with date
+- Greeting section: Good morning, [Name] with date
 - Alert banner: Any critical compliance or overdue items (red/amber)
 - Quick actions row: 4 large tap targets for most common actions
-- Today's priorities: Tasks due today with quick-complete buttons
+- Today priorities: Tasks due today with quick-complete buttons
 - Active orders: Horizontal scrolling cards showing order progress
 - Recent activity: Last 5 actions (collapsible)
 
@@ -301,14 +296,14 @@ Create QuickActions.tsx with 80x80px touch targets:
 - Record Movement (barrel transfer)
 - Log Gauge (opens gauge record form)
 
-3. Today's Priorities Component:
+3. Today Priorities Component:
 Create TodaysPriorities.tsx:
 - List of tasks due today, sorted by priority
 - Each task shows: title, assignee, due time, order reference
 - Swipe right to complete (with undo toast)
 - Tap to expand details
-- Empty state: ""All caught up!"" with celebratory icon
-- Max 5 items shown, ""View all X tasks"" link for more
+- Empty state: All caught up! with celebratory icon
+- Max 5 items shown, View all X tasks link for more
 
 4. Active Orders Component:
 Create ActiveOrders.tsx:
@@ -364,10 +359,10 @@ INTEGRATION TESTS:
 DELIVERABLES:
 1. All component files in MobileDashboard folder
 2. useDashboardData hook with caching
-3. Complete test suite with >85% coverage
+3. Complete test suite with greater than 85% coverage
 4. Integration with mobile router
-5. TypeScript interfaces for all data types","New","1","mobile;frontend;dashboard"
-"Task","Mobile-Friendly Web App","Implement Mobile Barrel Lookup with Camera Scanning","TASK: Implement Mobile Barrel Lookup with Camera Scanning
+5. TypeScript interfaces for all data types"
+Task,Implement Mobile Barrel Lookup with Camera Scanning,New,1,mobile;frontend;barrels;camera,"TASK: Implement Mobile Barrel Lookup with Camera Scanning
 
 You are working on the Caskr distillery management application. Your task is to implement a mobile-optimized barrel lookup page with integrated camera scanning for the m.caskr.co mobile web application.
 
@@ -399,7 +394,7 @@ Create caskr.client/src/mobile/components/BarcodeScanner/BarcodeScanner.tsx:
 - Fallback for devices without camera: manual entry prompt
 
 Technical implementation:
-- Use a barcode scanning library (e.g., @aspect-hq/barcode-scanner or similar)
+- Use a barcode scanning library (e.g., aspect-hq/barcode-scanner or similar)
 - Implement as reusable component
 - Support continuous and single-shot modes
 - Optimize for 30fps minimum
@@ -422,8 +417,8 @@ Create BarrelDetailsSheet.tsx as bottom sheet modal:
 - Sticky actions: Record Movement, Record Gauge, View Full History, Print Label
 
 5. Quick Actions:
-Implement Record Movement flow: Select destination rickhouse -> Optional notes -> Confirm -> Success with undo
-Implement Record Gauge flow: Enter proof/temp/volume -> Auto-calculate proof gallons -> TTB validation -> Save
+Implement Record Movement flow: Select destination rickhouse then Optional notes then Confirm then Success with undo
+Implement Record Gauge flow: Enter proof/temp/volume then Auto-calculate proof gallons then TTB validation then Save
 
 6. State Management:
 Create useBarrelLookup.ts hook:
@@ -470,16 +465,16 @@ ACTION TESTS:
 - Actions queue when offline and sync when online
 
 INTEGRATION TESTS:
-- Full flow: scan barrel -> details load -> record movement -> success
-- Offline flow: scan -> queue action -> go online -> sync
+- Full flow: scan barrel then details load then record movement then success
+- Offline flow: scan then queue action then go online then sync
 
 DELIVERABLES:
 1. All component files in MobileBarrels folder
 2. BarcodeScanner as reusable component
 3. Complete test suite
 4. Offline caching implementation
-5. Integration with mobile router","New","1","mobile;frontend;barrels;camera"
-"Task","Mobile-Friendly Web App","Implement Mobile Task Management Page","TASK: Implement Mobile Task Management Page
+5. Integration with mobile router"
+Task,Implement Mobile Task Management Page,New,1,mobile;frontend;tasks,"TASK: Implement Mobile Task Management Page
 
 You are working on the Caskr distillery management application. Your task is to implement a mobile-optimized task management page for warehouse staff to view, complete, and create tasks.
 
@@ -491,7 +486,7 @@ REQUIREMENTS:
 1. Mobile Tasks Page:
 Create caskr.client/src/mobile/pages/MobileTasks/MobileTasks.tsx:
 - Header with filter/sort options
-- Task count summary (""5 of 12 completed today"")
+- Task count summary (5 of 12 completed today)
 - Segmented control: My Tasks | All Tasks | Completed
 - Task list with swipe actions
 - Floating action button (FAB) for new task
@@ -536,7 +531,7 @@ Create TaskFilters.tsx as bottom sheet:
 7. Multi-Select Mode:
 - Long press activates
 - Checkboxes appear on all items
-- Header shows ""X selected"" with Close button
+- Header shows X selected with Close button
 - Bulk actions: Complete All, Delete All
 
 8. State Management:
@@ -593,13 +588,13 @@ DELIVERABLES:
 2. Reusable swipe gesture hook
 3. Complete test suite
 4. Offline support
-5. Integration with mobile router","New","1","mobile;frontend;tasks"
-"Task","Mobile-Friendly Web App","Implement Service Worker and PWA Caching","TASK: Implement Service Worker and PWA Caching
+5. Integration with mobile router"
+Task,Implement Service Worker and PWA Caching,New,1,mobile;pwa;offline,"TASK: Implement Service Worker and PWA Caching
 
 You are working on the Caskr distillery management application. Your task is to implement a service worker with a comprehensive caching strategy to enable offline functionality and instant loading for the mobile web application.
 
 CONTEXT:
-Caskr's mobile web app (m.caskr.co) needs to work reliably in warehouse environments where network connectivity may be spotty. Users need to view cached barrel data, complete tasks, and record information even when offline, with automatic sync when connectivity returns.
+Caskr mobile web app (m.caskr.co) needs to work reliably in warehouse environments where network connectivity may be spotty. Users need to view cached barrel data, complete tasks, and record information even when offline, with automatic sync when connectivity returns.
 
 REQUIREMENTS:
 
@@ -681,7 +676,7 @@ SYNC QUEUE TESTS:
 - Conflicts detected and handled
 
 INTEGRATION TESTS (Playwright):
-- Full offline flow: disconnect -> use app -> complete task -> reconnect -> sync
+- Full offline flow: disconnect then use app then complete task then reconnect then sync
 - App loads instantly from cache
 - Update prompt shown on new SW version
 
@@ -691,8 +686,8 @@ DELIVERABLES:
 3. IndexedDB wrapper with schema
 4. Background sync queue
 5. Offline indicator component
-6. Complete test suite","New","1","mobile;pwa;offline"
-"Task","Mobile-Friendly Web App","Create PWA Manifest and Install Experience","TASK: Create PWA Manifest and Install Experience
+6. Complete test suite"
+Task,Create PWA Manifest and Install Experience,New,1,mobile;pwa;manifest,"TASK: Create PWA Manifest and Install Experience
 
 You are working on the Caskr distillery management application. Your task is to create the web app manifest and implement the add-to-home-screen installation experience for the mobile web application.
 
@@ -704,9 +699,9 @@ REQUIREMENTS:
 1. Web App Manifest:
 Create caskr.client/public/manifest.json with:
 - name, short_name, description
-- start_url: ""/?source=pwa""
-- display: ""standalone""
-- orientation: ""portrait-primary""
+- start_url: /?source=pwa
+- display: standalone
+- orientation: portrait-primary
 - background_color, theme_color (Caskr brand)
 - icons array (all required sizes)
 - screenshots for install UI
@@ -736,13 +731,13 @@ Create InstallPrompt.tsx:
 - Capture beforeinstallprompt event
 - Show custom install UI (not browser default)
 - Track prompt state (shown, dismissed, installed)
-- Don't show again for 7 days if dismissed
+- Do not show again for 7 days if dismissed
 - Different UI for iOS (manual instructions) vs Android (direct install button)
 - Show after user engagement (e.g., 3 tasks completed or 2 visits)
-- Don't show if already installed or on desktop
+- Do not show if already installed or on desktop
 
 6. Install Prompt UI Design:
-For Android: Icon, title, description, Install Now button, Not Now button, Don't ask again checkbox
+For Android: Icon, title, description, Install Now button, Not Now button, Do not ask again checkbox
 For iOS: Icon, numbered instructions (Tap Share, Add to Home Screen, Add), Got it button
 
 7. App Shortcuts (in manifest):
@@ -750,7 +745,7 @@ For iOS: Icon, numbered instructions (Tap Share, Add to Home Screen, Add), Got i
 - My Tasks: /tasks?filter=mine
 
 8. Install Analytics:
-Track: beforeinstallprompt fired, prompt shown, install clicked, appinstalled fired, dismissed, don't ask again
+Track: beforeinstallprompt fired, prompt shown, install clicked, appinstalled fired, dismissed, do not ask again
 
 TESTING REQUIREMENTS:
 
@@ -764,12 +759,12 @@ MANIFEST TESTS:
 INSTALL PROMPT TESTS:
 - Captures beforeinstallprompt event
 - Shows after engagement criteria met
-- Doesn't show if already installed
-- Doesn't show on desktop
+- Does not show if already installed
+- Does not show on desktop
 - Shows iOS instructions on iOS
 - Install button triggers prompt.prompt()
 - Dismissal sets timeout correctly
-- Don't ask again is permanent
+- Do not ask again is permanent
 
 VISUAL TESTS:
 - Splash screens display correctly
@@ -784,13 +779,13 @@ DELIVERABLES:
 5. InstallPrompt component for iOS/Android
 6. Install analytics tracking
 7. Complete test suite
-8. Icon generation script (from source SVG)","New","1","mobile;pwa;manifest"
-"Task","Mobile-Friendly Web App","Implement Push Notifications","TASK: Implement Push Notifications
+8. Icon generation script (from source SVG)"
+Task,Implement Push Notifications,New,1,mobile;pwa;notifications,"TASK: Implement Push Notifications
 
 You are working on the Caskr distillery management application. Your task is to implement push notification support for the mobile web application, enabling real-time alerts for task assignments, compliance deadlines, and sync status.
 
 CONTEXT:
-Warehouse staff need immediate notification when assigned new tasks or when compliance deadlines approach. Push notifications enable this even when the app isn't open. This requires both frontend (subscription management) and backend (sending) implementation.
+Warehouse staff need immediate notification when assigned new tasks or when compliance deadlines approach. Push notifications enable this even when the app is not open. This requires both frontend (subscription management) and backend (sending) implementation.
 
 REQUIREMENTS:
 
@@ -824,7 +819,7 @@ SyncService: Notify on offline queue sync completed, sync failed
 Create PushController.cs:
 - POST /api/push/subscribe - Save subscription
 - DELETE /api/push/subscribe - Remove subscription
-- GET /api/push/subscriptions - List user's subscriptions
+- GET /api/push/subscriptions - List user subscriptions
 - POST /api/push/test - Send test notification (dev only)
 
 5. VAPID Configuration:
@@ -864,7 +859,7 @@ BACKEND TESTS:
 Subscription: Save creates/updates, delete removes, cleanup removes expired
 Sending: Delivers to valid subscription, handles 410, retries 5xx, respects quiet hours
 Triggers: Task assignment/due soon/compliance triggers correct notifications
-API: Subscribe requires auth, returns only user's subscriptions
+API: Subscribe requires auth, returns only user subscriptions
 
 FRONTEND TESTS:
 Permission: Returns correct status, handles denial gracefully
@@ -873,7 +868,7 @@ Service Worker (Playwright): Push shows notification, click opens URL, actions w
 Settings: Toggles work, quiet hours saves, test button sends
 
 INTEGRATION TESTS:
-Full flow: task assigned -> notification sent -> received -> clicked -> app opens to task
+Full flow: task assigned then notification sent then received then clicked then app opens to task
 
 DELIVERABLES:
 1. PushNotificationService.cs and PushSenderService.cs
@@ -884,8 +879,8 @@ DELIVERABLES:
 6. Service worker push handlers
 7. Notification settings and permission UI
 8. VAPID key generation script
-9. Complete test suite","New","1","mobile;pwa;notifications"
-"User Story","Production Planning & Capacity Management","","As a distillery operations manager, I need production planning and capacity management tools so that I can schedule batches efficiently, prevent bottlenecks, track equipment utilization, and forecast production needs to meet demand.
+9. Complete test suite"
+Product Backlog Item,Production Planning and Capacity Management,New,1,production;planning;p1-critical,"As a distillery operations manager, I need production planning and capacity management tools so that I can schedule batches efficiently, prevent bottlenecks, track equipment utilization, and forecast production needs to meet demand.
 
 Acceptance Criteria:
 - Batch scheduling calendar with drag-and-drop
@@ -894,8 +889,8 @@ Acceptance Criteria:
 - Bottling schedule coordination
 - Warehouse capacity tracking and visualization
 - What-if scenario planning for growth projections
-- Production efficiency metrics and reporting","New","1","production;planning;p1-critical"
-"Task","Production Planning & Capacity Management","Create Production Scheduling Calendar","TASK: Create Production Scheduling Calendar
+- Production efficiency metrics and reporting"
+Task,Create Production Scheduling Calendar,New,1,production;backend;frontend;calendar,"TASK: Create Production Scheduling Calendar
 
 You are working on the Caskr distillery management application. Your task is to implement a production scheduling calendar that allows operations managers to plan and visualize batch production schedules.
 
@@ -1039,8 +1034,8 @@ Utilization:
 - Time range changes update chart
 
 INTEGRATION TESTS:
-- Create schedule -> appears on calendar -> move it -> API called -> calendar updates
-- Create conflicting schedule -> warning shown -> resolve -> saves
+- Create schedule then appears on calendar then move it then API called then calendar updates
+- Create conflicting schedule then warning shown then resolve then saves
 
 DELIVERABLES:
 1. All backend models and migrations
@@ -1050,8 +1045,8 @@ DELIVERABLES:
 5. ScheduleForm.tsx
 6. EquipmentUtilization.tsx
 7. useSchedulingState.ts hook
-8. Complete test suite","New","1","production;backend;frontend;calendar"
-"Task","Production Planning & Capacity Management","Implement Equipment and Resource Management","TASK: Implement Equipment and Resource Management
+8. Complete test suite"
+Task,Implement Equipment and Resource Management,New,1,production;backend;frontend;equipment,"TASK: Implement Equipment and Resource Management
 
 You are working on the Caskr distillery management application. Your task is to implement equipment and resource management features for tracking distillery assets, their availability, maintenance schedules, and capacity constraints.
 
@@ -1208,13 +1203,13 @@ DELIVERABLES:
 5. EquipmentDetails.tsx
 6. EquipmentForm.tsx
 7. MaintenanceDashboard.tsx
-8. Complete test suite","New","1","production;backend;frontend;equipment"
-"Task","Production Planning & Capacity Management","Implement Material Requirements Planning (MRP)","TASK: Implement Material Requirements Planning (MRP)
+8. Complete test suite"
+Task,Implement Material Requirements Planning,New,1,production;backend;frontend;mrp,"TASK: Implement Material Requirements Planning (MRP)
 
 You are working on the Caskr distillery management application. Your task is to implement basic Material Requirements Planning functionality to help distilleries plan ingredient purchases based on production schedules.
 
 CONTEXT:
-Distilleries need to ensure they have sufficient raw materials (grain, yeast, barrels, bottles, labels) to meet their production schedules. MRP helps calculate what materials are needed, when they're needed, and identifies shortfalls before they impact production.
+Distilleries need to ensure they have sufficient raw materials (grain, yeast, barrels, bottles, labels) to meet their production schedules. MRP helps calculate what materials are needed, when they are needed, and identifies shortfalls before they impact production.
 
 REQUIREMENTS:
 
@@ -1246,7 +1241,7 @@ MaterialRequirement.cs (calculated needs):
 2. Backend - MRP Service:
 Create Caskr.Server/Services/MrpService.cs:
 - CalculateRequirements(startDate, endDate) - based on scheduled production
-- GetMaterialShortfalls(startDate, endDate) - where requirements > available
+- GetMaterialShortfalls(startDate, endDate) - where requirements greater than available
 - ProjectInventory(materialId, endDate) - project future stock levels
 - GetPurchaseSuggestions() - what to order and when based on lead times
 - RecordMaterialUsage(batchId, materialId, quantity)
@@ -1256,7 +1251,7 @@ Calculation Logic:
 - For each scheduled batch, use MashBill to determine material needs
 - Aggregate by material across all scheduled batches
 - Compare to current stock + ordered (not received)
-- Flag shortfalls where projected stock < 0 before need date
+- Flag shortfalls where projected stock less than 0 before need date
 - Suggest order date = need date - lead time
 
 3. Backend API:
@@ -1339,7 +1334,7 @@ Projection Chart:
 - Highlights negative projection
 
 INTEGRATION TESTS:
-- Schedule production -> MRP calculates requirements -> shortfall shown -> adjust stock -> shortfall cleared
+- Schedule production then MRP calculates requirements then shortfall shown then adjust stock then shortfall cleared
 
 DELIVERABLES:
 1. All backend models and migrations
@@ -1349,13 +1344,13 @@ DELIVERABLES:
 5. MrpDashboard.tsx
 6. InventoryProjection.tsx
 7. MaterialForm.tsx
-8. Complete test suite","New","1","production;backend;frontend;mrp"
-"Task","Production Planning & Capacity Management","Implement Capacity Planning and What-If Analysis","TASK: Implement Capacity Planning and What-If Analysis
+8. Complete test suite"
+Task,Implement Capacity Planning and What-If Analysis,New,1,production;backend;frontend;capacity,"TASK: Implement Capacity Planning and What-If Analysis
 
 You are working on the Caskr distillery management application. Your task is to implement capacity planning features that help distilleries understand their production limits and model growth scenarios.
 
 CONTEXT:
-Distilleries need to understand their maximum production capacity, identify bottlenecks, and plan for growth. Capacity planning helps answer questions like: ""How many barrels can we produce per month?"" and ""What equipment do we need to double production?""
+Distilleries need to understand their maximum production capacity, identify bottlenecks, and plan for growth. Capacity planning helps answer questions like: How many barrels can we produce per month? and What equipment do we need to double production?
 
 REQUIREMENTS:
 
@@ -1419,7 +1414,7 @@ Create BottleneckAnalysis.tsx:
 - Sorted list of constraints from most to least limiting
 - Each shows: Resource name, capacity, current utilization, % of max
 - Visual bar showing utilization
-- Recommendations (e.g., ""Add second still to increase capacity 40%"")
+- Recommendations (e.g., Add second still to increase capacity 40%)
 
 6. Frontend - Scenario Planner:
 Create ScenarioPlanner.tsx:
@@ -1481,7 +1476,7 @@ Scenario Planner:
 - Compare mode works
 
 INTEGRATION TESTS:
-- View current capacity -> create scenario -> add equipment -> calculate -> capacity increases -> compare to baseline
+- View current capacity then create scenario then add equipment then calculate then capacity increases then compare to baseline
 
 DELIVERABLES:
 1. Backend models and migrations
@@ -1491,8 +1486,8 @@ DELIVERABLES:
 5. BottleneckAnalysis.tsx
 6. ScenarioPlanner.tsx
 7. ScenarioComparison.tsx
-8. Complete test suite","New","1","production;backend;frontend;capacity"
-"User Story","Customer and Investor Portals","","As a distillery owner with cask investment programs, I need customer and investor portals so that cask owners can view their barrel details, track aging progress, and access ownership documentation without requiring staff assistance.
+8. Complete test suite"
+Product Backlog Item,Customer and Investor Portals,New,2,portals;investors;p2-competitive,"As a distillery owner with cask investment programs, I need customer and investor portals so that cask owners can view their barrel details, track aging progress, and access ownership documentation without requiring staff assistance.
 
 Acceptance Criteria:
 - Separate login for external cask owners (not distillery staff)
@@ -1501,8 +1496,8 @@ Acceptance Criteria:
 - Downloadable ownership certificates and documentation
 - Secure access with email verification
 - Read-only access (no ability to modify distillery data)
-- Audit trail of portal access for compliance","New","2","portals;investors;p2-competitive"
-"Task","Customer and Investor Portals","Create Customer Portal Authentication System","TASK: Create Customer Portal Authentication System
+- Audit trail of portal access for compliance"
+Task,Create Customer Portal Authentication System,New,2,portals;backend;frontend;auth,"TASK: Create Customer Portal Authentication System
 
 You are working on the Caskr distillery management application. Your task is to implement a separate authentication system for external customers and investors who own casks, providing secure access to view their barrel information.
 
@@ -1555,7 +1550,7 @@ Create Caskr.Server/Services/CustomerAuthService.cs:
 JWT Claims for Customers:
 - sub: customer user id
 - company_id: distillery they belong to
-- role: ""customer"" (not staff roles)
+- role: customer (not staff roles)
 - email
 - name
 
@@ -1576,24 +1571,24 @@ Create Caskr.Server/Controllers/CustomerPortalController.cs:
 
 4. Backend - Authorization:
 Create CustomerPortalAuthorizationHandler.cs:
-- Verify JWT has role=""customer""
+- Verify JWT has role=customer
 - Verify customer can only access barrels they own
 - Block all write operations to distillery data
-- Ensure customer only sees their company's portal
+- Ensure customer only sees their company portal
 
 5. Frontend - Customer Portal App:
 Create caskr.client/src/customer-portal/ (separate entry point or route):
 
 CustomerLogin.tsx:
 - Email and password login
-- ""Forgot password"" link
-- ""Register"" link (if distillery allows self-registration)
+- Forgot password link
+- Register link (if distillery allows self-registration)
 - Distillery branding (logo, colors based on company_id in URL)
 
 CustomerRegister.tsx:
 - Email, password, confirm password, name, phone
 - Terms acceptance checkbox
-- Submit -> verification email sent
+- Submit then verification email sent
 
 CustomerDashboard.tsx:
 - Welcome message with name
@@ -1636,7 +1631,7 @@ Authentication:
 
 Authorization:
 - Customer can only view owned barrels
-- Customer cannot view other customers' barrels
+- Customer cannot view other customers barrels
 - Customer cannot access staff API endpoints
 - Customer cannot modify barrel data
 - Access log records all actions
@@ -1665,7 +1660,7 @@ Profile:
 
 SECURITY TESTS:
 - Cannot access portal without valid JWT
-- Cannot access other company's portal
+- Cannot access other company portal
 - Cannot escalate to staff role
 - Rate limiting on login attempts
 - Password meets complexity requirements
@@ -1678,8 +1673,8 @@ DELIVERABLES:
 5. Customer portal React components
 6. Email templates
 7. Complete test suite
-8. Security documentation","New","2","portals;backend;frontend;auth"
-"Task","Customer and Investor Portals","Implement Barrel Ownership and Certificate Generation","TASK: Implement Barrel Ownership and Certificate Generation
+8. Security documentation"
+Task,Implement Barrel Ownership and Certificate Generation,New,2,portals;backend;frontend;certificates,"TASK: Implement Barrel Ownership and Certificate Generation
 
 You are working on the Caskr distillery management application. Your task is to implement the barrel ownership tracking system and automated certificate generation for the customer portal.
 
@@ -1828,7 +1823,7 @@ Verification:
 - QR scan works (integration test)
 
 INTEGRATION TESTS:
-- Staff assigns ownership -> certificate generated -> customer logs in -> downloads certificate -> verifies via QR
+- Staff assigns ownership then certificate generated then customer logs in then downloads certificate then verifies via QR
 
 DELIVERABLES:
 1. BarrelOwnershipService.cs
@@ -1838,4 +1833,4 @@ DELIVERABLES:
 5. Customer portal certificate components
 6. Public verification page
 7. Certificate PDF template
-8. Complete test suite","New","2","portals;backend;frontend;certificates"
+8. Complete test suite"
