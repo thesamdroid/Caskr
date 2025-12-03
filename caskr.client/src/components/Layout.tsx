@@ -67,6 +67,7 @@ export default function Layout() {
     { label: 'Barrels', path: '/barrels' },
     { label: 'Warehouses', path: '/warehouses' },
     { label: 'Products', path: '/products' },
+    { label: 'Purchase Orders', path: '/purchase-orders', ariaLabel: 'Manage Purchase Orders' },
     { label: 'Reports', path: '/reports', ariaLabel: 'View Reports', matchExact: true },
     { label: 'Report Builder', path: '/report-builder', ariaLabel: 'Custom Report Builder' },
     { label: 'Accounting', path: '/accounting' },

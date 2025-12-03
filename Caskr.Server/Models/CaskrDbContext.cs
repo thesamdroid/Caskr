@@ -2,6 +2,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Caskr.server.Models.Portal;
 using Caskr.server.Models.Crm;
+using Caskr.server.Models.SupplyChain;
 
 namespace Caskr.server.Models;
 
@@ -111,6 +112,19 @@ public partial class CaskrDbContext : DbContext
     public virtual DbSet<CrmSyncPreference> CrmSyncPreferences { get; set; } = null!;
 
     public virtual DbSet<CrmSyncConflict> CrmSyncConflicts { get; set; } = null!;
+
+    // Supply Chain entities (SCM-001, SCM-002)
+    public virtual DbSet<SupplyChain.Supplier> Suppliers { get; set; } = null!;
+
+    public virtual DbSet<SupplyChain.SupplierProduct> SupplierProducts { get; set; } = null!;
+
+    public virtual DbSet<SupplyChain.PurchaseOrder> PurchaseOrders { get; set; } = null!;
+
+    public virtual DbSet<SupplyChain.PurchaseOrderItem> PurchaseOrderItems { get; set; } = null!;
+
+    public virtual DbSet<SupplyChain.InventoryReceipt> InventoryReceipts { get; set; } = null!;
+
+    public virtual DbSet<SupplyChain.InventoryReceiptItem> InventoryReceiptItems { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
