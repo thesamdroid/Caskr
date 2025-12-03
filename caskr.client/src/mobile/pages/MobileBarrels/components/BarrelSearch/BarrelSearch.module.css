@@ -1,0 +1,434 @@
+.searchContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #f3f4f6;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.searchIcon {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #111827;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #9ca3af;
+}
+
+.clearButton,
+.voiceButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clearButton:active,
+.voiceButton:active {
+  background-color: #f3f4f6;
+}
+
+.clearIcon,
+.voiceIcon {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+}
+
+.filters {
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.filterChips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin-bottom: 12px;
+}
+
+.filterChips::-webkit-scrollbar {
+  display: none;
+}
+
+.filterChip {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.filterChip.active {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.filterChip:not(.active):active {
+  background-color: #e5e7eb;
+}
+
+.rickhouseFilter {
+  position: relative;
+}
+
+.rickhouseButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rickhouseButton:active {
+  background-color: #e5e7eb;
+}
+
+.chevronIcon {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+}
+
+.rickhouseDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.rickhouseOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  color: #374151;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rickhouseOption:last-child {
+  border-bottom: none;
+}
+
+.rickhouseOption.active {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.rickhouseOption:not(.active):active {
+  background-color: #f3f4f6;
+}
+
+.warehouseName {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.results {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 12px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingState span {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 4px;
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.emptySubtitle {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.resultsList {
+  background-color: #ffffff;
+}
+
+.resultItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.resultItem:active {
+  background-color: #f9fafb;
+}
+
+.resultMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.resultSku {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.resultStatus {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #ffffff;
+  text-transform: capitalize;
+}
+
+.resultDetails {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #6b7280;
+  flex: 1;
+}
+
+.separator {
+  color: #d1d5db;
+}
+
+.resultItem .chevronIcon {
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .searchContainer {
+    background-color: #111827;
+  }
+
+  .searchBar {
+    background-color: #1f2937;
+    border-bottom-color: #374151;
+  }
+
+  .searchInput {
+    color: #f9fafb;
+  }
+
+  .searchInput::placeholder {
+    color: #6b7280;
+  }
+
+  .clearButton:active,
+  .voiceButton:active {
+    background-color: #374151;
+  }
+
+  .clearIcon,
+  .voiceIcon,
+  .searchIcon {
+    color: #9ca3af;
+  }
+
+  .filters {
+    background-color: #1f2937;
+    border-bottom-color: #374151;
+  }
+
+  .filterChip {
+    background-color: #374151;
+    color: #e5e7eb;
+  }
+
+  .filterChip.active {
+    background-color: #2563eb;
+    color: #ffffff;
+  }
+
+  .filterChip:not(.active):active {
+    background-color: #4b5563;
+  }
+
+  .rickhouseButton {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
+  }
+
+  .rickhouseButton:active {
+    background-color: #4b5563;
+  }
+
+  .chevronIcon {
+    color: #9ca3af;
+  }
+
+  .rickhouseDropdown {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+
+  .rickhouseOption {
+    color: #e5e7eb;
+    border-bottom-color: #374151;
+  }
+
+  .rickhouseOption.active {
+    background-color: #1e3a5f;
+    color: #60a5fa;
+  }
+
+  .rickhouseOption:not(.active):active {
+    background-color: #374151;
+  }
+
+  .warehouseName {
+    color: #6b7280;
+  }
+
+  .spinner {
+    border-color: #374151;
+    border-top-color: #60a5fa;
+  }
+
+  .loadingState span {
+    color: #9ca3af;
+  }
+
+  .emptyTitle {
+    color: #f9fafb;
+  }
+
+  .emptySubtitle {
+    color: #9ca3af;
+  }
+
+  .resultsList {
+    background-color: #1f2937;
+  }
+
+  .resultItem {
+    border-bottom-color: #374151;
+  }
+
+  .resultItem:active {
+    background-color: #374151;
+  }
+
+  .resultSku {
+    color: #f9fafb;
+  }
+
+  .resultDetails {
+    color: #9ca3af;
+  }
+
+  .separator {
+    color: #4b5563;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

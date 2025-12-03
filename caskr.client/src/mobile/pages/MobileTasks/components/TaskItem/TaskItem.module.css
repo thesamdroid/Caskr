@@ -1,0 +1,319 @@
+.wrapper {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.wrapper.completing {
+  animation: shrinkOut 0.3s ease-out forwards;
+}
+
+.wrapper.deleting {
+  animation: shrinkOut 0.3s ease-out forwards;
+}
+
+@keyframes shrinkOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    max-height: 200px;
+    margin-bottom: 8px;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+    max-height: 0;
+    margin-bottom: 0;
+    padding: 0;
+  }
+}
+
+.actionBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.completeAction {
+  background-color: #10b981;
+  justify-content: flex-start;
+}
+
+.deleteAction {
+  background-color: #ef4444;
+  justify-content: flex-end;
+}
+
+.actionIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y pinch-zoom;
+  will-change: transform;
+}
+
+.container.animating {
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.container.selected {
+  background-color: #eff6ff;
+  border: 2px solid #2563eb;
+  padding: 14px;
+}
+
+.container.completed {
+  opacity: 0.6;
+}
+
+.container.completed .title {
+  text-decoration: line-through;
+}
+
+.checkbox {
+  flex-shrink: 0;
+}
+
+.checkboxInner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.checkboxInner.checked {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.checkboxInner svg {
+  width: 14px;
+  height: 14px;
+  color: #ffffff;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.priority {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.priority.high {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.priority.medium {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.priority.low {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.orderTag {
+  font-size: 12px;
+  color: #6b7280;
+  background-color: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.description {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.meta > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.metaIcon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.dueDate.overdue {
+  color: #dc2626;
+}
+
+.assignee {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.chevron {
+  width: 20px;
+  height: 20px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .completeAction {
+    background-color: #059669;
+  }
+
+  .deleteAction {
+    background-color: #dc2626;
+  }
+
+  .container {
+    background-color: #1f2937;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .container.selected {
+    background-color: #1e3a5f;
+    border-color: #3b82f6;
+  }
+
+  .checkboxInner {
+    border-color: #4b5563;
+  }
+
+  .checkboxInner.checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  .priority.high {
+    background-color: #450a0a;
+    color: #fca5a5;
+  }
+
+  .priority.medium {
+    background-color: #451a03;
+    color: #fcd34d;
+  }
+
+  .priority.low {
+    background-color: #1e3a5f;
+    color: #93c5fd;
+  }
+
+  .orderTag {
+    background-color: #374151;
+    color: #9ca3af;
+  }
+
+  .title {
+    color: #f9fafb;
+  }
+
+  .description {
+    color: #9ca3af;
+  }
+
+  .meta > span {
+    color: #9ca3af;
+  }
+
+  .dueDate.overdue {
+    color: #f87171;
+  }
+
+  .chevron {
+    color: #6b7280;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .wrapper.completing,
+  .wrapper.deleting {
+    animation: none;
+  }
+
+  .container.animating {
+    transition: none;
+  }
+}

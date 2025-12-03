@@ -1,0 +1,390 @@
+.scanner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #000000;
+}
+
+.viewfinder {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.canvas {
+  display: none;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.2) 30%,
+    rgba(0, 0, 0, 0.2) 70%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+}
+
+.scanRegion {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  border-radius: 16px;
+}
+
+.corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: #ffffff;
+  border-style: solid;
+  border-width: 0;
+}
+
+.topLeft {
+  top: 0;
+  left: 0;
+  border-top-width: 3px;
+  border-left-width: 3px;
+  border-top-left-radius: 16px;
+}
+
+.topRight {
+  top: 0;
+  right: 0;
+  border-top-width: 3px;
+  border-right-width: 3px;
+  border-top-right-radius: 16px;
+}
+
+.bottomLeft {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 3px;
+  border-left-width: 3px;
+  border-bottom-left-radius: 16px;
+}
+
+.bottomRight {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 3px;
+  border-right-width: 3px;
+  border-bottom-right-radius: 16px;
+}
+
+.scanLine {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #2563eb 50%,
+    transparent 100%
+  );
+  animation: scanLine 2s ease-in-out infinite;
+}
+
+@keyframes scanLine {
+  0% {
+    top: 12px;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    top: calc(100% - 14px);
+    opacity: 1;
+  }
+  60% {
+    opacity: 0;
+  }
+  100% {
+    top: calc(100% - 14px);
+    opacity: 0;
+  }
+}
+
+.scanFeedback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  background-color: rgba(16, 185, 129, 0.9);
+  border-radius: 12px;
+  animation: feedbackPop 0.3s ease-out;
+}
+
+@keyframes feedbackPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.checkIcon {
+  width: 32px;
+  height: 32px;
+  color: #ffffff;
+}
+
+.scanFeedback span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  max-width: 200px;
+  text-align: center;
+  word-break: break-all;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: #000000;
+}
+
+.controlButton {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.controlButton:active {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.controlButton.active {
+  background-color: #fbbf24;
+}
+
+.controlButton.active .buttonIcon {
+  color: #000000;
+}
+
+.buttonIcon {
+  width: 24px;
+  height: 24px;
+  color: #ffffff;
+}
+
+.instructions {
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+  background-color: #000000;
+}
+
+/* Permission denied state */
+.permissionDenied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  background-color: #111827;
+  gap: 12px;
+}
+
+.permissionIcon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.permissionIcon svg {
+  width: 48px;
+  height: 48px;
+  color: #9ca3af;
+}
+
+.permissionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.permissionText {
+  font-size: 14px;
+  color: #9ca3af;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.retryButton {
+  padding: 12px 32px;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.retryButton:active {
+  background-color: #1d4ed8;
+}
+
+.manualEntryButton {
+  padding: 8px 16px;
+  background: transparent;
+  color: #60a5fa;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Manual entry state */
+.manualEntry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  background-color: #111827;
+  gap: 16px;
+}
+
+.manualHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f9fafb;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.manualHeader svg {
+  width: 24px;
+  height: 24px;
+}
+
+.manualForm {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.manualInput {
+  flex: 1;
+  padding: 12px 16px;
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  color: #f9fafb;
+  font-size: 16px;
+  outline: none;
+}
+
+.manualInput:focus {
+  border-color: #2563eb;
+}
+
+.manualInput::placeholder {
+  color: #6b7280;
+}
+
+.manualSubmit {
+  padding: 12px 24px;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.manualSubmit:disabled {
+  background-color: #374151;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.manualSubmit:not(:disabled):active {
+  background-color: #1d4ed8;
+}
+
+.switchToCamera {
+  padding: 8px 16px;
+  background: transparent;
+  color: #60a5fa;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Landscape */
+@media (orientation: landscape) and (max-height: 500px) {
+  .scanRegion {
+    width: 200px;
+    height: 200px;
+  }
+
+  .controls {
+    padding: 8px;
+  }
+
+  .instructions {
+    padding: 8px 16px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .scanLine {
+    animation: none;
+    top: 50%;
+  }
+
+  .scanFeedback {
+    animation: none;
+  }
+}
