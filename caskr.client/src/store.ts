@@ -13,6 +13,7 @@ import ttbTransactionsReducer from './features/ttbTransactionsSlice'
 import ttbGaugeRecordsReducer from './features/ttbGaugeRecordsSlice'
 import authReducer from './features/authSlice'
 import reportsReducer from './features/reportsSlice'
+import warehousesReducer from './features/warehousesSlice'
 
 export const store = configureStore({
   reducer: {
@@ -29,7 +30,8 @@ export const store = configureStore({
     ttbTransactions: ttbTransactionsReducer,
     ttbGaugeRecords: ttbGaugeRecordsReducer,
     auth: authReducer,
-    reports: reportsReducer
+    reports: reportsReducer,
+    warehouses: warehousesReducer
   }
 })
 

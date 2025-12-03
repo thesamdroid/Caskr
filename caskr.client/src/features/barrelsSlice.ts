@@ -8,6 +8,7 @@ export interface Barrel {
   companyId: number
   batchId: number
   rickhouseId: number
+  warehouseId: number
 }
 
 export const fetchBarrels = createAsyncThunk(
