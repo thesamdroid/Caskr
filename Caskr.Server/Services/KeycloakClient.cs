@@ -30,8 +30,20 @@ public class KeycloakClient(HttpClient httpClient, IConfiguration configuration)
             $"{_configuration["Keycloak:Authority"]}/realms/{_configuration["Keycloak:Realm"]}/protocol/openid-connect/token",
             new FormUrlEncodedContent(content));
         if (!response.IsSuccessStatusCode) return null;
-        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        return doc.RootElement.GetProperty("access_token").GetString();
+
+        var responseText = await response.Content.ReadAsStringAsync();
+        try
+        {
+            using var doc = JsonDocument.Parse(responseText);
+            if (!doc.RootElement.TryGetProperty("access_token", out var tokenElement)) return null;
+
+            var token = tokenElement.GetString();
+            return string.IsNullOrWhiteSpace(token) ? null : token;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     public async Task CreateUserAsync(User user, string temporaryPassword)
