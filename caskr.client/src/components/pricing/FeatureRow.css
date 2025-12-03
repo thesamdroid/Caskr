@@ -1,0 +1,266 @@
+/* ===================================
+   FEATURE ROW
+   Individual row in comparison table
+   =================================== */
+
+.feature-row {
+  border-bottom: 1px solid var(--border-primary);
+  transition: background var(--transition-fast);
+}
+
+.feature-row:hover {
+  background: var(--bg-hover);
+}
+
+/* Zebra striping */
+.feature-row.zebra {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.feature-row.zebra:hover {
+  background: var(--bg-hover);
+}
+
+/* Feature name cell (sticky) */
+.feature-name-cell {
+  padding: var(--space-md) var(--space-lg);
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: var(--bg-secondary);
+  z-index: 5;
+  font-weight: 400;
+}
+
+.feature-row.zebra .feature-name-cell {
+  background: rgba(18, 18, 18, 1);
+}
+
+.feature-row:hover .feature-name-cell {
+  background: var(--bg-hover);
+}
+
+/* Shadow for sticky column when scrolled */
+.feature-name-cell::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -10px;
+  bottom: 0;
+  width: 10px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.15), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  pointer-events: none;
+}
+
+.scrolled-x .feature-name-cell::after {
+  opacity: 1;
+}
+
+/* Feature name wrapper */
+.feature-name-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  position: relative;
+}
+
+.feature-name-wrapper.has-tooltip {
+  cursor: help;
+}
+
+.feature-name-wrapper.has-tooltip:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.feature-name {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.feature-info-icon {
+  display: inline-flex;
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast);
+}
+
+.feature-name-wrapper:hover .feature-info-icon,
+.feature-name-wrapper:focus .feature-info-icon {
+  color: var(--text-gold);
+}
+
+/* Tooltip */
+.feature-tooltip {
+  position: absolute;
+  left: 0;
+  z-index: 100;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-secondary);
+  box-shadow: var(--shadow-lg);
+  max-width: 280px;
+  white-space: normal;
+  font-weight: 400;
+  animation: tooltipFade 200ms ease-out;
+}
+
+.feature-tooltip.below {
+  top: calc(100% + 8px);
+}
+
+.feature-tooltip.above {
+  bottom: calc(100% + 8px);
+}
+
+@keyframes tooltipFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltip-arrow {
+  position: absolute;
+  left: 20px;
+  width: 10px;
+  height: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-secondary);
+  transform: rotate(45deg);
+}
+
+.feature-tooltip.below .tooltip-arrow {
+  top: -6px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.feature-tooltip.above .tooltip-arrow {
+  bottom: -6px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Feature value cell */
+.feature-value-cell {
+  padding: var(--space-md);
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Popular tier column */
+.feature-value-cell.popular {
+  background: var(--gold-glow);
+}
+
+.feature-row:hover .feature-value-cell.popular {
+  background: var(--gold-glow-strong);
+}
+
+/* Highlighted tier column */
+.feature-value-cell.highlighted {
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.feature-row:hover .feature-value-cell.highlighted {
+  background: rgba(212, 175, 55, 0.12);
+}
+
+/* Value types */
+.feature-value-check {
+  display: inline-flex;
+  color: var(--success);
+}
+
+.feature-value-x {
+  display: inline-flex;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.feature-value-na {
+  display: inline-flex;
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+
+.feature-value-limit {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.feature-value-text {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .feature-name-cell {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .feature-name {
+    font-size: 0.8125rem;
+  }
+
+  .feature-value-cell {
+    padding: var(--space-sm);
+  }
+
+  .feature-value-limit {
+    font-size: 0.75rem;
+  }
+
+  .feature-value-text {
+    font-size: 0.75rem;
+  }
+
+  .feature-tooltip {
+    max-width: 200px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .feature-tooltip {
+    animation: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .feature-name-cell {
+    position: static;
+    background: white !important;
+  }
+
+  .feature-name-cell::after {
+    display: none;
+  }
+
+  .feature-value-cell {
+    background: white !important;
+  }
+
+  .feature-value-check {
+    color: #22c55e !important;
+  }
+
+  .feature-value-x {
+    color: #666 !important;
+  }
+}
