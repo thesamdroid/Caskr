@@ -1,5 +1,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
+using Caskr.server.Models.Portal;
 
 namespace Caskr.server.Models;
 
@@ -75,6 +76,17 @@ public partial class CaskrDbContext : DbContext
     public virtual DbSet<WebhookSubscription> WebhookSubscriptions { get; set; } = null!;
 
     public virtual DbSet<WebhookDelivery> WebhookDeliveries { get; set; } = null!;
+
+    // Portal entities (customer-facing portal)
+    public virtual DbSet<PortalUser> PortalUsers { get; set; } = null!;
+
+    public virtual DbSet<CaskOwnership> CaskOwnerships { get; set; } = null!;
+
+    public virtual DbSet<PortalAccessLog> PortalAccessLogs { get; set; } = null!;
+
+    public virtual DbSet<PortalDocument> PortalDocuments { get; set; } = null!;
+
+    public virtual DbSet<PortalNotification> PortalNotifications { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1126,6 +1138,283 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.SubscriptionId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_webhook_deliveries_subscription");
+        });
+
+        // Portal User configuration
+        modelBuilder.Entity<PortalUser>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("portal_users_pkey");
+
+            entity.ToTable("portal_users");
+
+            entity.HasIndex(e => e.Email)
+                .IsUnique()
+                .HasDatabaseName("portal_users_email_key");
+
+            entity.HasIndex(e => new { e.CompanyId, e.Email })
+                .HasDatabaseName("idx_portal_users_company_id_email");
+
+            entity.HasIndex(e => e.VerificationToken)
+                .HasDatabaseName("idx_portal_users_verification_token");
+
+            entity.HasIndex(e => e.PasswordResetToken)
+                .HasDatabaseName("idx_portal_users_password_reset_token");
+
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("idx_portal_users_is_active");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Email)
+                .HasMaxLength(200)
+                .HasColumnName("email");
+            entity.Property(e => e.PasswordHash)
+                .HasMaxLength(500)
+                .HasColumnName("password_hash");
+            entity.Property(e => e.FirstName)
+                .HasMaxLength(100)
+                .HasColumnName("first_name");
+            entity.Property(e => e.LastName)
+                .HasMaxLength(100)
+                .HasColumnName("last_name");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(50)
+                .HasColumnName("phone");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.EmailVerified)
+                .HasDefaultValue(false)
+                .HasColumnName("email_verified");
+            entity.Property(e => e.VerificationToken)
+                .HasMaxLength(100)
+                .HasColumnName("verification_token");
+            entity.Property(e => e.PasswordResetToken)
+                .HasMaxLength(100)
+                .HasColumnName("password_reset_token");
+            entity.Property(e => e.PasswordResetTokenExpiresAt)
+                .HasColumnName("password_reset_token_expires_at");
+            entity.Property(e => e.FailedLoginAttempts)
+                .HasDefaultValue(0)
+                .HasColumnName("failed_login_attempts");
+            entity.Property(e => e.LockoutUntil)
+                .HasColumnName("lockout_until");
+            entity.Property(e => e.LastLoginAt)
+                .HasColumnName("last_login_at");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_portal_users_company");
+        });
+
+        // Cask Ownership configuration
+        modelBuilder.Entity<CaskOwnership>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("cask_ownerships_pkey");
+
+            entity.ToTable("cask_ownerships");
+
+            entity.HasIndex(e => e.PortalUserId)
+                .HasDatabaseName("idx_cask_ownerships_portal_user_id");
+
+            entity.HasIndex(e => e.BarrelId)
+                .HasDatabaseName("idx_cask_ownerships_barrel_id");
+
+            entity.HasIndex(e => new { e.PortalUserId, e.BarrelId })
+                .IsUnique()
+                .HasDatabaseName("uq_cask_ownerships_portal_user_barrel");
+
+            entity.HasIndex(e => e.Status)
+                .HasDatabaseName("idx_cask_ownerships_status");
+
+            entity.HasIndex(e => e.CertificateNumber)
+                .HasDatabaseName("idx_cask_ownerships_certificate_number");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PortalUserId).HasColumnName("portal_user_id");
+            entity.Property(e => e.BarrelId).HasColumnName("barrel_id");
+            entity.Property(e => e.PurchaseDate).HasColumnName("purchase_date");
+            entity.Property(e => e.PurchasePrice)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("purchase_price");
+            entity.Property(e => e.OwnershipPercentage)
+                .HasColumnType("decimal(5,2)")
+                .HasDefaultValue(100.00m)
+                .HasColumnName("ownership_percentage");
+            entity.Property(e => e.CertificateNumber)
+                .HasMaxLength(100)
+                .HasColumnName("certificate_number");
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(CaskOwnershipStatus.Active)
+                .HasColumnName("status");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.PortalUser)
+                .WithMany(p => p.CaskOwnerships)
+                .HasForeignKey(d => d.PortalUserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_cask_ownerships_portal_user");
+
+            entity.HasOne(d => d.Barrel)
+                .WithMany()
+                .HasForeignKey(d => d.BarrelId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_cask_ownerships_barrel");
+        });
+
+        // Portal Access Log configuration
+        modelBuilder.Entity<PortalAccessLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("portal_access_logs_pkey");
+
+            entity.ToTable("portal_access_logs");
+
+            entity.HasIndex(e => e.PortalUserId)
+                .HasDatabaseName("idx_portal_access_logs_portal_user_id");
+
+            entity.HasIndex(e => e.AccessedAt)
+                .HasDatabaseName("idx_portal_access_logs_accessed_at");
+
+            entity.HasIndex(e => e.Action)
+                .HasDatabaseName("idx_portal_access_logs_action");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PortalUserId).HasColumnName("portal_user_id");
+            entity.Property(e => e.Action)
+                .HasConversion<string>()
+                .HasMaxLength(100)
+                .HasColumnName("action");
+            entity.Property(e => e.ResourceType)
+                .HasMaxLength(50)
+                .HasColumnName("resource_type");
+            entity.Property(e => e.ResourceId).HasColumnName("resource_id");
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(45)
+                .HasColumnName("ip_address");
+            entity.Property(e => e.UserAgent).HasColumnName("user_agent");
+            entity.Property(e => e.AccessedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("accessed_at");
+
+            entity.HasOne(d => d.PortalUser)
+                .WithMany(p => p.AccessLogs)
+                .HasForeignKey(d => d.PortalUserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_portal_access_logs_portal_user");
+        });
+
+        // Portal Document configuration
+        modelBuilder.Entity<PortalDocument>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("portal_documents_pkey");
+
+            entity.ToTable("portal_documents");
+
+            entity.HasIndex(e => e.CaskOwnershipId)
+                .HasDatabaseName("idx_portal_documents_cask_ownership_id");
+
+            entity.HasIndex(e => e.DocumentType)
+                .HasDatabaseName("idx_portal_documents_document_type");
+
+            entity.HasIndex(e => e.UploadedAt)
+                .HasDatabaseName("idx_portal_documents_uploaded_at");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CaskOwnershipId).HasColumnName("cask_ownership_id");
+            entity.Property(e => e.DocumentType)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .HasColumnName("document_type");
+            entity.Property(e => e.FileName)
+                .HasMaxLength(255)
+                .HasColumnName("file_name");
+            entity.Property(e => e.FilePath)
+                .HasMaxLength(500)
+                .HasColumnName("file_path");
+            entity.Property(e => e.FileSizeBytes).HasColumnName("file_size_bytes");
+            entity.Property(e => e.MimeType)
+                .HasMaxLength(100)
+                .HasColumnName("mime_type");
+            entity.Property(e => e.UploadedByUserId).HasColumnName("uploaded_by_user_id");
+            entity.Property(e => e.UploadedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("uploaded_at");
+
+            entity.HasOne(d => d.CaskOwnership)
+                .WithMany(p => p.Documents)
+                .HasForeignKey(d => d.CaskOwnershipId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_portal_documents_cask_ownership");
+
+            entity.HasOne(d => d.UploadedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.UploadedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_portal_documents_uploaded_by");
+        });
+
+        // Portal Notification configuration
+        modelBuilder.Entity<PortalNotification>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("portal_notifications_pkey");
+
+            entity.ToTable("portal_notifications");
+
+            entity.HasIndex(e => e.PortalUserId)
+                .HasDatabaseName("idx_portal_notifications_portal_user_id");
+
+            entity.HasIndex(e => e.SentAt)
+                .HasDatabaseName("idx_portal_notifications_sent_at");
+
+            entity.HasIndex(e => e.NotificationType)
+                .HasDatabaseName("idx_portal_notifications_type");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PortalUserId).HasColumnName("portal_user_id");
+            entity.Property(e => e.NotificationType)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .HasColumnName("notification_type");
+            entity.Property(e => e.Title)
+                .HasMaxLength(200)
+                .HasColumnName("title");
+            entity.Property(e => e.Message).HasColumnName("message");
+            entity.Property(e => e.RelatedBarrelId).HasColumnName("related_barrel_id");
+            entity.Property(e => e.IsRead)
+                .HasDefaultValue(false)
+                .HasColumnName("is_read");
+            entity.Property(e => e.SentAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("sent_at");
+            entity.Property(e => e.ReadAt).HasColumnName("read_at");
+
+            entity.HasOne(d => d.PortalUser)
+                .WithMany(p => p.Notifications)
+                .HasForeignKey(d => d.PortalUserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_portal_notifications_portal_user");
+
+            entity.HasOne(d => d.RelatedBarrel)
+                .WithMany()
+                .HasForeignKey(d => d.RelatedBarrelId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_portal_notifications_barrel");
         });
 
         OnModelCreatingPartial(modelBuilder);
