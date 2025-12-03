@@ -1,0 +1,152 @@
+.barrelsPage {
+  padding: 16px;
+}
+
+.searchBar {
+  margin-bottom: 16px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 16px;
+  background-color: #ffffff;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+.filterChip {
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background-color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.filterChip.active {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.barrelList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.barrelCard {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+
+.barrelCard:active {
+  transform: scale(0.98);
+}
+
+.barrelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.barrelId {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: capitalize;
+}
+
+.statusAging {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.statusReady {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.statusBottled {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.barrelDetails {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.detailItem {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .searchInput {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+
+  .filterChip {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #9ca3af;
+  }
+
+  .filterChip.active {
+    background-color: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+  }
+
+  .barrelCard {
+    background-color: #1f2937;
+  }
+
+  .barrelId {
+    color: #f9fafb;
+  }
+
+  .detailItem {
+    color: #9ca3af;
+  }
+}

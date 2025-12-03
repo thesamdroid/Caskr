@@ -126,6 +126,9 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<SupplyChain.InventoryReceiptItem> InventoryReceiptItems { get; set; } = null!;
 
+    // Mobile detection user preferences
+    public virtual DbSet<UserSitePreference> UserSitePreferences { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
