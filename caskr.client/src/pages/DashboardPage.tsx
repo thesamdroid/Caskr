@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import {
@@ -14,6 +14,7 @@ import { userHasPermission, TTB_COMPLIANCE_PERMISSION } from '../features/authSl
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
   const orders = useAppSelector(state => state.orders.items);
+  const ordersError = useAppSelector(state => state.orders.error);
   const statuses = useAppSelector(state => state.statuses.items);
   const tasks = useAppSelector(state => state.orders.outstandingTasks);
   const users = useAppSelector(state => state.users.items);
@@ -27,7 +28,7 @@ export default function DashboardPage() {
   const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
   const currentYear = new Date().getFullYear();
 
-  useEffect(() => {
+  const loadDashboard = useCallback(() => {
     dispatch(fetchOrders()).then(action => {
       if (fetchOrders.fulfilled.match(action)) {
         action.payload.forEach(order => dispatch(fetchOutstandingTasks(order.id)));
@@ -36,6 +37,10 @@ export default function DashboardPage() {
     dispatch(fetchStatuses());
     dispatch(fetchUsers());
   }, [dispatch]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   const getStatusName = (id: number) =>
     statuses.find(s => s.id === id)?.name || 'Unknown';
@@ -118,6 +123,18 @@ export default function DashboardPage() {
           <p className="page-subtitle">Manage your orders and track progress</p>
         </div>
       </div>
+
+      {ordersError && (
+        <div className="dashboard-error" role="alert">
+          <div className="dashboard-error-text">
+            <p className="dashboard-error-title">Unable to load dashboard.</p>
+            <p className="dashboard-error-details">{ordersError}</p>
+          </div>
+          <button onClick={loadDashboard} className="button-secondary">
+            Try again
+          </button>
+        </div>
+      )}
 
       {/* Compliance Status Banner - "Do the Last Thing First" for Great Demo! */}
       {hasComplianceAccess && (
