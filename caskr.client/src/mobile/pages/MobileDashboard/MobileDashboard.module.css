@@ -44,6 +44,41 @@
   color: #6b7280;
 }
 
+/* Error banner for partial failures */
+.errorBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 16px 12px;
+  padding: 12px 14px;
+  background-color: #fef2f2;
+  border: 1px solid #fecdd3;
+  border-radius: 12px;
+  color: #b91c1c;
+}
+
+.errorBannerText {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.retryInlineButton {
+  background-color: #b91c1c;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.retryInlineButton:active {
+  background-color: #991b1b;
+}
+
 /* Offline indicator */
 .offlineIndicator {
   display: flex;
@@ -173,6 +208,20 @@
 
   .pullText {
     color: #9ca3af;
+  }
+
+  .errorBanner {
+    background-color: #2d0a0a;
+    border-color: #7f1d1d;
+    color: #fecdd3;
+  }
+
+  .retryInlineButton {
+    background-color: #dc2626;
+  }
+
+  .retryInlineButton:active {
+    background-color: #b91c1c;
   }
 
   .offlineIndicator {

@@ -134,6 +134,7 @@ export function MobileDashboard() {
   // Calculate pull progress for styling
   const pullProgress = Math.min(pullDistance / PULL_THRESHOLD, 1)
   const refreshRotation = pullProgress * 360
+  const showInlineError = Boolean(error && data)
 
   // Loading state
   if (isLoading && !data) {
@@ -201,6 +202,20 @@ export function MobileDashboard() {
         <div className={styles.offlineIndicator}>
           <OfflineIcon />
           <span>You're offline. Showing cached data.</span>
+        </div>
+      )}
+
+      {/* Partial error banner */}
+      {showInlineError && (
+        <div className={styles.errorBanner} role="status">
+          <div className={styles.errorBannerText}>{error}</div>
+          <button
+            type="button"
+            className={styles.retryInlineButton}
+            onClick={refresh}
+          >
+            Retry
+          </button>
         </div>
       )}
 

@@ -347,8 +347,19 @@ test.describe('Mobile Dashboard', () => {
     })
 
     await page.goto('/')
-    await expect(page.getByText('Unable to load dashboard')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
+    await expect(page.getByText(/data may be outdated/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+  })
+
+  test('surfaces partial failures while keeping cached UI usable', async ({ page }) => {
+    await seedAuthenticatedUser(page)
+    await stubMobileDashboardData(page, { tasksError: true })
+
+    await page.goto('/')
+
+    await expect(page.getByText(/data may be outdated/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Scan Barrel' })).toBeVisible()
   })
 
   test('shows offline indicator when offline', async ({ page, context }) => {
@@ -364,6 +375,7 @@ test.describe('Mobile Dashboard', () => {
     await page.reload()
 
     await expect(page.getByText(/offline/i)).toBeVisible()
+    await expect(page.getByText('Check barrel B-2024-001')).toBeVisible()
   })
 })
 

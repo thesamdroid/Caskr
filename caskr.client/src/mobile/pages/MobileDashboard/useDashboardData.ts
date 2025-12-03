@@ -77,102 +77,113 @@ function isCacheValid(cached: CachedData | null): boolean {
   return Date.now() - cached.timestamp < CACHE_MAX_AGE
 }
 
+interface FetchResourceOptions<T> {
+  fallback: T
+  allow404?: boolean
+  transform?: (payload: unknown) => T
+}
+
+interface FetchResourceResult<T> {
+  data: T
+  error?: string
+}
+
+function formatFetchError(status: number): string {
+  return status >= 500 ? 'Service unavailable' : 'Request failed'
+}
+
+async function fetchResource<T>(
+  url: string,
+  { fallback, allow404 = false, transform }: FetchResourceOptions<T>
+): Promise<FetchResourceResult<T>> {
+  try {
+    const response = await authorizedFetch(url)
+
+    if (!response.ok) {
+      if (allow404 && response.status === 404) {
+        return { data: fallback }
+      }
+
+      return {
+        data: fallback,
+        error: formatFetchError(response.status)
+      }
+    }
+
+    const payload = await response.json()
+    const data = transform ? transform(payload) : (payload as T)
+    return { data }
+  } catch (error) {
+    console.error(`[useDashboardData] Error fetching ${url}`, error)
+    return {
+      data: fallback,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+  }
+}
+
 /**
  * Fetch tasks due today from the API
  */
-async function fetchTodaysTasks(): Promise<DashboardTask[]> {
-  try {
-    const today = new Date().toISOString().split('T')[0]
-    const response = await authorizedFetch(`api/tasks?dueDate=${today}`)
-    if (!response.ok) {
-      console.warn('[useDashboardData] Failed to fetch tasks', response.status)
-      return []
-    }
-    return await response.json()
-  } catch (error) {
-    console.error('[useDashboardData] Error fetching tasks', error)
-    return []
-  }
+async function fetchTodaysTasks(): Promise<FetchResourceResult<DashboardTask[]>> {
+  const today = new Date().toISOString().split('T')[0]
+  return fetchResource<DashboardTask[]>(`api/tasks?dueDate=${today}`, { fallback: [] })
 }
 
 /**
  * Fetch active orders from the API
  */
-async function fetchActiveOrders(): Promise<DashboardOrder[]> {
-  try {
-    const response = await authorizedFetch('api/orders?status=active&limit=10')
-    if (!response.ok) {
-      console.warn('[useDashboardData] Failed to fetch orders', response.status)
-      return []
+async function fetchActiveOrders(): Promise<FetchResourceResult<DashboardOrder[]>> {
+  return fetchResource<DashboardOrder[]>(
+    'api/orders?status=active&limit=10',
+    {
+      fallback: [],
+      transform: orders =>
+        (orders as { id: number; name: string; statusId: number; quantity: number }[]).map(order => ({
+          id: order.id,
+          name: order.name,
+          progress: Math.floor(Math.random() * 100), // TODO: Calculate from actual data
+          barrelCount: Math.floor(order.quantity * 0.7), // TODO: Get actual count
+          totalBarrels: order.quantity,
+          status: order.statusId === 1 ? 'In Progress' : 'Pending',
+          dueDate: undefined
+        }))
     }
-    const orders = await response.json()
-    // Transform to DashboardOrder format
-    return orders.map((order: { id: number; name: string; statusId: number; quantity: number }) => ({
-      id: order.id,
-      name: order.name,
-      progress: Math.floor(Math.random() * 100), // TODO: Calculate from actual data
-      barrelCount: Math.floor(order.quantity * 0.7), // TODO: Get actual count
-      totalBarrels: order.quantity,
-      status: order.statusId === 1 ? 'In Progress' : 'Pending',
-      dueDate: undefined
-    }))
-  } catch (error) {
-    console.error('[useDashboardData] Error fetching orders', error)
-    return []
-  }
+  )
 }
 
 /**
  * Fetch alerts from the API
  */
-async function fetchAlerts(): Promise<DashboardAlert[]> {
-  try {
-    const response = await authorizedFetch('api/dashboard/alerts')
-    if (!response.ok) {
-      // Return empty if no alerts endpoint
-      if (response.status === 404) return []
-      console.warn('[useDashboardData] Failed to fetch alerts', response.status)
-      return []
-    }
-    return await response.json()
-  } catch (error) {
-    console.error('[useDashboardData] Error fetching alerts', error)
-    return []
-  }
+async function fetchAlerts(): Promise<FetchResourceResult<DashboardAlert[]>> {
+  return fetchResource<DashboardAlert[]>('api/dashboard/alerts', {
+    fallback: [],
+    allow404: true
+  })
 }
 
 /**
  * Fetch recent activity from the API
  */
-async function fetchRecentActivity(): Promise<DashboardActivity[]> {
-  try {
-    const response = await authorizedFetch('api/dashboard/activity?limit=5')
-    if (!response.ok) {
-      // Return empty if no activity endpoint
-      if (response.status === 404) return []
-      console.warn('[useDashboardData] Failed to fetch activity', response.status)
-      return []
-    }
-    return await response.json()
-  } catch (error) {
-    console.error('[useDashboardData] Error fetching activity', error)
-    return []
-  }
+async function fetchRecentActivity(): Promise<FetchResourceResult<DashboardActivity[]>> {
+  return fetchResource<DashboardActivity[]>('api/dashboard/activity?limit=5', {
+    fallback: [],
+    allow404: true
+  })
 }
 
 /**
  * Fetch dashboard stats
  */
-async function fetchStats(): Promise<DashboardData['stats']> {
-  try {
-    const response = await authorizedFetch('api/dashboard/stats')
-    if (!response.ok) {
-      return { tasksCompletedToday: 0, tasksDueToday: 0, activeBarrels: 0, pendingMovements: 0 }
-    }
-    return await response.json()
-  } catch {
-    return { tasksCompletedToday: 0, tasksDueToday: 0, activeBarrels: 0, pendingMovements: 0 }
-  }
+async function fetchStats(): Promise<FetchResourceResult<DashboardData['stats']>> {
+  return fetchResource<DashboardData['stats']>('api/dashboard/stats', {
+    fallback: { tasksCompletedToday: 0, tasksDueToday: 0, activeBarrels: 0, pendingMovements: 0 }
+  })
+}
+
+interface DashboardFetchResult {
+  data: DashboardData
+  errors: string[]
 }
 
 /**
@@ -213,42 +224,39 @@ export function useDashboardData(): UseDashboardDataReturn {
   /**
    * Fetch all dashboard data in parallel
    */
-  const fetchDashboardData = useCallback(async (_isBackgroundRefresh = false): Promise<DashboardData | null> => {
-    try {
-      // Fetch all data in parallel
-      const [tasks, orders, alerts, activity, stats] = await Promise.all([
-        fetchTodaysTasks(),
-        fetchActiveOrders(),
-        fetchAlerts(),
-        fetchRecentActivity(),
-        fetchStats()
-      ])
+  const fetchDashboardData = useCallback(async (_isBackgroundRefresh = false): Promise<DashboardFetchResult> => {
+    // Fetch all data in parallel
+    const [tasksResult, ordersResult, alertsResult, activityResult, statsResult] = await Promise.all([
+      fetchTodaysTasks(),
+      fetchActiveOrders(),
+      fetchAlerts(),
+      fetchRecentActivity(),
+      fetchStats()
+    ])
 
-      const dashboardData: DashboardData = {
-        greeting: getGreeting(),
-        userName: user?.name || 'User',
-        currentDate: formatCurrentDate(),
-        alerts: alerts.filter(alert => !dismissedAlerts.has(alert.id)),
-        todaysTasks: tasks.slice(0, 5), // Max 5 tasks shown
-        activeOrders: orders.slice(0, 10), // Max 10 orders
-        recentActivity: activity.slice(0, 5), // Max 5 activities
-        stats
-      }
+    const errors = [
+      tasksResult.error && 'Tasks unavailable',
+      ordersResult.error && 'Orders unavailable',
+      alertsResult.error && 'Alerts unavailable',
+      activityResult.error && 'Activity unavailable',
+      statsResult.error && 'Stats unavailable'
+    ].filter((message): message is string => Boolean(message))
 
-      // Cache the data
-      saveCachedData(dashboardData)
-
-      return dashboardData
-    } catch (error) {
-      console.error('[useDashboardData] Failed to fetch dashboard data', error)
-
-      // If offline, return null to trigger cache usage
-      if (!navigator.onLine) {
-        return null
-      }
-
-      throw error
+    const dashboardData: DashboardData = {
+      greeting: getGreeting(),
+      userName: user?.name || 'User',
+      currentDate: formatCurrentDate(),
+      alerts: alertsResult.data.filter(alert => !dismissedAlerts.has(alert.id)),
+      todaysTasks: tasksResult.data.slice(0, 5), // Max 5 tasks shown
+      activeOrders: ordersResult.data.slice(0, 10), // Max 10 orders
+      recentActivity: activityResult.data.slice(0, 5), // Max 5 activities
+      stats: statsResult.data
     }
+
+    // Cache the data
+    saveCachedData(dashboardData)
+
+    return { data: dashboardData, errors }
   }, [user?.name, dismissedAlerts])
 
   /**
@@ -263,8 +271,9 @@ export function useDashboardData(): UseDashboardDataReturn {
     try {
       const freshData = await fetchDashboardData(true)
       if (freshData && isMountedRef.current) {
-        setData(freshData)
+        setData(freshData.data)
         setLastUpdated(new Date())
+        setError(freshData.errors.length ? 'Some dashboard data could not be updated. Try again shortly.' : null)
       }
     } catch (err) {
       if (isMountedRef.current) {
@@ -308,9 +317,9 @@ export function useDashboardData(): UseDashboardDataReturn {
         try {
           const freshData = await fetchDashboardData()
           if (freshData && isMountedRef.current) {
-            setData(freshData)
+            setData(freshData.data)
             setLastUpdated(new Date())
-            setError(null)
+            setError(freshData.errors.length ? 'Some dashboard data may be outdated. Pull to refresh to retry.' : null)
           }
         } catch (err) {
           // Only show error if we don't have cached data
@@ -320,6 +329,8 @@ export function useDashboardData(): UseDashboardDataReturn {
         }
       } else if (!cached) {
         setError('You are offline. No cached data available.')
+      } else {
+        setError('You are offline. Showing cached data. Pull to refresh when back online.')
       }
 
       if (isMountedRef.current) {
