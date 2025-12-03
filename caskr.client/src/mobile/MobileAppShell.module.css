@@ -1,0 +1,131 @@
+.appShell {
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  background-color: #f9fafb;
+  position: relative;
+}
+
+.mainContent {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.toastContainer {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toastContainer > * {
+  pointer-events: auto;
+}
+
+/* Page transition animations */
+.pageEnter {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+.pageEnterActive {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.pageExit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.pageExitActive {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Loading overlay for page transitions */
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.loadingOverlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .appShell {
+    background-color: #111827;
+  }
+
+  .loadingOverlay {
+    background-color: rgba(17, 24, 39, 0.8);
+  }
+
+  .spinner {
+    border-color: #374151;
+    border-top-color: #60a5fa;
+  }
+}
+
+/* Pull-to-refresh indicator */
+.pullIndicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  z-index: 1400;
+  padding: 16px;
+  transition: transform 0.2s ease;
+}
+
+.pullIndicator.active {
+  transform: translateX(-50%) translateY(0);
+}
+
+.pullIndicatorIcon {
+  width: 32px;
+  height: 32px;
+  animation: pullSpin 0.8s linear infinite;
+}
+
+@keyframes pullSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

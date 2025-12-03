@@ -63,12 +63,18 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Mobile redirect configuration
+builder.Services.AddMobileRedirect(builder.Configuration);
+
 builder.Services.BindServices(builder.Configuration);
 
 var app = builder.Build();
 
 // Global exception handling - must be first in pipeline
 app.UseGlobalExceptionHandler();
+
+// Mobile redirect - after exception handling, before static files
+app.UseMobileRedirect();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
