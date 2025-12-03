@@ -19,13 +19,38 @@ public class AzureDevOpsBacklogConverterTests
 
         Assert.Single(results);
         var item = results.First();
-        Assert.Equal("Product Backlog Item", item.WorkItemType);
+        Assert.Equal("User Story", item.WorkItemType);
         Assert.Equal("Sample Item", item.Title);
         Assert.Equal("Active", item.State);
         Assert.Equal("2", item.Priority);
         Assert.Equal("alpha;beta", item.Tags);
         Assert.Equal("Intro text.", item.Description);
         Assert.Equal("- One\n- Two", item.AcceptanceCriteria);
+    }
+
+    [Fact]
+    public void Convert_NormalizesProductBacklogItemToUserStory()
+    {
+        const string csv = "Work Item Type,Title,State,Priority,Tags,Description\n" +
+                           "Product Backlog Item,Story Title,Active,2,tag,\"Description text\"";
+
+        using var reader = new StringReader(csv);
+        var results = AzureDevOpsBacklogConverter.Convert(reader);
+
+        Assert.Single(results);
+        Assert.Equal("User Story", results.First().WorkItemType);
+    }
+
+    [Fact]
+    public void Convert_ThrowsWhenWorkItemTypeMissing()
+    {
+        const string csv = "Work Item Type,Title,State,Priority,Tags,Description\n" +
+                           ",Missing type,Active,2,tag,\"Description text\"";
+
+        using var reader = new StringReader(csv);
+
+        var exception = Assert.Throws<InvalidDataException>(() => AzureDevOpsBacklogConverter.Convert(reader));
+        Assert.Contains("Work Item Type cannot be empty", exception.Message);
     }
 
     [Fact]

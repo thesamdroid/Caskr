@@ -1,5 +1,5 @@
 "Work Item Type","Title","State","Priority","Tags","Description","Acceptance Criteria"
-"Product Backlog Item","Mobile-Friendly Web App (m.caskr.co)","New","1","mobile;pwa;p1-critical","As a warehouse staff member, I need a mobile-optimized web application at m.caskr.co so that I can perform barrel scanning, task management, and inventory operations from my phone without needing a native app.","- Mobile devices automatically detected and redirected to m.caskr.co
+"User Story","Mobile-Friendly Web App (m.caskr.co)","New","1","mobile;pwa;p1-critical","As a warehouse staff member, I need a mobile-optimized web application at m.caskr.co so that I can perform barrel scanning, task management, and inventory operations from my phone without needing a native app.","- Mobile devices automatically detected and redirected to m.caskr.co
 - All touch targets minimum 44x44px
 - Core pages load in <3 seconds on 3G networks
 - App installable on home screen (iOS and Android)
@@ -877,7 +877,7 @@ DELIVERABLES:
 7. Notification settings and permission UI
 8. VAPID key generation script
 9. Complete test suite",""
-"Product Backlog Item","Production Planning and Capacity Management","New","1","production;planning;p1-critical","As a distillery operations manager, I need production planning and capacity management tools so that I can schedule batches efficiently, prevent bottlenecks, track equipment utilization, and forecast production needs to meet demand.","- Batch scheduling calendar with drag-and-drop
+"User Story","Production Planning and Capacity Management","New","1","production;planning;p1-critical","As a distillery operations manager, I need production planning and capacity management tools so that I can schedule batches efficiently, prevent bottlenecks, track equipment utilization, and forecast production needs to meet demand.","- Batch scheduling calendar with drag-and-drop
 - Equipment booking with conflict detection
 - Material requirements planning (MRP) for ingredients
 - Bottling schedule coordination
@@ -1481,7 +1481,7 @@ DELIVERABLES:
 6. ScenarioPlanner.tsx
 7. ScenarioComparison.tsx
 8. Complete test suite",""
-"Product Backlog Item","Customer and Investor Portals","New","2","portals;investors;p2-competitive","As a distillery owner with cask investment programs, I need customer and investor portals so that cask owners can view their barrel details, track aging progress, and access ownership documentation without requiring staff assistance.","- Separate login for external cask owners (not distillery staff)
+"User Story","Customer and Investor Portals","New","2","portals;investors;p2-competitive","As a distillery owner with cask investment programs, I need customer and investor portals so that cask owners can view their barrel details, track aging progress, and access ownership documentation without requiring staff assistance.","- Separate login for external cask owners (not distillery staff)
 - Dashboard showing owned barrels with key details
 - Real-time aging progress and location information
 - Downloadable ownership certificates and documentation

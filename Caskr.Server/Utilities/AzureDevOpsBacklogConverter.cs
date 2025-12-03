@@ -60,7 +60,7 @@ public static class AzureDevOpsBacklogConverter
 
             var (description, acceptanceCriteria) = SplitAcceptance(GetField("Description"));
             results.Add(new AzureDevOpsWorkItem(
-                WorkItemType: GetField("Work Item Type").Trim(),
+                WorkItemType: NormalizeWorkItemType(GetField("Work Item Type")),
                 Title: GetField("Title").Trim(),
                 State: NormalizeState(GetField("State")),
                 Priority: NormalizePriority(GetField("Priority")),
@@ -130,6 +130,19 @@ public static class AzureDevOpsBacklogConverter
         var description = rawDescription[..index].TrimEnd();
         var acceptance = rawDescription[(index + marker.Length)..].Trim();
         return (description, acceptance);
+    }
+
+    private static string NormalizeWorkItemType(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidDataException("Work Item Type cannot be empty.");
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.Equals("Product Backlog Item", StringComparison.OrdinalIgnoreCase)
+            ? "User Story"
+            : trimmed;
     }
 
     private static string NormalizePriority(string value) => value.Trim();
