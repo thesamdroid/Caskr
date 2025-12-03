@@ -33,17 +33,22 @@ export default function Layout() {
   const authUser = useAppSelector(state => state.auth.user)
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated)
 
+  // Navigation order optimized for Great Demo! flow:
+  // 1. TTB Compliance first (the "Wow!" moment - completed reports)
+  // 2. Dashboard (operations overview)
+  // 3. Production features (Orders, Barrels, Products)
+  // 4. Analytics & Settings
   const navigationItems: NavigationItem[] = [
-    { label: 'Dashboard', path: '/', matchExact: true },
-    { label: 'Orders', path: '/orders' },
-    { label: 'Barrels', path: '/barrels' },
     {
-      label: 'TTB Compliance',
+      label: 'Compliance',
       path: '/ttb-reports',
-      ariaLabel: 'TTB compliance reports',
+      ariaLabel: 'TTB compliance reports - your completed federal reports',
       requiresPermission: TTB_COMPLIANCE_PERMISSION,
       icon: <ClipboardIcon />
     },
+    { label: 'Dashboard', path: '/', matchExact: true },
+    { label: 'Orders', path: '/orders' },
+    { label: 'Barrels', path: '/barrels' },
     { label: 'Products', path: '/products' },
     { label: 'Reports', path: '/reports', ariaLabel: 'View Reports', matchExact: true },
     { label: 'Report Builder', path: '/report-builder', ariaLabel: 'Custom Report Builder' },

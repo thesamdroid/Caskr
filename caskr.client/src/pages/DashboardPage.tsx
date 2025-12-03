@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks';
 import {
   fetchOrders,
@@ -8,6 +9,7 @@ import {
 } from '../features/ordersSlice';
 import { fetchStatuses } from '../features/statusSlice';
 import { fetchUsers } from '../features/usersSlice';
+import { userHasPermission, TTB_COMPLIANCE_PERMISSION } from '../features/authSlice';
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
@@ -15,9 +17,15 @@ export default function DashboardPage() {
   const statuses = useAppSelector(state => state.statuses.items);
   const tasks = useAppSelector(state => state.orders.outstandingTasks);
   const users = useAppSelector(state => state.users.items);
-  
+  const authUser = useAppSelector(state => state.auth.user);
+  const hasComplianceAccess = userHasPermission(authUser, TTB_COMPLIANCE_PERMISSION);
+
   const [hoveredTask, setHoveredTask] = useState<number | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+
+  // Get current month/year for compliance status display
+  const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
+  const currentYear = new Date().getFullYear();
 
   useEffect(() => {
     dispatch(fetchOrders()).then(action => {
@@ -110,6 +118,33 @@ export default function DashboardPage() {
           <p className="page-subtitle">Manage your orders and track progress</p>
         </div>
       </div>
+
+      {/* Compliance Status Banner - "Do the Last Thing First" for Great Demo! */}
+      {hasComplianceAccess && (
+        <div className="compliance-banner">
+          <div className="compliance-banner-content">
+            <div className="compliance-banner-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <div className="compliance-banner-text">
+              <h3 className="compliance-banner-title">TTB Compliance Ready</h3>
+              <p className="compliance-banner-subtitle">
+                {currentMonth} {currentYear} reports are ready to generate. All transactions logged and calculations verified.
+              </p>
+            </div>
+            <div className="compliance-banner-actions">
+              <Link to="/ttb-reports" className="button-primary compliance-banner-cta">
+                View Reports
+              </Link>
+              <Link to="/ttb-transactions" className="button-secondary">
+                Log Transactions
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Overview */}
       <div className="stats-grid">
