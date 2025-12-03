@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { stubDashboardData } from './support/apiStubs'
+import { seedAuthenticatedUser } from './support/auth'
 
 test.describe('dashboard', () => {
   test('expands an order card to reveal outstanding tasks', async ({ page }) => {
@@ -70,5 +71,54 @@ test.describe('dashboard', () => {
 
     const progressCard = page.locator('.stat-card', { hasText: 'Overall Progress' })
     await expect(progressCard.locator('.stat-value')).toHaveText('67%')
+  })
+
+  test('shows compliance banner for authorized users', async ({ page }) => {
+    await seedAuthenticatedUser(page)
+
+    await stubDashboardData(page, {
+      statuses: [
+        { id: 1, name: 'Ready', statusTasks: [] }
+      ]
+    })
+
+    await page.goto('/')
+
+    await expect(page.getByRole('heading', { name: 'TTB Compliance Ready' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'View Reports' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Log Transactions' })).toBeVisible()
+  })
+
+  test('surfaces dashboard load errors and allows retry', async ({ page }) => {
+    await seedAuthenticatedUser(page)
+
+    await stubDashboardData(page, {
+      orders: [
+        { id: 1, name: 'Bourbon Order', statusId: 1, ownerId: 1, spiritTypeId: 1, quantity: 10, mashBillId: 1 }
+      ],
+      statuses: [
+        { id: 1, name: 'In Progress', statusTasks: [] }
+      ],
+      tasksByOrder: {
+        1: [
+          { id: 10, name: 'Review paperwork', orderId: 1, assigneeId: null, isComplete: false }
+        ]
+      },
+      ordersResponses: [
+        { status: 500, body: { message: 'Database offline' } },
+        { status: 200 }
+      ]
+    })
+
+    await page.goto('/')
+
+    const alert = page.getByRole('alert')
+    await expect(alert).toContainText('Unable to load dashboard.')
+    await expect(alert).toContainText('Failed to fetch orders')
+
+    await page.getByRole('button', { name: 'Try again' }).click()
+
+    await expect(alert).toBeHidden()
+    await expect(page.locator('.order-card', { hasText: 'Bourbon Order' })).toBeVisible()
   })
 })

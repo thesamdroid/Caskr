@@ -5,6 +5,7 @@ export interface DashboardStubOptions {
   statuses?: unknown[]
   tasksByOrder?: Record<number, unknown[]>
   users?: unknown[]
+  ordersResponses?: Array<{ status: number; body?: unknown }>
 }
 
 export const stubDashboardData = async (page: Page, options: DashboardStubOptions = {}) => {
@@ -30,12 +31,20 @@ export const stubDashboardData = async (page: Page, options: DashboardStubOption
     })
   })
 
+  let ordersRequestCount = 0
+
   await page.route('**/api/orders', async route => {
     if (route.request().method() === 'GET') {
+      const definedResponse = options.ordersResponses?.[ordersRequestCount]
+      ordersRequestCount += 1
+
+      const responseBody = definedResponse?.body ?? orders
+      const fulfilledBody = typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody)
+
       await route.fulfill({
-        status: 200,
+        status: definedResponse?.status ?? 200,
         contentType: 'application/json',
-        body: JSON.stringify(orders)
+        body: fulfilledBody
       })
     } else {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
