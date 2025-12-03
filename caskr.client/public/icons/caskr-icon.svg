@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#2563eb" rx="64"/>
+
+  <!-- Barrel shape -->
+  <g fill="#ffffff">
+    <!-- Barrel body -->
+    <ellipse cx="256" cy="140" rx="100" ry="40"/>
+    <ellipse cx="256" cy="372" rx="100" ry="40"/>
+    <path d="M156 140 L156 372 Q156 412 256 412 Q356 412 356 372 L356 140 Q356 100 256 100 Q156 100 156 140 Z"/>
+
+    <!-- Barrel bands -->
+    <rect x="156" y="180" width="200" height="12" fill="#2563eb" opacity="0.3"/>
+    <rect x="156" y="240" width="200" height="12" fill="#2563eb" opacity="0.3"/>
+    <rect x="156" y="300" width="200" height="12" fill="#2563eb" opacity="0.3"/>
+
+    <!-- Barrel top highlight -->
+    <ellipse cx="256" cy="140" rx="80" ry="30" fill="#ffffff" opacity="0.3"/>
+  </g>
+
+  <!-- "C" letter overlay -->
+  <text x="256" y="290" font-family="Arial, sans-serif" font-size="140" font-weight="bold" fill="#2563eb" text-anchor="middle">C</text>
+</svg>

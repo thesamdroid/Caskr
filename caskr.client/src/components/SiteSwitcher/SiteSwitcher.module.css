@@ -1,0 +1,513 @@
+/**
+ * SiteSwitcher Component Styles
+ */
+
+/* Banner Variant */
+.banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  z-index: 9990;
+  animation: slideIn 0.3s ease-out;
+}
+
+.banner.top {
+  top: 0;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.banner.bottom {
+  bottom: 0;
+  border-top: 1px solid #e5e7eb;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.banner.top {
+  animation-name: slideInTop;
+}
+
+@keyframes slideInTop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.bannerContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.bannerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #eff6ff;
+  border-radius: 10px;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.bannerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.bannerMessage {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+
+.bannerSuggestion {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.bannerActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rememberCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.rememberCheckbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+.bannerButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.switchButton {
+  flex: 1;
+  padding: 12px 16px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.switchButton:hover {
+  background: #1d4ed8;
+}
+
+.switchButton:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+}
+
+.stayButton {
+  flex: 1;
+  padding: 12px 16px;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.stayButton:hover {
+  background: #e5e7eb;
+}
+
+.dontAskButton {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.dontAskButton:hover {
+  color: #6b7280;
+}
+
+/* Toast Variant */
+.toast {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  max-width: 400px;
+  margin: 0 auto;
+  background: #1f2937;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 9990;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.toastContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toastMessage {
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.toastActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toastSwitch {
+  padding: 6px 12px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.toastSwitch:hover {
+  background: #1d4ed8;
+}
+
+.toastDismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.toastDismiss:hover {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+/* Compact Variant */
+.compactButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 8px;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.compactButton:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.compactButtonActive .compactBadge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background: #2563eb;
+  border-radius: 50%;
+}
+
+/* Modal Variant / Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  animation: scaleIn 0.2s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.modalContent {
+  padding: 20px;
+}
+
+.modalMessage {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.siteOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.siteOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.siteOption:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.siteOptionActive {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+.siteOption:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.currentBadge {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 400;
+  color: #6b7280;
+  padding: 2px 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.modalFooter {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.modalFooter .stayButton,
+.modalFooter .dontAskButton {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .banner {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .bannerIcon {
+    background: #1e3a5f;
+  }
+
+  .bannerMessage {
+    color: #f9fafb;
+  }
+
+  .rememberCheckbox {
+    color: #9ca3af;
+  }
+
+  .stayButton {
+    background: #374151;
+    color: #e5e7eb;
+  }
+
+  .stayButton:hover {
+    background: #4b5563;
+  }
+
+  .compactButton:hover {
+    background: #374151;
+    color: #f9fafb;
+  }
+
+  .modal {
+    background: #1f2937;
+  }
+
+  .modalHeader {
+    border-bottom-color: #374151;
+  }
+
+  .modalTitle {
+    color: #f9fafb;
+  }
+
+  .closeButton {
+    background: #374151;
+    color: #9ca3af;
+  }
+
+  .closeButton:hover {
+    background: #4b5563;
+    color: #f9fafb;
+  }
+
+  .siteOption {
+    background: #374151;
+    color: #e5e7eb;
+  }
+
+  .siteOption:hover {
+    background: #1e3a5f;
+    border-color: #3b82f6;
+  }
+
+  .siteOptionActive {
+    background: #1e3a5f;
+    border-color: #3b82f6;
+    color: #60a5fa;
+  }
+
+  .currentBadge {
+    background: #4b5563;
+    color: #9ca3af;
+  }
+
+  .modalFooter {
+    background: #111827;
+    border-top-color: #374151;
+  }
+}
