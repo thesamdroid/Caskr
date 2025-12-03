@@ -1,4 +1,5 @@
 using Caskr.server;
+using Caskr.server.Middleware;
 using Caskr.server.Models;
 using Caskr.server.Services;
 using Caskr.Server.Services.BackgroundJobs;
@@ -65,6 +66,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.BindServices(builder.Configuration);
 
 var app = builder.Build();
+
+// Global exception handling - must be first in pipeline
+app.UseGlobalExceptionHandler();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();

@@ -1,0 +1,120 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  caskr-db:
+    build: ./Database
+    image: caskr/database:latest
+    container_name: caskr-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
+      POSTGRES_DB: ${POSTGRES_DB:-caskr-db}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-caskr-db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caskr-network
+
+  # Keycloak Authentication Server
+  keycloak:
+    build: ./Keycloak
+    image: caskr/keycloak:latest
+    container_name: caskr-keycloak
+    restart: always
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Keycloak admin password required}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://caskr-db:5432/${POSTGRES_DB:-caskr-db}
+      KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HOSTNAME: auth.caskr.co
+      KC_PROXY: edge
+    ports:
+      - "8080:8080"
+    depends_on:
+      caskr-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - caskr-network
+
+  # Caskr Application Server
+  caskr-server:
+    build:
+      context: .
+      dockerfile: Caskr.Server/Dockerfile
+    image: caskr/server:latest
+    container_name: caskr-server
+    restart: always
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__CaskrDatabaseConnectionString: "Host=caskr-db;Port=5432;Database=${POSTGRES_DB:-caskr-db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: ${JWT_SECRET_KEY:?JWT secret key required}
+      Jwt__Issuer: Caskr
+      Jwt__Audience: CaskrUser
+      SendGrid__ApiKey: ${SENDGRID_API_KEY:-}
+      Keycloak__Authority: https://auth.caskr.co
+      Keycloak__Realm: caskr
+      Keycloak__ClientId: caskr-client
+      Keycloak__ClientSecret: ${KEYCLOAK_CLIENT_SECRET:-}
+      Keycloak__AdminUser: ${KEYCLOAK_ADMIN_USER:-}
+      Keycloak__AdminPassword: ${KEYCLOAK_ADMIN_PASSWORD:-}
+    ports:
+      - "8081:8080"
+    depends_on:
+      caskr-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - caskr-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: caskr-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - caskr-server
+      - keycloak
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - caskr-network
+
+volumes:
+  postgres_data:
+
+networks:
+  caskr-network:
+    driver: bridge

@@ -1,0 +1,85 @@
+version: '3.9'
+
+# Local development environment
+# Usage: docker-compose -f docker-compose.local.yml up --build
+
+services:
+  # PostgreSQL Database
+  caskr-db:
+    build: ./Database
+    image: caskr/database:local
+    container_name: caskr-db-local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdev123
+      POSTGRES_DB: caskr-db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d caskr-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caskr-local
+
+  # Keycloak Authentication Server
+  keycloak:
+    build: ./Keycloak
+    image: caskr/keycloak:local
+    container_name: caskr-keycloak-local
+    restart: unless-stopped
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+    ports:
+      - "8080:8080"
+    depends_on:
+      caskr-db:
+        condition: service_healthy
+    networks:
+      - caskr-local
+
+  # Caskr Application Server
+  caskr-server:
+    build:
+      context: .
+      dockerfile: Caskr.Server/Dockerfile
+    image: caskr/server:local
+    container_name: caskr-server-local
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CaskrDatabaseConnectionString: "Host=caskr-db;Port=5432;Database=caskr-db;Username=postgres;Password=localdev123"
+      Jwt__Key: "LocalDevelopmentJwtKeyThatIsAtLeast32CharactersLong!"
+      Jwt__Issuer: Caskr
+      Jwt__Audience: CaskrUser
+      Keycloak__Authority: http://localhost:8080
+      Keycloak__Realm: master
+      Keycloak__ClientId: caskr-client
+      Keycloak__ClientSecret: ""
+      Keycloak__AdminUser: admin
+      Keycloak__AdminPassword: admin123
+    ports:
+      - "5000:8080"
+    depends_on:
+      caskr-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - caskr-local
+
+volumes:
+  postgres_data_local:
+
+networks:
+  caskr-local:
+    driver: bridge

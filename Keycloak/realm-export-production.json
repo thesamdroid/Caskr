@@ -1,0 +1,76 @@
+{
+  "realm": "caskr",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "passwordPolicy": "length(8) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1)",
+  "clients": [
+    {
+      "clientId": "caskr-client",
+      "name": "Caskr Application",
+      "description": "Main Caskr application client",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "https://caskr.co/*",
+        "https://www.caskr.co/*",
+        "https://api.caskr.co/*"
+      ],
+      "webOrigins": [
+        "https://caskr.co",
+        "https://www.caskr.co",
+        "https://api.caskr.co"
+      ],
+      "attributes": {
+        "access.token.lifespan": "3600",
+        "client.session.idle.timeout": "1800"
+      }
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Administrator role with full access"
+      },
+      {
+        "name": "manager",
+        "description": "Manager role with elevated access"
+      },
+      {
+        "name": "user",
+        "description": "Standard user role"
+      },
+      {
+        "name": "ttb-access",
+        "description": "Access to TTB compliance features"
+      },
+      {
+        "name": "accounting-access",
+        "description": "Access to accounting and QuickBooks features"
+      }
+    ]
+  },
+  "defaultRoles": ["user"],
+  "requiredCredentials": ["password"],
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyInitialCounter": 0,
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30
+}

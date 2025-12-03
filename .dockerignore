@@ -1,0 +1,71 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+**/dist/
+
+# Node modules (will be installed in Docker)
+**/node_modules/
+
+# Test files
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+**/Caskr.Server.Tests/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+backups/
+*.bak
+
+# SSL certificates (mounted separately)
+nginx/ssl/
+
+# Database data (mounted as volume)
+Database/postgres/
+
+# Scripts (not needed in container)
+scripts/
+
+# Local development files
+docker-compose.local.yml
+docker-compose.yml
+
+# Claude configuration
+.claude/
