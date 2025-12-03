@@ -1,6 +1,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Caskr.server.Models.Portal;
+using Caskr.server.Models.Crm;
 
 namespace Caskr.server.Models;
 
@@ -96,6 +97,21 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<PortalNotification> PortalNotifications { get; set; } = null!;
 
+    // CRM Integration entities (CRM-001)
+    public virtual DbSet<Customer> Customers { get; set; } = null!;
+
+    public virtual DbSet<CrmIntegration> CrmIntegrations { get; set; } = null!;
+
+    public virtual DbSet<CrmSyncLog> CrmSyncLogs { get; set; } = null!;
+
+    public virtual DbSet<CrmEntityMapping> CrmEntityMappings { get; set; } = null!;
+
+    public virtual DbSet<CrmFieldMapping> CrmFieldMappings { get; set; } = null!;
+
+    public virtual DbSet<CrmSyncPreference> CrmSyncPreferences { get; set; } = null!;
+
+    public virtual DbSet<CrmSyncConflict> CrmSyncConflicts { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -163,6 +179,28 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.FulfillmentWarehouseId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("fk_orders_fulfillment_warehouse");
+
+            // CRM Integration fields (CRM-001)
+            entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+            entity.Property(e => e.SalesforceOpportunityId)
+                .HasMaxLength(18)
+                .HasColumnName("salesforce_opportunity_id");
+            entity.Property(e => e.SalesforceLastSyncAt).HasColumnName("salesforce_last_sync_at");
+            entity.Property(e => e.OrderDate).HasColumnName("order_date");
+            entity.Property(e => e.TotalAmount)
+                .HasColumnType("decimal(12,2)")
+                .HasColumnName("total_amount");
+            entity.Property(e => e.OrderNotes).HasColumnName("order_notes");
+
+            entity.HasIndex(e => e.CustomerId).HasDatabaseName("idx_orders_customer_id");
+            entity.HasIndex(e => e.SalesforceOpportunityId)
+                .HasDatabaseName("idx_orders_salesforce_opportunity_id");
+
+            entity.HasOne(d => d.Customer)
+                .WithMany()
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_orders_customer");
         });
 
         modelBuilder.Entity<OrderTask>(entity =>
@@ -1429,11 +1467,32 @@ public partial class CaskrDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("updated_at");
 
+            // CRM Integration fields (CRM-001)
+            entity.Property(e => e.SalesforceContactId)
+                .HasMaxLength(18)
+                .HasColumnName("salesforce_contact_id");
+            entity.Property(e => e.SalesforceLastSyncAt).HasColumnName("salesforce_last_sync_at");
+            entity.Property(e => e.LinkedCustomerId).HasColumnName("linked_customer_id");
+            entity.Property(e => e.IsCaskInvestor)
+                .HasDefaultValue(false)
+                .HasColumnName("is_cask_investor");
+
+            entity.HasIndex(e => e.SalesforceContactId)
+                .HasDatabaseName("idx_portal_users_salesforce_contact_id");
+            entity.HasIndex(e => e.LinkedCustomerId)
+                .HasDatabaseName("idx_portal_users_linked_customer_id");
+
             entity.HasOne(d => d.Company)
                 .WithMany()
                 .HasForeignKey(d => d.CompanyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_portal_users_company");
+
+            entity.HasOne(d => d.LinkedCustomer)
+                .WithMany()
+                .HasForeignKey(d => d.LinkedCustomerId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_portal_users_customer");
         });
 
         // Cask Ownership configuration
@@ -1636,6 +1695,401 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.RelatedBarrelId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("fk_portal_notifications_barrel");
+        });
+
+        // ========================================================================
+        // CRM Integration Entity Configurations (CRM-001)
+        // ========================================================================
+
+        // Customer configuration
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("customers_pkey");
+
+            entity.ToTable("customers");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_customers_company_id");
+            entity.HasIndex(e => new { e.CompanyId, e.CustomerName }).HasDatabaseName("idx_customers_customer_name");
+            entity.HasIndex(e => e.SalesforceAccountId)
+                .HasDatabaseName("idx_customers_salesforce_account_id");
+            entity.HasIndex(e => new { e.CompanyId, e.CustomerType }).HasDatabaseName("idx_customers_customer_type");
+            entity.HasIndex(e => new { e.CompanyId, e.IsActive }).HasDatabaseName("idx_customers_is_active");
+            entity.HasIndex(e => new { e.CompanyId, e.SalesforceAccountId })
+                .IsUnique()
+                .HasDatabaseName("uq_customers_salesforce_account");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.CustomerName)
+                .HasMaxLength(200)
+                .HasColumnName("customer_name");
+            entity.Property(e => e.CustomerType)
+                .HasConversion<string>()
+                .HasColumnName("customer_type");
+            entity.Property(e => e.Email)
+                .HasMaxLength(200)
+                .HasColumnName("email");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(50)
+                .HasColumnName("phone");
+            entity.Property(e => e.Website)
+                .HasMaxLength(255)
+                .HasColumnName("website");
+            entity.Property(e => e.AddressLine1)
+                .HasMaxLength(200)
+                .HasColumnName("address_line1");
+            entity.Property(e => e.AddressLine2)
+                .HasMaxLength(200)
+                .HasColumnName("address_line2");
+            entity.Property(e => e.City)
+                .HasMaxLength(100)
+                .HasColumnName("city");
+            entity.Property(e => e.State)
+                .HasMaxLength(100)
+                .HasColumnName("state");
+            entity.Property(e => e.PostalCode)
+                .HasMaxLength(20)
+                .HasColumnName("postal_code");
+            entity.Property(e => e.Country)
+                .HasMaxLength(100)
+                .HasDefaultValue("USA")
+                .HasColumnName("country");
+            entity.Property(e => e.SalesforceAccountId)
+                .HasMaxLength(18)
+                .HasColumnName("salesforce_account_id");
+            entity.Property(e => e.SalesforceLastSyncAt).HasColumnName("salesforce_last_sync_at");
+            entity.Property(e => e.AssignedUserId).HasColumnName("assigned_user_id");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_customers_company");
+
+            entity.HasOne(d => d.AssignedUser)
+                .WithMany()
+                .HasForeignKey(d => d.AssignedUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_customers_assigned_user");
+        });
+
+        // CrmIntegration configuration
+        modelBuilder.Entity<CrmIntegration>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("crm_integrations_pkey");
+
+            entity.ToTable("crm_integrations");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_crm_integrations_company_id");
+            entity.HasIndex(e => e.Provider).HasDatabaseName("idx_crm_integrations_provider");
+            entity.HasIndex(e => e.IsActive).HasDatabaseName("idx_crm_integrations_is_active");
+            entity.HasIndex(e => new { e.CompanyId, e.Provider })
+                .IsUnique()
+                .HasDatabaseName("uq_crm_integrations_company_provider");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Provider).HasColumnName("provider");
+            entity.Property(e => e.InstanceUrl).HasColumnName("instance_url");
+            entity.Property(e => e.OrganizationId)
+                .HasMaxLength(18)
+                .HasColumnName("organization_id");
+            entity.Property(e => e.AccessTokenEncrypted).HasColumnName("access_token_encrypted");
+            entity.Property(e => e.RefreshTokenEncrypted).HasColumnName("refresh_token_encrypted");
+            entity.Property(e => e.TokenExpiresAt).HasColumnName("token_expires_at");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.ConnectionStatus)
+                .HasConversion<string>()
+                .HasColumnName("connection_status");
+            entity.Property(e => e.LastErrorMessage).HasColumnName("last_error_message");
+            entity.Property(e => e.LastErrorAt).HasColumnName("last_error_at");
+            entity.Property(e => e.ConnectedByUserId).HasColumnName("connected_by_user_id");
+            entity.Property(e => e.ConnectedAt).HasColumnName("connected_at");
+            entity.Property(e => e.LastSyncAt).HasColumnName("last_sync_at");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_crm_integrations_company");
+
+            entity.HasOne(d => d.ConnectedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.ConnectedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_crm_integrations_connected_by");
+        });
+
+        // CrmSyncLog configuration
+        modelBuilder.Entity<CrmSyncLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("crm_sync_logs_pkey");
+
+            entity.ToTable("crm_sync_logs");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_crm_sync_logs_company_id");
+            entity.HasIndex(e => e.SyncStatus).HasDatabaseName("idx_crm_sync_logs_sync_status");
+            entity.HasIndex(e => e.SyncedAt).HasDatabaseName("idx_crm_sync_logs_synced_at");
+            entity.HasIndex(e => e.EntityType).HasDatabaseName("idx_crm_sync_logs_entity_type");
+            entity.HasIndex(e => e.SalesforceId).HasDatabaseName("idx_crm_sync_logs_salesforce_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Provider).HasColumnName("provider");
+            entity.Property(e => e.EntityType).HasColumnName("entity_type");
+            entity.Property(e => e.CaskrEntityId).HasColumnName("caskr_entity_id");
+            entity.Property(e => e.CaskrEntityType).HasColumnName("caskr_entity_type");
+            entity.Property(e => e.SalesforceId)
+                .HasMaxLength(18)
+                .HasColumnName("salesforce_id");
+            entity.Property(e => e.SyncDirection)
+                .HasConversion<string>()
+                .HasColumnName("sync_direction");
+            entity.Property(e => e.SyncStatus)
+                .HasConversion<string>()
+                .HasColumnName("sync_status");
+            entity.Property(e => e.SyncAction).HasColumnName("sync_action");
+            entity.Property(e => e.ErrorMessage).HasColumnName("error_message");
+            entity.Property(e => e.ErrorCode).HasColumnName("error_code");
+            entity.Property(e => e.RetryCount)
+                .HasDefaultValue(0)
+                .HasColumnName("retry_count");
+            entity.Property(e => e.RequestPayload)
+                .HasColumnType("jsonb")
+                .HasColumnName("request_payload");
+            entity.Property(e => e.ResponsePayload)
+                .HasColumnType("jsonb")
+                .HasColumnName("response_payload");
+            entity.Property(e => e.SyncStartedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("sync_started_at");
+            entity.Property(e => e.SyncCompletedAt).HasColumnName("sync_completed_at");
+            entity.Property(e => e.SyncedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("synced_at");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_crm_sync_logs_company");
+        });
+
+        // CrmEntityMapping configuration
+        modelBuilder.Entity<CrmEntityMapping>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("crm_entity_mappings_pkey");
+
+            entity.ToTable("crm_entity_mappings");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_crm_entity_mappings_company_id");
+            entity.HasIndex(e => e.SalesforceId).HasDatabaseName("idx_crm_entity_mappings_salesforce_id");
+            entity.HasIndex(e => new { e.CompanyId, e.Provider, e.CaskrEntityType, e.CaskrEntityId })
+                .IsUnique()
+                .HasDatabaseName("uq_crm_entity_mappings_caskr");
+            entity.HasIndex(e => new { e.CompanyId, e.Provider, e.SalesforceEntityType, e.SalesforceId })
+                .IsUnique()
+                .HasDatabaseName("uq_crm_entity_mappings_salesforce");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Provider).HasColumnName("provider");
+            entity.Property(e => e.SalesforceEntityType).HasColumnName("salesforce_entity_type");
+            entity.Property(e => e.SalesforceId)
+                .HasMaxLength(18)
+                .HasColumnName("salesforce_id");
+            entity.Property(e => e.CaskrEntityType).HasColumnName("caskr_entity_type");
+            entity.Property(e => e.CaskrEntityId).HasColumnName("caskr_entity_id");
+            entity.Property(e => e.LastSyncAt).HasColumnName("last_sync_at");
+            entity.Property(e => e.CaskrLastModified).HasColumnName("caskr_last_modified");
+            entity.Property(e => e.SalesforceLastModified).HasColumnName("salesforce_last_modified");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_crm_entity_mappings_company");
+        });
+
+        // CrmFieldMapping configuration
+        modelBuilder.Entity<CrmFieldMapping>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("crm_field_mappings_pkey");
+
+            entity.ToTable("crm_field_mappings");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_crm_field_mappings_company_id");
+            entity.HasIndex(e => e.SalesforceEntityType).HasDatabaseName("idx_crm_field_mappings_entity_type");
+            entity.HasIndex(e => new { e.CompanyId, e.Provider, e.SalesforceEntityType, e.SalesforceField })
+                .IsUnique()
+                .HasDatabaseName("uq_crm_field_mappings");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Provider).HasColumnName("provider");
+            entity.Property(e => e.SalesforceEntityType).HasColumnName("salesforce_entity_type");
+            entity.Property(e => e.CaskrEntityType).HasColumnName("caskr_entity_type");
+            entity.Property(e => e.SalesforceField).HasColumnName("salesforce_field");
+            entity.Property(e => e.CaskrField).HasColumnName("caskr_field");
+            entity.Property(e => e.TransformationRule).HasColumnName("transformation_rule");
+            entity.Property(e => e.DefaultValue).HasColumnName("default_value");
+            entity.Property(e => e.SyncDirection)
+                .HasConversion<string>()
+                .HasColumnName("sync_direction");
+            entity.Property(e => e.IsRequired)
+                .HasDefaultValue(false)
+                .HasColumnName("is_required");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_crm_field_mappings_company");
+        });
+
+        // CrmSyncPreference configuration
+        modelBuilder.Entity<CrmSyncPreference>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("crm_sync_preferences_pkey");
+
+            entity.ToTable("crm_sync_preferences");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_crm_sync_preferences_company_id");
+            entity.HasIndex(e => new { e.CompanyId, e.Provider, e.EntityType })
+                .IsUnique()
+                .HasDatabaseName("uq_crm_sync_preferences");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Provider).HasColumnName("provider");
+            entity.Property(e => e.EntityType).HasColumnName("entity_type");
+            entity.Property(e => e.SyncDirection)
+                .HasConversion<string>()
+                .HasColumnName("sync_direction");
+            entity.Property(e => e.WebhookEnabled)
+                .HasDefaultValue(true)
+                .HasColumnName("webhook_enabled");
+            entity.Property(e => e.PollingEnabled)
+                .HasDefaultValue(true)
+                .HasColumnName("polling_enabled");
+            entity.Property(e => e.PollingIntervalMinutes)
+                .HasDefaultValue(15)
+                .HasColumnName("polling_interval_minutes");
+            entity.Property(e => e.AutoCreateEnabled)
+                .HasDefaultValue(true)
+                .HasColumnName("auto_create_enabled");
+            entity.Property(e => e.AutoUpdateEnabled)
+                .HasDefaultValue(true)
+                .HasColumnName("auto_update_enabled");
+            entity.Property(e => e.AutoDeleteEnabled)
+                .HasDefaultValue(false)
+                .HasColumnName("auto_delete_enabled");
+            entity.Property(e => e.ConflictResolution).HasColumnName("conflict_resolution");
+            entity.Property(e => e.LastPollingAt).HasColumnName("last_polling_at");
+            entity.Property(e => e.LastWebhookAt).HasColumnName("last_webhook_at");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_crm_sync_preferences_company");
+        });
+
+        // CrmSyncConflict configuration
+        modelBuilder.Entity<CrmSyncConflict>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("crm_sync_conflicts_pkey");
+
+            entity.ToTable("crm_sync_conflicts");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_crm_sync_conflicts_company_id");
+            entity.HasIndex(e => e.ResolutionStatus).HasDatabaseName("idx_crm_sync_conflicts_status");
+            entity.HasIndex(e => e.CreatedAt).HasDatabaseName("idx_crm_sync_conflicts_created_at");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Provider).HasColumnName("provider");
+            entity.Property(e => e.SalesforceEntityType).HasColumnName("salesforce_entity_type");
+            entity.Property(e => e.SalesforceId)
+                .HasMaxLength(18)
+                .HasColumnName("salesforce_id");
+            entity.Property(e => e.CaskrEntityType).HasColumnName("caskr_entity_type");
+            entity.Property(e => e.CaskrEntityId).HasColumnName("caskr_entity_id");
+            entity.Property(e => e.FieldName).HasColumnName("field_name");
+            entity.Property(e => e.CaskrValue).HasColumnName("caskr_value");
+            entity.Property(e => e.SalesforceValue).HasColumnName("salesforce_value");
+            entity.Property(e => e.CaskrModifiedAt).HasColumnName("caskr_modified_at");
+            entity.Property(e => e.SalesforceModifiedAt).HasColumnName("salesforce_modified_at");
+            entity.Property(e => e.ResolutionStatus)
+                .HasConversion<string>()
+                .HasColumnName("resolution_status");
+            entity.Property(e => e.ResolvedValue).HasColumnName("resolved_value");
+            entity.Property(e => e.ResolvedByUserId).HasColumnName("resolved_by_user_id");
+            entity.Property(e => e.ResolvedAt).HasColumnName("resolved_at");
+            entity.Property(e => e.ResolutionNotes).HasColumnName("resolution_notes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_crm_sync_conflicts_company");
+
+            entity.HasOne(d => d.ResolvedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.ResolvedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_crm_sync_conflicts_resolved_by");
         });
 
         OnModelCreatingPartial(modelBuilder);
