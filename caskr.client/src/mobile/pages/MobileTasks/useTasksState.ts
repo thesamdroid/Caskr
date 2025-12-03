@@ -267,6 +267,21 @@ export function useTasksState(): UseTasksStateReturn {
   }, [filters])
 
   // Fetch tasks
+  /**
+   * Format error message based on response status or error type
+   */
+  const formatTaskError = (status?: number, err?: unknown): string => {
+    if (status) {
+      if (status >= 500) return 'Unable to load tasks. Our servers are experiencing issues.'
+      if (status === 401 || status === 403) return 'Please sign in to view your tasks.'
+      if (status === 429) return 'Too many requests. Please wait a moment.'
+    }
+    if (err instanceof TypeError && err.message.includes('fetch')) {
+      return 'Network error. Please check your connection.'
+    }
+    return 'Unable to load tasks. Pull down to try again.'
+  }
+
   const fetchTasks = useCallback(async (isBackground = false) => {
     if (!isBackground) {
       setIsLoading(true)
@@ -276,7 +291,7 @@ export function useTasksState(): UseTasksStateReturn {
     try {
       const response = await authorizedFetch('api/tasks')
       if (!response.ok) {
-        throw new Error('Failed to fetch tasks')
+        throw { status: response.status, message: formatTaskError(response.status) }
       }
 
       const data = await response.json() as MobileTask[]
@@ -284,12 +299,18 @@ export function useTasksState(): UseTasksStateReturn {
       saveCachedTasks(data)
     } catch (err) {
       console.error('[useTasksState] Fetch error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load tasks')
+
+      const errorMessage = (err as { message?: string })?.message || formatTaskError(undefined, err)
+      setError(errorMessage)
 
       // Try to load from cache
       const cached = loadCachedTasks()
       if (cached) {
         setTasks(cached.tasks)
+        // Update error to indicate we're showing cached data
+        if (!isBackground) {
+          setError('Showing cached tasks. Pull to refresh.')
+        }
       }
     } finally {
       setIsLoading(false)

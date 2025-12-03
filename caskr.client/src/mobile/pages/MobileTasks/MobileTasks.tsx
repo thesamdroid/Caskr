@@ -174,50 +174,67 @@ export function MobileTasks() {
 
       {/* Multi-select toolbar */}
       {isMultiSelectMode && (
-        <div className={styles.multiSelectBar}>
-          <button className={styles.multiSelectButton} onClick={clearSelection}>
+        <div className={styles.multiSelectBar} role="toolbar" aria-label="Task selection actions">
+          <button
+            type="button"
+            className={styles.multiSelectButton}
+            onClick={clearSelection}
+            aria-label="Cancel selection"
+          >
             <svg
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              aria-hidden="true"
             >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
             Cancel
           </button>
-          <span className={styles.selectionCount}>
+          <span className={styles.selectionCount} aria-live="polite">
             {selectedTaskIds.size} selected
           </span>
           <div className={styles.multiSelectActions}>
-            <button className={styles.selectAllButton} onClick={selectAll}>
+            <button
+              type="button"
+              className={styles.selectAllButton}
+              onClick={selectAll}
+              aria-label="Select all tasks"
+            >
               Select All
             </button>
             <button
+              type="button"
               className={styles.bulkCompleteButton}
               onClick={handleBulkComplete}
               disabled={selectedTaskIds.size === 0}
+              aria-label={`Complete ${selectedTaskIds.size} selected tasks`}
             >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
+                aria-hidden="true"
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </button>
             <button
+              type="button"
               className={styles.bulkDeleteButton}
               onClick={handleBulkDelete}
               disabled={selectedTaskIds.size === 0}
+              aria-label={`Delete ${selectedTaskIds.size} selected tasks`}
             >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                aria-hidden="true"
               >
                 <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
               </svg>
@@ -251,6 +268,7 @@ export function MobileTasks() {
       {/* FAB for new task */}
       {!isMultiSelectMode && (
         <button
+          type="button"
           className={styles.fab}
           onClick={handleOpenNewForm}
           aria-label="Create new task"
@@ -260,6 +278,7 @@ export function MobileTasks() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2.5"
+            aria-hidden="true"
           >
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
@@ -269,9 +288,9 @@ export function MobileTasks() {
 
       {/* Undo toast */}
       {showUndoToast && (
-        <div className={styles.undoToast}>
+        <div className={styles.undoToast} role="alert" aria-live="assertive">
           <span>{undoLabel}</span>
-          <button className={styles.undoButton} onClick={handleUndo}>
+          <button type="button" className={styles.undoButton} onClick={handleUndo}>
             Undo
           </button>
         </div>

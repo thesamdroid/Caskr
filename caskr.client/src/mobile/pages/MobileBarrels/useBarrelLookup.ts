@@ -222,6 +222,20 @@ export function useBarrelLookup(): UseBarrelLookupReturn {
     setScanResult(null)
   }, [])
 
+  /**
+   * Format search/barrel error to user-friendly message
+   */
+  const formatBarrelError = (status?: number, context?: string): string => {
+    const action = context || 'complete this action'
+    if (status) {
+      if (status >= 500) return `Unable to ${action}. Our servers are temporarily unavailable.`
+      if (status === 401 || status === 403) return 'Please sign in to continue.'
+      if (status === 404) return 'Barrel not found. It may have been moved or removed.'
+      if (status === 429) return 'Too many requests. Please wait a moment.'
+    }
+    return `Unable to ${action}. Please check your connection and try again.`
+  }
+
   // Search barrels
   const performSearch = useCallback(async (query: string, status: BarrelStatus | 'all', rickhouseId: number | null) => {
     if (!query.trim()) {
@@ -244,14 +258,15 @@ export function useBarrelLookup(): UseBarrelLookupReturn {
 
       const response = await authorizedFetch(url)
       if (!response.ok) {
-        throw new Error('Search failed')
+        throw { status: response.status }
       }
 
       const results = await response.json() as BarrelSearchResult[]
       setSearchResults(results)
     } catch (error) {
       console.error('[useBarrelLookup] Search error:', error)
-      setSearchError(error instanceof Error ? error.message : 'Search failed')
+      const status = (error as { status?: number })?.status
+      setSearchError(formatBarrelError(status, 'search barrels'))
       setSearchResults([])
     } finally {
       setIsSearching(false)
@@ -368,9 +383,10 @@ export function useBarrelLookup(): UseBarrelLookupReturn {
       const response = await authorizedFetch(`api/barrels/sku/${encodeURIComponent(sku)}`)
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error(`Barrel ${sku} not found`)
+          setDetailError(`Barrel "${sku}" was not found. Please verify the barcode and try again.`)
+          return
         }
-        throw new Error('Failed to load barrel')
+        throw { status: response.status }
       }
 
       const detail = await response.json() as BarrelDetail
@@ -400,7 +416,8 @@ export function useBarrelLookup(): UseBarrelLookupReturn {
       setScanResult({ type: 'barcode', value: sku, timestamp: new Date() })
     } catch (error) {
       console.error('[useBarrelLookup] Load by SKU error:', error)
-      setDetailError(error instanceof Error ? error.message : 'Failed to load barrel')
+      const status = (error as { status?: number })?.status
+      setDetailError(formatBarrelError(status, 'load barrel details'))
     } finally {
       setIsLoadingDetail(false)
     }

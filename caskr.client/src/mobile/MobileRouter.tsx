@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { MobileAppShell } from './MobileAppShell'
+import styles from './MobileRouter.module.css'
 
 // Lazy-loaded mobile pages
 const MobileDashboard = lazy(() => import('./pages/MobileDashboard'))
@@ -9,27 +10,13 @@ const MobileTasks = lazy(() => import('./pages/MobileTasks'))
 const MobileBarrels = lazy(() => import('./pages/MobileBarrels'))
 const MobileBarrelDetail = lazy(() => import('./pages/MobileBarrelDetail'))
 
-// Fallback loading component
+/**
+ * Fallback loading component for lazy-loaded pages
+ * Accessible, supports dark mode and reduced motion
+ */
 const PageLoader = () => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '50vh'
-  }}>
-    <div style={{
-      width: 40,
-      height: 40,
-      border: '3px solid #e5e7eb',
-      borderTopColor: '#2563eb',
-      borderRadius: '50%',
-      animation: 'spin 0.8s linear infinite'
-    }} />
-    <style>{`
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-    `}</style>
+  <div className={styles.pageLoader} role="status" aria-label="Loading page">
+    <div className={styles.spinner} aria-hidden="true" />
   </div>
 )
 

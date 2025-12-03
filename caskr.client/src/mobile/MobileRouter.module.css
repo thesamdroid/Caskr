@@ -1,0 +1,55 @@
+/**
+ * Mobile Router Styles
+ * Styles for route-level components like page loaders
+ */
+
+/* Page loader container */
+.pageLoader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Loading spinner */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Loading text (optional) */
+.loadingText {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .spinner {
+    border-color: #374151;
+    border-top-color: #60a5fa;
+  }
+
+  .loadingText {
+    color: #9ca3af;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

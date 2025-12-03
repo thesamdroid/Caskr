@@ -266,7 +266,7 @@ interface SiteSwitcherModalProps {
 
 function SiteSwitcherModal({
   currentSite,
-  targetSite,
+  targetSite: _targetSite,
   deviceMessage,
   rememberChoice,
   setRememberChoice,
@@ -277,6 +277,7 @@ function SiteSwitcherModal({
   onClose,
   className,
 }: SiteSwitcherModalProps) {
+  // _targetSite is available for future use (e.g., highlighting recommended option)
   return (
     <div
       className={`${styles.overlay} ${className || ''}`}
