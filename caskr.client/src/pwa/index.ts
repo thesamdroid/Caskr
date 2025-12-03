@@ -49,8 +49,23 @@ export {
 export type { SyncStatus } from './sync'
 
 // Components
-export { OfflineIndicator } from './components'
-export type { OfflineIndicatorProps } from './components'
+export { OfflineIndicator, InstallPrompt } from './components'
+export type { OfflineIndicatorProps, InstallPromptProps } from './components'
+
+// Hooks
+export { useInstallPrompt } from './hooks'
+export type { InstallPromptState } from './hooks'
+
+// Analytics
+export {
+  trackInstallEvent,
+  getStoredEvents,
+  clearStoredEvents,
+  getInstallFunnelSummary,
+  getConversionRate,
+  detectPlatform,
+} from './analytics'
+export type { InstallEvent, InstallEventData } from './analytics'
 
 /**
  * Initialize PWA features

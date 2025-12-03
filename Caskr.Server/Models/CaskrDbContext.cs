@@ -129,6 +129,11 @@ public partial class CaskrDbContext : DbContext
     // Mobile detection user preferences
     public virtual DbSet<UserSitePreference> UserSitePreferences { get; set; } = null!;
 
+    // Push notifications
+    public virtual DbSet<PushSubscription> PushSubscriptions { get; set; } = null!;
+
+    public virtual DbSet<NotificationPreference> NotificationPreferences { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>

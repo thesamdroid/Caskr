@@ -1,0 +1,447 @@
+/**
+ * NotificationSettings Component Styles
+ */
+
+.container {
+  padding: 16px;
+}
+
+.error {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Unsupported / Denied / Subscribe States */
+.unsupported,
+.denied,
+.subscribe {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.unsupportedIcon,
+.deniedIcon,
+.subscribeIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: #f3f4f6;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  color: #6b7280;
+}
+
+.unsupportedTitle,
+.deniedTitle,
+.subscribeTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.unsupportedText,
+.deniedText,
+.subscribeText {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.deniedSteps {
+  text-align: left;
+  padding-left: 24px;
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.8;
+}
+
+.enableButton {
+  padding: 12px 24px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.enableButton:hover {
+  background: #1d4ed8;
+}
+
+.enableButton:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+}
+
+/* Sections */
+.section {
+  padding: 16px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.sectionDescription {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 12px 0;
+}
+
+/* Toggle Rows */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+}
+
+.toggleRow:not(:last-child) {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.toggleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  padding-right: 12px;
+}
+
+.toggleLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.toggleDescription {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #d1d5db;
+  transition: 0.3s;
+  border-radius: 28px;
+}
+
+.toggleSlider::before {
+  position: absolute;
+  content: '';
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggle input:checked + .toggleSlider {
+  background-color: #2563eb;
+}
+
+.toggle input:checked + .toggleSlider::before {
+  transform: translateX(20px);
+}
+
+.toggle input:disabled + .toggleSlider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Quiet Hours */
+.quietHours {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.timeInput {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeInput label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.timeInput input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+.timeInput input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.timezoneSelect {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timezoneSelect label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.timezoneSelect select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+.timezoneSelect select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Device List */
+.deviceList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.device {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.deviceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deviceName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.deviceDate {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.removeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.removeButton:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.removeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.testButton {
+  padding: 12px 16px;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.testButton:hover {
+  background: #e5e7eb;
+}
+
+.testButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.disableButton {
+  padding: 12px 16px;
+  background: none;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.disableButton:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.disableButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .error {
+    background: #450a0a;
+    color: #fca5a5;
+  }
+
+  .unsupportedIcon,
+  .deniedIcon,
+  .subscribeIcon {
+    background: #374151;
+    color: #9ca3af;
+  }
+
+  .unsupportedTitle,
+  .deniedTitle,
+  .subscribeTitle {
+    color: #f9fafb;
+  }
+
+  .unsupportedText,
+  .deniedText,
+  .subscribeText {
+    color: #9ca3af;
+  }
+
+  .deniedSteps {
+    color: #d1d5db;
+  }
+
+  .section {
+    border-bottom-color: #374151;
+  }
+
+  .sectionTitle {
+    color: #e5e7eb;
+  }
+
+  .toggleRow:not(:last-child) {
+    border-bottom-color: #374151;
+  }
+
+  .toggleLabel {
+    color: #f9fafb;
+  }
+
+  .toggleDescription {
+    color: #9ca3af;
+  }
+
+  .toggleSlider {
+    background-color: #4b5563;
+  }
+
+  .timeInput input,
+  .timezoneSelect select {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .device {
+    background: #374151;
+  }
+
+  .deviceName {
+    color: #f9fafb;
+  }
+
+  .testButton {
+    background: #374151;
+    color: #e5e7eb;
+  }
+
+  .testButton:hover {
+    background: #4b5563;
+  }
+
+  .disableButton {
+    color: #fca5a5;
+    border-color: #991b1b;
+  }
+
+  .disableButton:hover {
+    background: #450a0a;
+  }
+}
