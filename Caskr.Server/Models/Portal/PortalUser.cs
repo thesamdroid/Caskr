@@ -1,5 +1,7 @@
 namespace Caskr.server.Models.Portal;
 
+using Caskr.server.Models.Crm;
+
 /// <summary>
 /// Customer portal user - separate from main app users for security isolation.
 /// Allows external customers to view their cask investments.
@@ -40,8 +42,34 @@ public class PortalUser
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    // Salesforce CRM integration fields (CRM-001)
+    /// <summary>
+    /// Salesforce Contact ID (18 character format)
+    /// </summary>
+    public string? SalesforceContactId { get; set; }
+
+    /// <summary>
+    /// Timestamp of last Salesforce sync
+    /// </summary>
+    public DateTime? SalesforceLastSyncAt { get; set; }
+
+    /// <summary>
+    /// Link to the customer record for this portal user
+    /// </summary>
+    public long? LinkedCustomerId { get; set; }
+
+    /// <summary>
+    /// Flag indicating if this user is a cask investor (from Salesforce custom field)
+    /// </summary>
+    public bool IsCaskInvestor { get; set; } = false;
+
     // Navigation properties
     public virtual Company Company { get; set; } = null!;
+
+    /// <summary>
+    /// Linked customer record (for CRM integration)
+    /// </summary>
+    public virtual Customer? LinkedCustomer { get; set; }
 
     public virtual ICollection<CaskOwnership> CaskOwnerships { get; set; } = new List<CaskOwnership>();
 
