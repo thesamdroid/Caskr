@@ -19,6 +19,7 @@ import CustomReportBuilderPage from './pages/CustomReportBuilderPage'
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage'
 import PermissionGuard from './components/PermissionGuard'
 import { TTB_COMPLIANCE_PERMISSION, TTB_EDIT_PERMISSION } from './features/authSlice'
+import { PricingPage } from './pages/public/pricing'
 
 function App() {
   return (
@@ -61,6 +62,7 @@ function App() {
           <Route path='accounting' element={<AccountingSettingsPage />} />
         <Route path='accounting/sync-history' element={<AccountingSyncHistoryPage />} />
         <Route path='login' element={<LoginPage />} />
+        <Route path='pricing' element={<PricingPage />} />
       </Route>
     </Routes>
   )

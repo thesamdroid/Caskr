@@ -1,0 +1,110 @@
+/* ===================================
+   PRICING PAGE
+   Main page layout and styles
+   =================================== */
+
+.pricing-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Error state */
+.pricing-page-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pricing-error-container {
+  text-align: center;
+  padding: var(--space-3xl);
+  max-width: 500px;
+}
+
+.pricing-error-container h1 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.pricing-error-container p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xl);
+}
+
+/* Mobile sticky CTA button */
+.pricing-mobile-sticky {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-md);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--bg-primary) 30%
+  );
+  z-index: var(--z-sticky);
+}
+
+.pricing-mobile-cta {
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 768px) {
+  .pricing-mobile-sticky {
+    display: block;
+  }
+
+  /* Add bottom padding to page content for sticky button */
+  .pricing-page {
+    padding-bottom: 80px;
+  }
+}
+
+/* Lazy loading for below-fold content */
+.pricing-page section:not(:first-child) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* Print styles */
+@media print {
+  .pricing-page {
+    background: white;
+    color: black;
+  }
+
+  .pricing-mobile-sticky {
+    display: none;
+  }
+
+  .pricing-hero {
+    break-after: avoid;
+  }
+
+  .pricing-cards-section {
+    break-inside: avoid;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pricing-page * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .pricing-page {
+    --border-secondary: #666;
+    --border-primary: #444;
+  }
+}

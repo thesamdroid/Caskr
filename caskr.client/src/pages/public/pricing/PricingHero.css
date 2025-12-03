@@ -1,0 +1,80 @@
+/* ===================================
+   PRICING HERO SECTION
+   Top section with headline and toggle
+   =================================== */
+
+.pricing-hero {
+  padding: var(--space-3xl) var(--space-xl);
+  text-align: center;
+  background: linear-gradient(
+    180deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
+}
+
+.pricing-hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.pricing-hero-headline {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+
+.pricing-hero-subheadline {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2xl);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pricing-hero-toggle {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-xl);
+}
+
+/* Gold accent gradient on headline */
+.pricing-hero-headline::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold-primary), var(--gold-dark));
+  margin: var(--space-lg) auto 0;
+  border-radius: var(--radius-full);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .pricing-hero {
+    padding: var(--space-2xl) var(--space-md);
+  }
+
+  .pricing-hero-headline {
+    font-size: 2rem;
+  }
+
+  .pricing-hero-subheadline {
+    font-size: 1rem;
+    margin-bottom: var(--space-xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .pricing-hero-headline {
+    font-size: 1.75rem;
+  }
+
+  .pricing-hero-subheadline {
+    font-size: 0.9rem;
+  }
+}

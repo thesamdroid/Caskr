@@ -1,0 +1,136 @@
+/* ===================================
+   PRICING FOOTER
+   Standard public footer
+   =================================== */
+
+.pricing-footer {
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-secondary);
+  padding: var(--space-3xl) var(--space-xl) var(--space-xl);
+}
+
+.pricing-footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Brand section */
+.pricing-footer-brand {
+  margin-bottom: var(--space-2xl);
+}
+
+.pricing-footer-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-md);
+  text-decoration: none;
+  color: var(--gold-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  transition: color var(--transition-fast);
+}
+
+.pricing-footer-logo:hover {
+  color: var(--gold-light);
+}
+
+.pricing-footer-logo .barrel-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.pricing-footer-tagline {
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+  margin-top: var(--space-sm);
+}
+
+/* Navigation */
+.pricing-footer-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-xl);
+  margin-bottom: var(--space-2xl);
+}
+
+.pricing-footer-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-footer-heading {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-md);
+}
+
+.pricing-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.pricing-footer-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color var(--transition-fast);
+}
+
+.pricing-footer-links a:hover {
+  color: var(--text-gold);
+}
+
+.pricing-footer-links a:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Bottom section */
+.pricing-footer-bottom {
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--border-primary);
+}
+
+.pricing-footer-copyright {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .pricing-footer {
+    padding: var(--space-2xl) var(--space-md) var(--space-lg);
+  }
+
+  .pricing-footer-nav {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .pricing-footer-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .pricing-footer-column {
+    text-align: center;
+  }
+
+  .pricing-footer-brand {
+    text-align: center;
+  }
+
+  .pricing-footer-logo {
+    justify-content: center;
+  }
+}

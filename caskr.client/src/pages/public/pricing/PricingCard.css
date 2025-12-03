@@ -1,0 +1,213 @@
+/* ===================================
+   PRICING CARD COMPONENT
+   Individual tier card styling
+   =================================== */
+
+.pricing-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  transition: all var(--transition-base);
+  animation: cardFadeIn 400ms ease-out both;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-card {
+    animation: none;
+  }
+}
+
+/* Hover effect on desktop */
+@media (hover: hover) {
+  .pricing-card:hover {
+    border-color: var(--border-gold);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+  }
+}
+
+/* Popular card styling */
+.pricing-card-popular {
+  border-color: var(--gold-primary);
+  box-shadow: var(--shadow-gold);
+  transform: scale(1.02);
+  z-index: 1;
+}
+
+.pricing-card-popular:hover {
+  transform: scale(1.02) translateY(-4px);
+}
+
+/* Most Popular badge */
+.pricing-card-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-xs) var(--space-lg);
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+  color: var(--bg-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}
+
+/* Card header */
+.pricing-card-header {
+  text-align: center;
+  margin-bottom: var(--space-lg);
+}
+
+.pricing-card-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.pricing-card-tagline {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Price section */
+.pricing-card-price {
+  text-align: center;
+  padding: var(--space-lg) 0;
+  border-top: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-primary);
+  margin-bottom: var(--space-lg);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+/* Custom pricing for enterprise */
+.pricing-card-custom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.pricing-card-custom-text {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pricing-card-custom-subtext {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Features list */
+.pricing-card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.pricing-card-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.pricing-card-feature.included .pricing-card-feature-icon {
+  color: var(--success);
+}
+
+.pricing-card-feature.excluded {
+  opacity: 0.5;
+}
+
+.pricing-card-feature.excluded .pricing-card-feature-icon {
+  color: var(--text-muted);
+}
+
+.pricing-card-feature-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pricing-card-feature-text {
+  flex: 1;
+}
+
+.pricing-card-feature-text strong {
+  color: var(--text-primary);
+}
+
+/* Footer with CTA */
+.pricing-card-footer {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+}
+
+.pricing-card-cta {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all var(--transition-base);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .pricing-card {
+    padding: var(--space-lg);
+  }
+
+  .pricing-card-popular {
+    transform: none;
+  }
+
+  .pricing-card-popular:hover {
+    transform: translateY(-4px);
+  }
+
+  .pricing-card-name {
+    font-size: 1.25rem;
+  }
+}
