@@ -7,6 +7,7 @@ import OrdersPage from './pages/OrdersPage'
 import ProductsPage from './pages/ProductsPage'
 import LoginPage from './pages/LoginPage'
 import BarrelsPage from './pages/BarrelsPage'
+import WarehousesPage from './pages/WarehousesPage'
 import AccountingSettingsPage from './pages/AccountingSettingsPage'
 import AccountingSyncHistoryPage from './pages/AccountingSyncHistoryPage'
 import TtbReportsPage from './pages/TtbReportsPage'
@@ -26,6 +27,7 @@ function App() {
           <Route path='dashboard-preview' element={<DashboardPreviewPage />} />
           <Route path='orders' element={<OrdersPage />} />
           <Route path='barrels' element={<BarrelsPage />} />
+          <Route path='warehouses' element={<WarehousesPage />} />
           <Route
             path='ttb-reports'
             element={

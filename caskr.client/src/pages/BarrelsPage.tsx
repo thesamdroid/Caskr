@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fetchBarrels, forecastBarrels } from '../features/barrelsSlice'
 import ForecastingModal from '../components/ForecastingModal'
@@ -8,20 +8,50 @@ function BarrelsPage() {
   const dispatch = useAppDispatch()
   const barrels = useAppSelector(state => state.barrels.items)
   const forecast = useAppSelector(state => state.barrels.forecast)
-  const forecastCount = useAppSelector(state => state.barrels.forecastCount)
   const forecastDate = useAppSelector(state => state.barrels.forecastDate)
   const forecastAgeYears = useAppSelector(state => state.barrels.forecastAgeYears)
   const [showModal, setShowModal] = useState(false)
   const companyId = 1
 
+  // Warehouse filtering
+  const selectedWarehouseId = useAppSelector(state => state.warehouses.selectedWarehouseId)
+  const warehouses = useAppSelector(state => state.warehouses.items)
+
+  // Get warehouse name by ID
+  const getWarehouseName = (warehouseId: number) => {
+    const warehouse = warehouses.find(w => w.id === warehouseId)
+    return warehouse?.name || '-'
+  }
+
   useEffect(() => {
     dispatch(fetchBarrels(companyId))
   }, [dispatch, companyId])
+
+  // Filter barrels by selected warehouse
+  const filteredBarrels = useMemo(() => {
+    if (selectedWarehouseId === null) {
+      return barrels
+    }
+    return barrels.filter(b => b.warehouseId === selectedWarehouseId)
+  }, [barrels, selectedWarehouseId])
+
+  // Filter forecast by selected warehouse
+  const filteredForecast = useMemo(() => {
+    if (selectedWarehouseId === null) {
+      return forecast
+    }
+    return forecast.filter(b => b.warehouseId === selectedWarehouseId)
+  }, [forecast, selectedWarehouseId])
 
   const handleForecast = async (targetDate: string, ageYears: number) => {
     await dispatch(forecastBarrels({ companyId, targetDate, ageYears })).unwrap()
     setShowModal(false)
   }
+
+  // Get the warehouse name for display in subtitle
+  const selectedWarehouseName = selectedWarehouseId !== null
+    ? warehouses.find(w => w.id === selectedWarehouseId)?.name
+    : null
 
   return (
     <>
@@ -29,7 +59,11 @@ function BarrelsPage() {
         <div className="section-header">
           <div>
             <h1 id="barrels-title" className="section-title">Barrels</h1>
-            <p className="section-subtitle">Manage barrel inventory and forecasting</p>
+            <p className="section-subtitle">
+              {selectedWarehouseName
+                ? `Showing ${filteredBarrels.length} barrels in ${selectedWarehouseName}`
+                : `Manage barrel inventory and forecasting (${filteredBarrels.length} total)`}
+            </p>
           </div>
           <div className="section-actions">
             <button
@@ -48,11 +82,19 @@ function BarrelsPage() {
           onSubmit={handleForecast}
         />
 
-        {barrels.length === 0 ? (
+        {filteredBarrels.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">🛢️</div>
-            <h3 className="empty-state-title">No barrels in inventory</h3>
-            <p className="empty-state-text">Barrels will appear here when orders are created</p>
+            <h3 className="empty-state-title">
+              {selectedWarehouseName
+                ? `No barrels in ${selectedWarehouseName}`
+                : 'No barrels in inventory'}
+            </h3>
+            <p className="empty-state-text">
+              {selectedWarehouseName
+                ? 'Try selecting a different warehouse or "All Warehouses"'
+                : 'Barrels will appear here when orders are created'}
+            </p>
           </div>
         ) : (
           <div className="table-container">
@@ -60,13 +102,15 @@ function BarrelsPage() {
               <thead>
                 <tr>
                   <th scope="col">SKU</th>
+                  <th scope="col">Warehouse</th>
                   <th scope="col">Order ID</th>
                 </tr>
               </thead>
               <tbody>
-                {barrels.map(b => (
+                {filteredBarrels.map(b => (
                   <tr key={b.id}>
                     <td><span className="text-gold">{b.sku}</span></td>
+                    <td><span className="text-secondary">{getWarehouseName(b.warehouseId)}</span></td>
                     <td><span className="text-secondary">{b.orderId}</span></td>
                   </tr>
                 ))}
@@ -76,13 +120,14 @@ function BarrelsPage() {
         )}
       </section>
 
-      {forecast.length > 0 && (
+      {filteredForecast.length > 0 && (
         <section className="content-section" aria-labelledby="forecast-title">
           <div className="section-header">
             <div>
               <h2 id="forecast-title" className="section-title">Forecast Results</h2>
               <p className="section-subtitle text-gold">
-                {formatForecastSummary(forecastDate, forecastAgeYears, forecastCount)}
+                {formatForecastSummary(forecastDate, forecastAgeYears, filteredForecast.length)}
+                {selectedWarehouseName && ` (in ${selectedWarehouseName})`}
               </p>
             </div>
           </div>
@@ -92,12 +137,14 @@ function BarrelsPage() {
               <thead>
                 <tr>
                   <th scope="col">SKU</th>
+                  <th scope="col">Warehouse</th>
                 </tr>
               </thead>
               <tbody>
-                {forecast.map(b => (
+                {filteredForecast.map(b => (
                   <tr key={b.id}>
                     <td><span className="text-gold">{b.sku}</span></td>
+                    <td><span className="text-secondary">{getWarehouseName(b.warehouseId)}</span></td>
                   </tr>
                 ))}
               </tbody>

@@ -41,6 +41,14 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<Rickhouse> Rickhouses { get; set; } = null!;
 
+    public virtual DbSet<Warehouse> Warehouses { get; set; } = null!;
+
+    public virtual DbSet<InterWarehouseTransfer> InterWarehouseTransfers { get; set; } = null!;
+
+    public virtual DbSet<BarrelTransfer> BarrelTransfers { get; set; } = null!;
+
+    public virtual DbSet<WarehouseCapacitySnapshot> WarehouseCapacitySnapshots { get; set; } = null!;
+
     public virtual DbSet<Barrel> Barrels { get; set; } = null!;
 
     public virtual DbSet<AccountingIntegration> AccountingIntegrations { get; set; } = null!;
@@ -146,6 +154,15 @@ public partial class CaskrDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(d => d.InvoiceId)
                 .HasConstraintName("fk_orders_invoice");
+
+            entity.Property(e => e.FulfillmentWarehouseId).HasColumnName("fulfillment_warehouse_id");
+
+            entity.HasIndex(e => e.FulfillmentWarehouseId).HasDatabaseName("idx_orders_fulfillment_warehouse_id");
+
+            entity.HasOne(d => d.FulfillmentWarehouse).WithMany(p => p.FulfillmentOrders)
+                .HasForeignKey(d => d.FulfillmentWarehouseId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_orders_fulfillment_warehouse");
         });
 
         modelBuilder.Entity<OrderTask>(entity =>
@@ -426,6 +443,9 @@ public partial class CaskrDbContext : DbContext
             entity.Property(e => e.BatchId).HasColumnName("batch_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.RickhouseId).HasColumnName("rickhouse_id");
+            entity.Property(e => e.WarehouseId).HasColumnName("warehouse_id");
+
+            entity.HasIndex(e => e.WarehouseId).HasDatabaseName("idx_barrel_warehouse_id");
 
             entity.HasOne(d => d.Company).WithMany(p => p.Barrels)
                 .HasForeignKey(d => d.CompanyId)
@@ -445,6 +465,207 @@ public partial class CaskrDbContext : DbContext
             entity.HasOne(d => d.Batch).WithMany()
                 .HasForeignKey(d => new { d.BatchId, d.CompanyId })
                 .HasConstraintName("fk_barrel_batch");
+
+            entity.HasOne(d => d.Warehouse).WithMany(p => p.Barrels)
+                .HasForeignKey(d => d.WarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_barrel_warehouse");
+        });
+
+        // Warehouse configuration
+        modelBuilder.Entity<Warehouse>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("warehouses_pkey");
+
+            entity.ToTable("warehouses");
+
+            entity.HasIndex(e => e.CompanyId).HasDatabaseName("idx_warehouses_company_id");
+            entity.HasIndex(e => e.IsActive).HasDatabaseName("idx_warehouses_is_active");
+            entity.HasIndex(e => e.WarehouseType).HasDatabaseName("idx_warehouses_type");
+            entity.HasIndex(e => new { e.CompanyId, e.Name })
+                .IsUnique()
+                .HasDatabaseName("uq_warehouses_company_name");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(200)
+                .HasColumnName("name");
+            entity.Property(e => e.WarehouseType)
+                .HasConversion<string>()
+                .HasColumnName("warehouse_type");
+            entity.Property(e => e.AddressLine1)
+                .HasMaxLength(255)
+                .HasColumnName("address_line1");
+            entity.Property(e => e.AddressLine2)
+                .HasMaxLength(255)
+                .HasColumnName("address_line2");
+            entity.Property(e => e.City)
+                .HasMaxLength(100)
+                .HasColumnName("city");
+            entity.Property(e => e.State)
+                .HasMaxLength(100)
+                .HasColumnName("state");
+            entity.Property(e => e.PostalCode)
+                .HasMaxLength(20)
+                .HasColumnName("postal_code");
+            entity.Property(e => e.Country)
+                .HasMaxLength(100)
+                .HasDefaultValue("USA")
+                .HasColumnName("country");
+            entity.Property(e => e.TotalCapacity)
+                .HasDefaultValue(0)
+                .HasColumnName("total_capacity");
+            entity.Property(e => e.LengthFeet)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("length_feet");
+            entity.Property(e => e.WidthFeet)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("width_feet");
+            entity.Property(e => e.HeightFeet)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("height_feet");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+
+            entity.HasOne(d => d.Company).WithMany(p => p.Warehouses)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_warehouses_company");
+
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_warehouses_created_by");
+        });
+
+        // InterWarehouseTransfer configuration
+        modelBuilder.Entity<InterWarehouseTransfer>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("inter_warehouse_transfers_pkey");
+
+            entity.ToTable("inter_warehouse_transfers");
+
+            entity.HasIndex(e => e.FromWarehouseId).HasDatabaseName("idx_inter_warehouse_transfers_from");
+            entity.HasIndex(e => e.ToWarehouseId).HasDatabaseName("idx_inter_warehouse_transfers_to");
+            entity.HasIndex(e => e.Status).HasDatabaseName("idx_inter_warehouse_transfers_status");
+            entity.HasIndex(e => e.TransferDate).HasDatabaseName("idx_inter_warehouse_transfers_date");
+            entity.HasIndex(e => e.InitiatedByUserId).HasDatabaseName("idx_inter_warehouse_transfers_initiated_by");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FromWarehouseId).HasColumnName("from_warehouse_id");
+            entity.Property(e => e.ToWarehouseId).HasColumnName("to_warehouse_id");
+            entity.Property(e => e.TransferDate).HasColumnName("transfer_date");
+            entity.Property(e => e.BarrelsCount)
+                .HasDefaultValue(0)
+                .HasColumnName("barrels_count");
+            entity.Property(e => e.ProofGallons)
+                .HasColumnType("decimal(12,2)")
+                .HasColumnName("proof_gallons");
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasColumnName("status");
+            entity.Property(e => e.InitiatedByUserId).HasColumnName("initiated_by_user_id");
+            entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.FromWarehouse).WithMany(p => p.OutgoingTransfers)
+                .HasForeignKey(d => d.FromWarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_inter_warehouse_transfers_from");
+
+            entity.HasOne(d => d.ToWarehouse).WithMany(p => p.IncomingTransfers)
+                .HasForeignKey(d => d.ToWarehouseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_inter_warehouse_transfers_to");
+
+            entity.HasOne(d => d.InitiatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.InitiatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_inter_warehouse_transfers_initiated_by");
+        });
+
+        // BarrelTransfer configuration
+        modelBuilder.Entity<BarrelTransfer>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("barrel_transfers_pkey");
+
+            entity.ToTable("barrel_transfers");
+
+            entity.HasIndex(e => e.BarrelId).HasDatabaseName("idx_barrel_transfers_barrel_id");
+            entity.HasIndex(e => e.TransferId).HasDatabaseName("idx_barrel_transfers_transfer_id");
+            entity.HasIndex(e => new { e.BarrelId, e.TransferId })
+                .IsUnique()
+                .HasDatabaseName("uq_barrel_transfer");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BarrelId).HasColumnName("barrel_id");
+            entity.Property(e => e.TransferId).HasColumnName("transfer_id");
+            entity.Property(e => e.TransferredAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("transferred_at");
+
+            entity.HasOne(d => d.Barrel).WithMany(p => p.BarrelTransfers)
+                .HasForeignKey(d => d.BarrelId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_barrel_transfers_barrel");
+
+            entity.HasOne(d => d.Transfer).WithMany(p => p.BarrelTransfers)
+                .HasForeignKey(d => d.TransferId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_barrel_transfers_transfer");
+        });
+
+        // WarehouseCapacitySnapshot configuration
+        modelBuilder.Entity<WarehouseCapacitySnapshot>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("warehouse_capacity_snapshots_pkey");
+
+            entity.ToTable("warehouse_capacity_snapshots");
+
+            entity.HasIndex(e => e.WarehouseId).HasDatabaseName("idx_warehouse_capacity_snapshots_warehouse_id");
+            entity.HasIndex(e => e.SnapshotDate).HasDatabaseName("idx_warehouse_capacity_snapshots_date");
+            entity.HasIndex(e => e.OccupancyPercentage).HasDatabaseName("idx_warehouse_capacity_snapshots_occupancy");
+            entity.HasIndex(e => new { e.WarehouseId, e.SnapshotDate })
+                .IsUnique()
+                .HasDatabaseName("uq_warehouse_snapshot_date");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.WarehouseId).HasColumnName("warehouse_id");
+            entity.Property(e => e.SnapshotDate).HasColumnName("snapshot_date");
+            entity.Property(e => e.TotalCapacity).HasColumnName("total_capacity");
+            entity.Property(e => e.OccupiedPositions)
+                .HasDefaultValue(0)
+                .HasColumnName("occupied_positions");
+            entity.Property(e => e.OccupancyPercentage)
+                .HasColumnType("decimal(5,2)")
+                .HasDefaultValue(0.00m)
+                .HasColumnName("occupancy_percentage");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.Warehouse).WithMany(p => p.CapacitySnapshots)
+                .HasForeignKey(d => d.WarehouseId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_warehouse_capacity_snapshots_warehouse");
         });
 
         modelBuilder.Entity<AccountingIntegration>(entity =>

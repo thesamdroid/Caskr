@@ -26,10 +26,17 @@ public partial class Order
 
     public int? InvoiceId { get; set; }
 
+    /// <summary>
+    /// Warehouse that will fulfill this order (source of barrels)
+    /// </summary>
+    public int? FulfillmentWarehouseId { get; set; }
+
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public int MashBillId { get; set; }
 
     public virtual User Owner { get; set; } = null!;
+
+    public virtual Warehouse? FulfillmentWarehouse { get; set; }
 
     public virtual Batch? Batch { get; set; }
 
