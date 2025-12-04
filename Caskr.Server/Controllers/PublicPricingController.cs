@@ -21,6 +21,7 @@ public class PublicPricingController : ControllerBase
 
     private const int MaxRequestsPerMinute = 100;
     private const string RateLimitCacheKeyPrefix = "pricing:ratelimit:";
+    private const string RateLimitExceededMessage = "Rate limit exceeded. Please try again later.";
 
     public PublicPricingController(
         IPricingService pricingService,
@@ -47,9 +48,10 @@ public class PublicPricingController : ControllerBase
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
     public async Task<ActionResult<PricingPageDataDto>> GetPricingPageData()
     {
-        if (IsRateLimited())
+        var rateLimited = GetRateLimitResponseIfExceeded();
+        if (rateLimited is not null)
         {
-            return StatusCode(429, new { message = "Rate limit exceeded. Please try again later." });
+            return rateLimited;
         }
 
         var data = await _pricingService.GetPricingPageDataAsync();
@@ -71,9 +73,10 @@ public class PublicPricingController : ControllerBase
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
     public async Task<ActionResult<IEnumerable<PricingTierDto>>> GetTiers()
     {
-        if (IsRateLimited())
+        var rateLimited = GetRateLimitResponseIfExceeded();
+        if (rateLimited is not null)
         {
-            return StatusCode(429, new { message = "Rate limit exceeded. Please try again later." });
+            return rateLimited;
         }
 
         var tiers = await _pricingService.GetActivePricingTiersAsync();
@@ -97,9 +100,10 @@ public class PublicPricingController : ControllerBase
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
     public async Task<ActionResult<PricingTierDto>> GetTierBySlug(string slug)
     {
-        if (IsRateLimited())
+        var rateLimited = GetRateLimitResponseIfExceeded();
+        if (rateLimited is not null)
         {
-            return StatusCode(429, new { message = "Rate limit exceeded. Please try again later." });
+            return rateLimited;
         }
 
         var tier = await _pricingService.GetTierBySlugAsync(slug);
@@ -125,9 +129,10 @@ public class PublicPricingController : ControllerBase
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
     public async Task<ActionResult<IEnumerable<PricingFeatureCategoryDto>>> GetFeatures()
     {
-        if (IsRateLimited())
+        var rateLimited = GetRateLimitResponseIfExceeded();
+        if (rateLimited is not null)
         {
-            return StatusCode(429, new { message = "Rate limit exceeded. Please try again later." });
+            return rateLimited;
         }
 
         var features = await _pricingService.GetPricingFeaturesAsync();
@@ -149,9 +154,10 @@ public class PublicPricingController : ControllerBase
     [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
     public async Task<ActionResult<IEnumerable<PricingFaqDto>>> GetFaqs()
     {
-        if (IsRateLimited())
+        var rateLimited = GetRateLimitResponseIfExceeded();
+        if (rateLimited is not null)
         {
-            return StatusCode(429, new { message = "Rate limit exceeded. Please try again later." });
+            return rateLimited;
         }
 
         var faqs = await _pricingService.GetPricingFaqsAsync();
@@ -175,9 +181,10 @@ public class PublicPricingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<PromoCodeValidationResult>> ValidatePromoCode([FromBody] ValidatePromoCodeRequest request)
     {
-        if (IsRateLimited())
+        var rateLimited = GetRateLimitResponseIfExceeded();
+        if (rateLimited is not null)
         {
-            return StatusCode(429, new { message = "Rate limit exceeded. Please try again later." });
+            return rateLimited;
         }
 
         if (string.IsNullOrWhiteSpace(request.Code))
@@ -206,9 +213,10 @@ public class PublicPricingController : ControllerBase
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<PromoCodeApplicationResult>> ApplyPromoCode([FromBody] ApplyPromoCodeRequest request)
     {
-        if (IsRateLimited())
+        var rateLimited = GetRateLimitResponseIfExceeded();
+        if (rateLimited is not null)
         {
-            return StatusCode(429, new { message = "Rate limit exceeded. Please try again later." });
+            return rateLimited;
         }
 
         if (string.IsNullOrWhiteSpace(request.Code))
@@ -229,6 +237,16 @@ public class PublicPricingController : ControllerBase
         }
 
         return Ok(result);
+    }
+
+    private ActionResult? GetRateLimitResponseIfExceeded()
+    {
+        if (!IsRateLimited())
+        {
+            return null;
+        }
+
+        return StatusCode(StatusCodes.Status429TooManyRequests, new { message = RateLimitExceededMessage });
     }
 
     /// <summary>
