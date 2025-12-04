@@ -47,6 +47,25 @@ test.describe('Pricing Page', () => {
       await expect(page.getByRole('alert')).toContainText('Unable to load pricing');
       await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
     });
+
+    test('allows retry after an API failure', async ({ page }) => {
+      await stubPricingData(page, {
+        pricingResponses: [
+          { status: 500, body: { message: 'Server error' } },
+          { status: 200 },
+        ],
+      });
+
+      await page.goto('/pricing');
+
+      await expect(page.getByRole('alert')).toContainText('Unable to load pricing');
+      await expect(page.getByRole('alert')).toContainText('Server error');
+
+      await page.getByRole('button', { name: 'Retry' }).click();
+
+      await expect(page.getByRole('heading', { name: 'Simple, Transparent Pricing' })).toBeVisible();
+      await expect(page.getByRole('alert')).toHaveCount(0);
+    });
   });
 
   test.describe('Pricing Cards', () => {
