@@ -19,7 +19,7 @@ public class PricingAdminController : AuthorizedApiControllerBase
 {
     private readonly CaskrDbContext _context;
     private readonly IPricingAuditLogger _auditLogger;
-    private readonly PricingService _pricingService;
+    private readonly IPricingService _pricingService;
     private readonly IUsersService _usersService;
     private readonly ILogger<PricingAdminController> _logger;
 
@@ -32,7 +32,7 @@ public class PricingAdminController : AuthorizedApiControllerBase
     {
         _context = context;
         _auditLogger = auditLogger;
-        _pricingService = (PricingService)pricingService;
+        _pricingService = pricingService;
         _usersService = usersService;
         _logger = logger;
     }
