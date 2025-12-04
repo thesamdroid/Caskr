@@ -42,6 +42,7 @@ export function PricingPage() {
     promoApplications,
     validatePromoCode,
     clearPromoCode,
+    refetch,
   } = usePricingData();
 
   const {
@@ -112,6 +113,11 @@ export function PricingPage() {
     clearPromoCode();
   }, [clearPromoCode]);
 
+  const handleRetry = useCallback(() => {
+    track('pricing_retry_clicked', { error });
+    refetch();
+  }, [error, refetch, track]);
+
   // Handle FAQ open
   const handleFaqOpen = useCallback(
     (questionId: string, questionText: string) => {
@@ -176,10 +182,11 @@ export function PricingPage() {
         <div className="pricing-error-container" role="alert">
           <h1>Unable to load pricing</h1>
           <p>We're having trouble loading our pricing information. Please try again later.</p>
+          <p className="pricing-error-message">{error}</p>
           <button
             type="button"
             className="button-primary"
-            onClick={() => window.location.reload()}
+            onClick={handleRetry}
           >
             Retry
           </button>

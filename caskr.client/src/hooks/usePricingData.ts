@@ -74,6 +74,31 @@ function clearStoredPromoCode(): void {
   }
 }
 
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = await response.clone().json();
+    if (typeof body?.message === 'string' && body.message.trim().length > 0) {
+      return body.message;
+    }
+    if (typeof body?.error === 'string' && body.error.trim().length > 0) {
+      return body.error;
+    }
+  } catch {
+    // Ignore JSON parse errors
+  }
+
+  try {
+    const text = await response.clone().text();
+    if (text?.trim()) {
+      return text.trim();
+    }
+  } catch {
+    // Ignore plain text parse errors
+  }
+
+  return fallback;
+}
+
 function getPromoFromUrl(): string | null {
   if (typeof window === 'undefined') return null;
   const params = new URLSearchParams(window.location.search);
@@ -81,8 +106,9 @@ function getPromoFromUrl(): string | null {
 }
 
 export function usePricingData(options: UsePricingDataOptions = {}): UsePricingDataReturn {
-  const [data, setData] = useState<PricingPageData | null>(() => getFromCache());
-  const [loading, setLoading] = useState<boolean>(!getFromCache());
+  const initialCachedData = getFromCache();
+  const [data, setData] = useState<PricingPageData | null>(() => initialCachedData);
+  const [loading, setLoading] = useState<boolean>(!initialCachedData);
   const [error, setError] = useState<string | null>(null);
   const [promoValidation, setPromoValidation] = useState<PromoCodeValidationResult | null>(null);
   const [promoApplications, setPromoApplications] = useState<Map<number, PromoCodeApplicationResult>>(
@@ -116,14 +142,16 @@ export function usePricingData(options: UsePricingDataOptions = {}): UsePricingD
     try {
       const response = await fetch('/api/public/pricing');
       if (!response.ok) {
-        throw new Error('Failed to fetch pricing data');
+        const message = await readErrorMessage(response, 'Failed to fetch pricing data');
+        throw new Error(message);
       }
       const pricingData: PricingPageData = await response.json();
       setData(pricingData);
       setInMemoryData(pricingData);
       saveToCache(pricingData);
+      setError(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'An error occurred';
+      const message = err instanceof Error ? err.message : 'An error occurred while loading pricing';
       setError(message);
     } finally {
       setLoading(false);
@@ -139,7 +167,8 @@ export function usePricingData(options: UsePricingDataOptions = {}): UsePricingD
       });
 
       if (!response.ok) {
-        throw new Error('Failed to validate promo code');
+        const message = await readErrorMessage(response, 'Failed to validate promo code');
+        throw new Error(message);
       }
 
       const result: PromoCodeValidationResult = await response.json();
@@ -174,7 +203,8 @@ export function usePricingData(options: UsePricingDataOptions = {}): UsePricingD
         });
 
         if (!response.ok) {
-          throw new Error('Failed to apply promo code');
+          const message = await readErrorMessage(response, 'Failed to apply promo code');
+          throw new Error(message);
         }
 
         const result: PromoCodeApplicationResult = await response.json();
@@ -193,6 +223,11 @@ export function usePricingData(options: UsePricingDataOptions = {}): UsePricingD
           success: false,
           errorMessage: err instanceof Error ? err.message : 'Application failed',
         };
+        setPromoApplications((prev) => {
+          const next = new Map(prev);
+          next.delete(tierId);
+          return next;
+        });
         return errorResult;
       }
     },

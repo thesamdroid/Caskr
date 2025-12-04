@@ -327,6 +327,22 @@ public class PublicPricingControllerTests : IDisposable
         var messageProperty = statusResult.Value?.GetType().GetProperty("message");
         Assert.NotNull(messageProperty);
         Assert.Equal("Rate limit exceeded. Please try again later.", messageProperty!.GetValue(statusResult.Value));
+    public async Task RateLimiting_UsesForwardedForHeader()
+    {
+        _controller.ControllerContext.HttpContext!.Request.Headers["X-Forwarded-For"] = "203.0.113.5, 10.0.0.2";
+
+        _pricingServiceMock.Setup(s => s.GetActivePricingTiersAsync())
+            .ReturnsAsync(new List<PricingTierDto>());
+
+        for (int i = 0; i < 100; i++)
+        {
+            await _controller.GetTiers();
+        }
+
+        var result = await _controller.GetTiers();
+
+        var statusResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(429, statusResult.StatusCode);
     }
 
     #endregion
