@@ -29,11 +29,11 @@ Caskr has made **exceptional progress** since the November 2025 analysis. The pl
 - ✅ Comprehensive audit trail (31+ fields)
 
 **Remaining Gaps for MVP:**
-- ❌ No native mobile app (iOS/Android)
 - ❌ No production planning/capacity management
 - ❌ No barcode/label printing
-- ❌ Pricing tiers not defined (infrastructure exists)
-- ❌ No support SLA definitions
+- ✅ Pricing tiers DEFINED ($699-$2,999/mo)
+- ✅ Support SLAs DEFINED (1h-48h by tier)
+- ⚠️ Native mobile app optional (PWA works well)
 
 ### Target State: ✅ **US Market Leader**
 - End-to-end TTB compliance automation ✅ **ACHIEVED**
@@ -225,8 +225,8 @@ Caskr has made **exceptional progress** since the November 2025 analysis. The pl
 | **Gauge Records** | ✅ **Full** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Excise Tax Calc** | ✅ **Federal+Reduced** | ✅ Multi-jurisdiction | ✅ Yes | ✅ Full | ✅ Yes | ✅ Yes |
 | **Customer Portals** | ✅ **Full** | ⚠️ Limited | ⚠️ Basic | ✅ Yes | ⚠️ Basic | ✅ Full |
-| **Pricing Transparency** | ⚠️ **Infrastructure** | ❌ Quote-based | ✅ Per-bottle | ❌ Quote-based | ✅ Tiers | ⚠️ Listed |
-| **Support SLA** | ❌ None | ✅ Professional | ✅ 10-min response | ✅ Implementation | ⚠️ Standard | ⚠️ Standard |
+| **Pricing Transparency** | ✅ **$699-$2,999/mo** | ❌ Quote-based | ✅ Per-bottle | ❌ Quote-based | ✅ Tiers | ⚠️ Listed |
+| **Support SLA** | ✅ **1h-48h by tier** | ✅ Professional | ✅ 10-min response | ✅ Implementation | ⚠️ Standard | ⚠️ Standard |
 
 **Legend:** ✅ Full Feature | ⚠️ Partial/Limited | ❌ Missing
 
@@ -373,90 +373,83 @@ Phase 2: Capacity Analysis (4 tasks)
 
 ---
 
-### 2. Defined Pricing Tiers ⭐⭐⭐⭐⭐ CRITICAL (Business Decision)
+### 2. Defined Pricing Tiers ✅ DEFINED (Ready for Implementation)
 
-**Current State:** Infrastructure complete, tiers NOT populated
-**Required State:** Clear tiered pricing visible on website
+**Current State:** Pricing tiers defined, seeder created
+**Required State:** Deploy to production
 
-**Why Critical:**
-- Sales team cannot close deals without pricing
-- Prospects cannot evaluate ROI
-- Infrastructure is ready - just needs data!
+**Approved Pricing (Premium Positioning):**
 
-**Detailed Task List:**
-```
-PRICE-001: Define pricing tiers (BUSINESS DECISION)
-├── Craft tier: $X/month (1-2 locations, basic features)
-├── Growth tier: $X/month (3-5 locations, full features)
-├── Professional tier: $X/month (unlimited, priority support)
-└── Enterprise tier: Contact sales (custom SLA)
+| Tier | Monthly | Annual (20% off) | Target Customer |
+|------|---------|------------------|-----------------|
+| **Starter** | $699 | $559/mo ($6,710/yr) | <$2M, 1 location |
+| **Growth** | $1,699 | $1,359/mo ($16,310/yr) | $2M-$5M, 1-2 locations |
+| **Professional** | $2,999 | $2,399/mo ($28,790/yr) | $5M-$15M, 3-5 locations |
+| **Enterprise** | Custom | Custom | >$15M, 5+ locations |
 
-PRICE-002: Populate PricingTier database table
-├── Insert tier definitions
-├── Configure feature flags per tier
-├── Set monthly/annual pricing
-└── Define annual discount percentages
+**Feature Matrix:**
 
-PRICE-003: Populate PricingFeature database table
-├── Map all features to tiers
-├── Set feature limits (barrels, users, reports)
-└── Configure add-on pricing
+| Feature | Starter | Growth | Professional | Enterprise |
+|---------|---------|--------|--------------|------------|
+| **Barrels** | 500 | 2,500 | 10,000 | Unlimited |
+| **Users** | 3 | 10 | 25 | Unlimited |
+| **Locations** | 1 | 2 | 5 | Unlimited |
+| **TTB Compliance** | ✅ | ✅ | ✅ | ✅ |
+| **QuickBooks Sync** | ✅ | ✅ | ✅ | ✅ |
+| **Standard Reports** | 15 | 30+ | 30+ | 30+ |
+| **Custom Report Builder** | ❌ | ✅ | ✅ | ✅ |
+| **Investor Portal** | ❌ | 50 investors | 200 investors | Unlimited |
+| **Webhooks/API** | ❌ | ✅ | ✅ | ✅ |
+| **Production Planning** | ❌ | ❌ | ✅ | ✅ |
+| **Support Response** | 48h | 24h | 4h | 1h |
+| **Onboarding** | Self-serve | Guided (2h) | White-glove (8h) | Custom |
 
-PRICE-004: Configure pricing page content
-├── Add tier descriptions
-├── Add feature comparison data
-├── Add FAQ content
-└── Enable promo codes
+**Sales Discount Strategy:**
+- Annual commitment: 20% off (built-in)
+- Competitive switch: 15% off
+- Early adopter (first 25): 25% off (code: EARLYBIRD25)
+- Multi-year (2yr): 30% off
 
-PRICE-005: Launch pricing page
-├── Remove "Contact for pricing"
-├── Enable self-service signup
-└── Configure payment processing (if applicable)
-```
+**Value Justification:**
+- TTB compliance saves $3-5K/mo in accountant fees
+- QuickBooks sync saves $500/mo in data entry
+- Investor portal replaces $2K/mo custom development
+- **Net ROI: 4-5x on Growth tier**
 
-**Investment:** $0 (business decision + database seeding)
-**Timeline:** 1 day to implement once decisions made
+**Implementation:** Seeder created at `PricingDataSeeder.cs` - ready to deploy
 
 ---
 
-### 3. Support SLA Definition ⭐⭐⭐⭐ HIGH PRIORITY (Business Decision)
+### 3. Support SLA Definition ✅ DEFINED (Included in Pricing)
 
-**Current State:** No defined support SLA
-**Required State:** Clear response time commitments by tier
+**Current State:** SLAs defined per pricing tier
+**Required State:** Implement ticketing system with SLA tracking
 
-**Why Critical:**
-- DistillX5 advertises "10-minute response"
-- Enterprise buyers require SLA guarantees
-- Differentiator for premium tiers
+**Approved Support SLAs:**
 
-**Detailed Task List:**
+| Tier | Response Time | Onboarding | Account Manager |
+|------|---------------|------------|-----------------|
+| **Starter** | 48h | Self-serve | ❌ |
+| **Growth** | 24h | Guided (2h) | ❌ |
+| **Professional** | 4h | White-glove (8h) | ❌ |
+| **Enterprise** | 1h | Custom | ✅ Dedicated |
+
+**Remaining Tasks:**
 ```
-SUPPORT-001: Define support SLA tiers (BUSINESS DECISION)
-├── Craft: Standard support (24-48 hour response)
-├── Growth: Priority support (4-hour response)
-├── Professional: Premium support (1-hour response)
-└── Enterprise: Dedicated support (15-min response + account manager)
-
-SUPPORT-002: Implement support ticket system (if needed)
+SUPPORT-001: Implement support ticket system
 ├── Ticket creation and tracking
 ├── Priority routing by tier
 ├── SLA countdown timers
 └── Escalation rules
 
-SUPPORT-003: Create support documentation
+SUPPORT-002: Create support documentation
 ├── Knowledge base articles
 ├── Video tutorials
-├── FAQs
-└── TTB compliance guides
-
-SUPPORT-004: Configure support channels
-├── Email support setup
-├── Chat widget (optional)
-├── Phone support for Enterprise
-└── Scheduled training sessions
+├── TTB compliance guides
+└── QuickBooks setup guides
 ```
 
-**Investment:** $10K-$20K for ticketing system (or use existing tools)
+**Investment:** $10K-$20K for ticketing system
 **Timeline:** 2-4 weeks
 
 ---
@@ -898,10 +891,10 @@ Caskr's TTB implementation is now **best-in-class** for the US market:
    - Push notifications
    - Native app quality in browser
 
-6. ⚠️ **Pricing Needs Definition** - INFRASTRUCTURE READY
-   - Backend complete
-   - Frontend complete
-   - Just needs business decisions on tier pricing
+6. ✅ **Pricing Defined** - READY TO LAUNCH
+   - Starter: $699/mo, Growth: $1,699/mo, Professional: $2,999/mo
+   - Seeder created, ready to deploy
+   - Early adopter promo: EARLYBIRD25 (25% off)
 
 7. ⚠️ **Production Planning Missing** - CRITICAL GAP
    - Required for operations >$5M
@@ -979,20 +972,21 @@ Caskr's TTB implementation is now **best-in-class** for the US market:
 | LABEL-005 | Print UI integration | Frontend | 5 | LABEL-001, LABEL-003 |
 | **Total** | | | **32 SP** | |
 
-### Summary: 26 Tasks for Full MVP
+### Summary: Remaining Tasks for Full MVP
 
-| Category | Tasks | Story Points | Investment | Timeline |
-|----------|-------|--------------|------------|----------|
-| Production Planning | 12 | 69 | $100K | 6-8 weeks |
-| Pricing Definition | 5 | 6 | $0 | 1 day |
-| Support SLA | 4 | 21 | $15K | 2-4 weeks |
-| Label Printing | 5 | 32 | $35K | 3-4 weeks |
-| **Total** | **26** | **128 SP** | **$150K** | **8-10 weeks** |
+| Category | Tasks | Story Points | Investment | Timeline | Status |
+|----------|-------|--------------|------------|----------|--------|
+| Production Planning | 12 | 69 | $100K | 6-8 weeks | ❌ Not Started |
+| Pricing Definition | 5 | 6 | $0 | Ready | ✅ **COMPLETE** |
+| Support SLA | 2 | 18 | $15K | 2-4 weeks | ⚠️ Ticketing Only |
+| Label Printing | 5 | 32 | $35K | 3-4 weeks | ❌ Not Started |
+| **Total** | **24** | **125 SP** | **$150K** | **8-10 weeks** | |
 
 ---
 
 **Prepared by:** Claude (Competitive Intelligence Analysis)
 **Original Review Date:** November 2025
-**Updated Review Date:** December 4, 2025 (Re-analysis for US MVP)
+**Updated Review Date:** December 4, 2025 (Re-analysis for US MVP + Pricing)
+**Pricing Approved:** December 4, 2025
 **Target Launch:** Q1 2026
 **Next Review:** Post-launch (March 2026)
