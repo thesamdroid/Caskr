@@ -1,6 +1,8 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { usePricingData } from '../../../hooks/usePricingData';
 import { useBillingPeriod } from '../../../hooks/useBillingPeriod';
+import { useAnalytics, useTimeOnPage, useScrollDepth } from '../../../hooks/useAnalytics';
+import { TrackVisibility } from '../../../components/analytics';
 import { PricingHero } from './PricingHero';
 import { PricingCards } from './PricingCards';
 import { FeatureComparisonTable } from './FeatureComparisonTable';
@@ -9,7 +11,23 @@ import { PromoCodeInput } from './PromoCodeInput';
 import { PricingCta } from './PricingCta';
 import { PricingFooter } from './PricingFooter';
 import { PricingStructuredData } from './PricingStructuredData';
+import { ValidatedPromo } from '../../../utils/calculatePromoPrice';
 import './PricingPage.css';
+
+/**
+ * Get URL parameters for analytics
+ */
+function getUrlParams(): Record<string, string | undefined> {
+  if (typeof window === 'undefined') return {};
+
+  const params = new URLSearchParams(window.location.search);
+  return {
+    utm_source: params.get('utm_source') ?? undefined,
+    utm_medium: params.get('utm_medium') ?? undefined,
+    utm_campaign: params.get('utm_campaign') ?? undefined,
+    promo_code: params.get('promo') ?? undefined,
+  };
+}
 
 /**
  * Public pricing page.
@@ -31,6 +49,14 @@ export function PricingPage() {
     setBillingPeriod,
   } = useBillingPeriod();
 
+  const { track, trackPageView } = useAnalytics();
+
+  // Track time on page
+  useTimeOnPage('pricing_page');
+
+  // Track scroll depth
+  useScrollDepth('pricing_page');
+
   // Get max annual discount for the toggle display
   const maxAnnualDiscount = useMemo(() => {
     if (!data?.tiers) return 20; // Default fallback
@@ -39,6 +65,63 @@ export function PricingPage() {
       .map(t => t.annualDiscountPercent);
     return discounts.length > 0 ? Math.max(...discounts) : 20;
   }, [data?.tiers]);
+
+  // Track page view on mount
+  useEffect(() => {
+    const urlParams = getUrlParams();
+    trackPageView('pricing_page', {
+      source: document.referrer || undefined,
+      ...urlParams,
+    });
+  }, [trackPageView]);
+
+  // Track billing toggle changes
+  const handleBillingChange = useCallback(
+    (period: 'monthly' | 'annual') => {
+      track('billing_toggle_changed', {
+        from: billingPeriod,
+        to: period,
+      });
+      setBillingPeriod(period);
+    },
+    [billingPeriod, setBillingPeriod, track]
+  );
+
+  // Analytics callback for PromoCodeInput
+  const handlePromoAnalyticsEvent = useCallback(
+    (event: string, eventData?: Record<string, unknown>) => {
+      track(event, eventData);
+    },
+    [track]
+  );
+
+  // Handle promo code apply
+  const handlePromoApply = useCallback(
+    (promo: ValidatedPromo) => {
+      // The actual promo application is handled by usePricingData
+      // Just ensure validation is triggered
+      if (promo.code) {
+        validatePromoCode(promo.code);
+      }
+    },
+    [validatePromoCode]
+  );
+
+  // Handle promo code remove
+  const handlePromoRemove = useCallback(() => {
+    clearPromoCode();
+  }, [clearPromoCode]);
+
+  // Handle FAQ open
+  const handleFaqOpen = useCallback(
+    (questionId: string, questionText: string) => {
+      track('faq_item_opened', {
+        question_id: questionId,
+        question_text: questionText.substring(0, 100), // Truncate for analytics
+      });
+    },
+    [track]
+  );
 
   // Set page title and meta tags
   useEffect(() => {
@@ -74,7 +157,7 @@ export function PricingPage() {
       <main className="pricing-page" aria-busy="true" aria-label="Loading pricing information">
         <PricingHero
           billingPeriod={billingPeriod}
-          onBillingChange={setBillingPeriod}
+          onBillingChange={handleBillingChange}
           annualDiscountPercent={maxAnnualDiscount}
         />
         <PricingCards
@@ -105,6 +188,11 @@ export function PricingPage() {
     );
   }
 
+  // Get initial promo code from URL
+  const initialPromoCode = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('promo') ?? undefined
+    : undefined;
+
   return (
     <main className="pricing-page">
       {/* Structured data for SEO */}
@@ -113,15 +201,19 @@ export function PricingPage() {
       {/* Hero section with billing toggle */}
       <PricingHero
         billingPeriod={billingPeriod}
-        onBillingChange={setBillingPeriod}
+        onBillingChange={handleBillingChange}
         annualDiscountPercent={maxAnnualDiscount}
       />
 
       {/* Promo code input */}
       <PromoCodeInput
+        onApply={handlePromoApply}
+        onRemove={handlePromoRemove}
         onValidate={validatePromoCode}
         onClear={clearPromoCode}
         currentValidation={promoValidation}
+        initialCode={initialPromoCode}
+        onAnalyticsEvent={handlePromoAnalyticsEvent}
       />
 
       {/* Pricing cards */}
@@ -135,15 +227,20 @@ export function PricingPage() {
 
       {/* Feature comparison table */}
       {data && data.featuresByCategory.length > 0 && (
-        <FeatureComparisonTable
-          tiers={data.tiers}
-          featuresByCategory={data.featuresByCategory}
-        />
+        <TrackVisibility
+          event="feature_comparison_viewed"
+          properties={{ section: 'feature_comparison' }}
+        >
+          <FeatureComparisonTable
+            tiers={data.tiers}
+            featuresByCategory={data.featuresByCategory}
+          />
+        </TrackVisibility>
       )}
 
       {/* FAQ section */}
       {data && data.faqs.length > 0 && (
-        <PricingFaq faqs={data.faqs} />
+        <PricingFaq faqs={data.faqs} onFaqOpen={handleFaqOpen} />
       )}
 
       {/* Final CTA */}
@@ -162,7 +259,10 @@ export function PricingPage() {
  * Sticky "View Plans" button for mobile
  */
 function MobileStickyButton() {
+  const { track } = useAnalytics();
+
   const handleClick = () => {
+    track('mobile_sticky_cta_clicked', {});
     const cardsSection = document.querySelector('.pricing-cards-section');
     cardsSection?.scrollIntoView({ behavior: 'smooth' });
   };

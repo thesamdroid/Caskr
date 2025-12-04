@@ -15,6 +15,8 @@ export interface AccordionProps {
   defaultOpenIndex?: number;
   className?: string;
   variant?: 'default' | 'bordered' | 'separated';
+  /** Callback when an item is opened */
+  onItemOpen?: (id: string, title: string) => void;
 }
 
 interface AccordionContextType {
@@ -44,6 +46,7 @@ export function Accordion({
   defaultOpenIndex,
   className = '',
   variant = 'default',
+  onItemOpen,
 }: AccordionProps) {
   // Initialize open items based on defaultOpenIndex and defaultOpen props
   const [openItems, setOpenItems] = useState<Set<string>>(() => {
@@ -71,19 +74,29 @@ export function Accordion({
   const toggleItem = useCallback((id: string) => {
     setOpenItems(prev => {
       const next = new Set(prev);
+      const wasOpen = next.has(id);
 
-      if (next.has(id)) {
+      if (wasOpen) {
         next.delete(id);
       } else {
         if (!allowMultiple) {
           next.clear();
         }
         next.add(id);
+
+        // Call onItemOpen callback when item is opened
+        if (onItemOpen) {
+          const item = items.find(i => i.id === id);
+          if (item) {
+            const titleText = typeof item.title === 'string' ? item.title : id;
+            onItemOpen(id, titleText);
+          }
+        }
       }
 
       return next;
     });
-  }, [allowMultiple]);
+  }, [allowMultiple, items, onItemOpen]);
 
   const contextValue = useMemo(() => ({
     openItems,
