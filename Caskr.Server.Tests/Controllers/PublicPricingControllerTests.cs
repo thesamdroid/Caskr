@@ -327,6 +327,9 @@ public class PublicPricingControllerTests : IDisposable
         var messageProperty = statusResult.Value?.GetType().GetProperty("message");
         Assert.NotNull(messageProperty);
         Assert.Equal("Rate limit exceeded. Please try again later.", messageProperty!.GetValue(statusResult.Value));
+    }
+
+    [Fact]
     public async Task RateLimiting_UsesForwardedForHeader()
     {
         _controller.ControllerContext.HttpContext!.Request.Headers["X-Forwarded-For"] = "203.0.113.5, 10.0.0.2";

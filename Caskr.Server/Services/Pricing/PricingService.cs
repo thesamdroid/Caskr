@@ -46,6 +46,11 @@ public interface IPricingService
     /// Gets aggregated pricing page data (tiers, features, FAQs).
     /// </summary>
     Task<PricingPageDataDto> GetPricingPageDataAsync();
+
+    /// <summary>
+    /// Invalidates all pricing-related caches. Call after any admin changes.
+    /// </summary>
+    void InvalidateCache();
 }
 
 /// <summary>
