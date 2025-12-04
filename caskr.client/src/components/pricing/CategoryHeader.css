@@ -1,0 +1,120 @@
+/* ===================================
+   CATEGORY HEADER
+   Section divider for feature categories
+   =================================== */
+
+.category-header-row {
+  background: var(--bg-tertiary);
+}
+
+.category-header-cell {
+  padding: 0;
+  text-align: left;
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.category-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  min-height: 48px;
+}
+
+.category-toggle:hover {
+  background: var(--bg-hover);
+}
+
+.category-toggle:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: -3px;
+}
+
+.category-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.category-icon {
+  display: inline-flex;
+  color: var(--text-gold);
+  opacity: 0.8;
+}
+
+.category-toggle:hover .category-icon {
+  opacity: 1;
+}
+
+.category-name {
+  color: var(--text-gold);
+}
+
+.category-chevron {
+  display: inline-flex;
+  color: var(--text-secondary);
+  transition: transform var(--transition-base);
+}
+
+.category-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .category-toggle {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.8125rem;
+    min-height: 44px;
+  }
+
+  .category-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Make the entire row more tappable on mobile */
+  .category-toggle {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .category-toggle:active {
+    background: var(--bg-hover);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .category-chevron {
+    transition: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .category-header-row {
+    background: #f5f5f5 !important;
+  }
+
+  .category-toggle {
+    color: black !important;
+  }
+
+  .category-name {
+    color: #333 !important;
+  }
+
+  .category-chevron {
+    display: none;
+  }
+}

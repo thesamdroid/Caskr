@@ -156,13 +156,56 @@ export const defaultFeaturesByCategory = [
     features: [
       { id: 1, name: 'Barrel Management', description: 'Track all your barrels', sortOrder: 1 },
       { id: 2, name: 'Reporting', description: 'Generate reports', sortOrder: 2 },
+      { id: 3, name: 'Barrel Limits', description: 'Maximum barrels you can track', sortOrder: 3 },
     ],
   },
   {
     category: 'Compliance',
     features: [
       { id: 4, name: 'TTB Compliance', description: 'Automated TTB reporting', sortOrder: 1 },
+      { id: 5, name: 'Dedicated Support', description: 'Priority customer support', sortOrder: 2 },
     ],
+  },
+  {
+    category: 'Security',
+    features: [
+      { id: 6, name: 'SSO Integration', description: 'Single sign-on support', sortOrder: 1 },
+      { id: 7, name: 'Audit Logs', description: 'Complete audit trail', sortOrder: 2 },
+    ],
+  },
+];
+
+// Extended FAQs for testing
+export const extendedPricingFaqs: PricingFaqStub[] = [
+  {
+    id: 1,
+    question: 'What is included in the free trial?',
+    answer: 'All features are included in our **14-day free trial**. No credit card required.',
+    sortOrder: 1,
+  },
+  {
+    id: 2,
+    question: 'Can I change plans later?',
+    answer: 'Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.',
+    sortOrder: 2,
+  },
+  {
+    id: 3,
+    question: 'Is there a discount for annual billing?',
+    answer: 'Yes, annual billing saves you **20%** compared to monthly billing.',
+    sortOrder: 3,
+  },
+  {
+    id: 4,
+    question: 'How secure is my data?',
+    answer: 'We use **SOC 2 Type II** certified infrastructure with encryption at rest and in transit.',
+    sortOrder: 4,
+  },
+  {
+    id: 5,
+    question: 'Can I export my data?',
+    answer: 'Yes, you can export all your data at any time in CSV, Excel, or JSON format.',
+    sortOrder: 5,
   },
 ];
 

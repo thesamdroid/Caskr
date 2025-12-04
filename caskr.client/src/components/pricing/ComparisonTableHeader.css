@@ -1,0 +1,184 @@
+/* ===================================
+   COMPARISON TABLE HEADER
+   Sticky header with tier names and prices
+   =================================== */
+
+.comparison-table-thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-secondary);
+}
+
+.comparison-th {
+  padding: var(--space-lg);
+  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-secondary);
+  background: var(--bg-secondary);
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+/* Feature name column (sticky on horizontal scroll) */
+.comparison-th.feature-name-col {
+  text-align: left;
+  width: 280px;
+  min-width: 200px;
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  background: var(--bg-secondary);
+}
+
+/* Add shadow when scrolled horizontally */
+.comparison-th.feature-name-col::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -10px;
+  bottom: 0;
+  width: 10px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.15), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  pointer-events: none;
+}
+
+.scrolled-x .comparison-th.feature-name-col::after {
+  opacity: 1;
+}
+
+/* Tier columns */
+.comparison-th.tier-col {
+  min-width: 150px;
+  cursor: default;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.comparison-th.tier-col[role="button"] {
+  cursor: pointer;
+}
+
+.comparison-th.tier-col[role="button"]:hover {
+  background: var(--bg-hover);
+}
+
+.comparison-th.tier-col[role="button"]:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: -3px;
+}
+
+/* Popular tier styling */
+.comparison-th.tier-col.popular {
+  background: linear-gradient(180deg, var(--gold-glow-strong) 0%, transparent 100%);
+  border-bottom-color: var(--gold-primary);
+}
+
+/* Highlighted tier styling */
+.comparison-th.tier-col.highlighted {
+  background: var(--gold-glow);
+  border-bottom-color: var(--gold-primary);
+}
+
+/* Tier header content */
+.tier-header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.tier-popular-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
+  color: var(--bg-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-xs);
+}
+
+.tier-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tier-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tier-price-period {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.tier-savings {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--success);
+  background: var(--success-bg);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .comparison-th {
+    padding: var(--space-md);
+    font-size: 0.875rem;
+  }
+
+  .comparison-th.feature-name-col {
+    width: 140px;
+    min-width: 120px;
+  }
+
+  .comparison-th.tier-col {
+    min-width: 100px;
+  }
+
+  .tier-popular-badge {
+    font-size: 0.625rem;
+    padding: 2px 6px;
+  }
+
+  .tier-name {
+    font-size: 0.875rem;
+  }
+
+  .tier-price {
+    font-size: 1.25rem;
+  }
+
+  .tier-price-period {
+    font-size: 0.75rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .comparison-table-thead {
+    position: static;
+  }
+
+  .comparison-th {
+    background: white !important;
+    color: black !important;
+    border-bottom-color: #ccc !important;
+  }
+
+  .tier-popular-badge {
+    background: #666 !important;
+    color: white !important;
+  }
+}
