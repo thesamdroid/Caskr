@@ -1,0 +1,39 @@
+# Standalone Seq for local development
+# Run with: docker-compose -f docker-compose.seq.yml up -d
+#
+# Access Seq UI at: http://localhost:8082
+# Ingestion endpoint: http://localhost:5341
+#
+# Default credentials (first run):
+#   Username: admin
+#   Password: (set via SEQ_FIRSTRUN_ADMINPASSWORDHASH or leave empty for no password)
+#
+# To generate a password hash, run:
+#   echo 'your-password' | docker run --rm -i datalust/seq config hash
+
+version: '3.9'
+
+services:
+  seq:
+    image: datalust/seq:latest
+    container_name: caskr-seq-dev
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      # Leave empty for no password in development
+      # SEQ_FIRSTRUN_ADMINPASSWORDHASH: ""
+    ports:
+      - "5341:5341"   # Ingestion API (Serilog sends logs here)
+      - "8082:80"     # Web UI (view logs here)
+    volumes:
+      - seq_dev_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5341/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  seq_dev_data:
+    driver: local

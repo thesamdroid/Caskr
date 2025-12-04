@@ -52,6 +52,28 @@ services:
     networks:
       - caskr-network
 
+  # Seq Log Server - Centralized structured logging
+  seq:
+    image: datalust/seq:latest
+    container_name: caskr-seq
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORDHASH: ${SEQ_ADMIN_PASSWORD_HASH:-}
+    ports:
+      - "5341:5341"   # Ingestion API
+      - "8082:80"     # Web UI
+    volumes:
+      - seq_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5341/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - caskr-network
+
   # Caskr Application Server
   caskr-server:
     build:
@@ -73,12 +95,19 @@ services:
       Keycloak__ClientSecret: ${KEYCLOAK_CLIENT_SECRET:-}
       Keycloak__AdminUser: ${KEYCLOAK_ADMIN_USER:-}
       Keycloak__AdminPassword: ${KEYCLOAK_ADMIN_PASSWORD:-}
+      # Serilog Seq configuration
+      Serilog__WriteTo__1__Args__serverUrl: http://seq:5341
+      Serilog__WriteTo__1__Args__apiKey: ${SEQ_API_KEY:-}
     ports:
       - "8081:8080"
+    volumes:
+      - caskr_logs:/var/log/caskr
     depends_on:
       caskr-db:
         condition: service_healthy
       keycloak:
+        condition: service_healthy
+      seq:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
@@ -114,6 +143,8 @@ services:
 
 volumes:
   postgres_data:
+  seq_data:
+  caskr_logs:
 
 networks:
   caskr-network:

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Serilog.Context;
 
 namespace Caskr.server.Middleware;
 
@@ -27,10 +28,32 @@ public class GlobalExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred. TraceId: {TraceId}", context.TraceIdentifier);
+            // Enrich log context with exception details for Seq
+            using (LogContext.PushProperty("ExceptionType", ex.GetType().Name))
+            using (LogContext.PushProperty("RequestPath", context.Request.Path.Value))
+            using (LogContext.PushProperty("RequestMethod", context.Request.Method))
+            using (LogContext.PushProperty("QueryString", context.Request.QueryString.Value))
+            using (LogContext.PushProperty("StatusCode", GetStatusCode(ex)))
+            {
+                _logger.LogError(ex,
+                    "Unhandled exception occurred processing {RequestMethod} {RequestPath}. TraceId: {TraceId}",
+                    context.Request.Method,
+                    context.Request.Path.Value,
+                    context.TraceIdentifier);
+            }
+
             await HandleExceptionAsync(context, ex);
         }
     }
+
+    private static int GetStatusCode(Exception exception) => exception switch
+    {
+        ArgumentException => (int)HttpStatusCode.BadRequest,
+        KeyNotFoundException => (int)HttpStatusCode.NotFound,
+        UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
+        InvalidOperationException => (int)HttpStatusCode.Conflict,
+        _ => (int)HttpStatusCode.InternalServerError
+    };
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
@@ -39,6 +62,9 @@ public class GlobalExceptionMiddleware
         var response = new ErrorResponse
         {
             TraceId = context.TraceIdentifier,
+            CorrelationId = context.Items.TryGetValue("CorrelationId", out var correlationId)
+                ? correlationId?.ToString()
+                : null,
             Timestamp = DateTime.UtcNow
         };
 
@@ -97,6 +123,7 @@ public class ErrorResponse
     public string Error { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public string TraceId { get; set; } = string.Empty;
+    public string? CorrelationId { get; set; }
     public DateTime Timestamp { get; set; }
     public string? Details { get; set; }
 }
