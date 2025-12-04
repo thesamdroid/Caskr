@@ -310,6 +310,146 @@ test.describe('Pricing Page', () => {
 
       await expect(page.getByRole('alert')).toContainText('Invalid promo code');
     });
+
+    test('shows loading state while validating', async ({ page }) => {
+      await stubPricingData(page, {
+        promoValidation: { isValid: true, code: 'SAVE20', discountDescription: '20% off' },
+        promoValidationDelay: 500,
+      });
+      await page.goto('/pricing');
+
+      await page.getByRole('button', { name: /Have a promo code/ }).click();
+      await page.getByRole('textbox', { name: 'Promo code' }).fill('SAVE20');
+      await page.getByRole('button', { name: 'Apply' }).click();
+
+      // Should show loading spinner
+      await expect(page.locator('.promo-code-spinner')).toBeVisible();
+
+      // Wait for success state
+      await expect(page.getByText('Promo Code Applied')).toBeVisible();
+    });
+
+    test('remove button clears promo code', async ({ page }) => {
+      await stubPricingData(page, {
+        promoValidation: { isValid: true, code: 'SAVE20', discountDescription: '20% off' },
+      });
+      await page.goto('/pricing');
+
+      // Apply promo
+      await page.getByRole('button', { name: /Have a promo code/ }).click();
+      await page.getByRole('textbox', { name: 'Promo code' }).fill('SAVE20');
+      await page.getByRole('button', { name: 'Apply' }).click();
+      await expect(page.getByText('Promo Code Applied')).toBeVisible();
+
+      // Remove promo
+      await page.getByRole('button', { name: 'Remove promo code' }).click();
+
+      // Should show toggle again
+      await expect(page.getByRole('button', { name: /Have a promo code/ })).toBeVisible();
+    });
+
+    test('cancel button hides input without clearing', async ({ page }) => {
+      await stubPricingData(page);
+      await page.goto('/pricing');
+
+      await page.getByRole('button', { name: /Have a promo code/ }).click();
+      await page.getByRole('textbox', { name: 'Promo code' }).fill('TEST');
+      await page.getByRole('button', { name: 'Cancel' }).click();
+
+      // Should show toggle again
+      await expect(page.getByRole('button', { name: /Have a promo code/ })).toBeVisible();
+    });
+
+    test('input converts to uppercase', async ({ page }) => {
+      await stubPricingData(page);
+      await page.goto('/pricing');
+
+      await page.getByRole('button', { name: /Have a promo code/ }).click();
+      await page.getByRole('textbox', { name: 'Promo code' }).fill('lowercase');
+
+      await expect(page.getByRole('textbox', { name: 'Promo code' })).toHaveValue('LOWERCASE');
+    });
+
+    test('shows retry option after error', async ({ page }) => {
+      await stubPricingData(page, {
+        promoValidation: { isValid: false, errorMessage: 'Invalid promo code' },
+      });
+      await page.goto('/pricing');
+
+      await page.getByRole('button', { name: /Have a promo code/ }).click();
+      await page.getByRole('textbox', { name: 'Promo code' }).fill('INVALID');
+      await page.getByRole('button', { name: 'Apply' }).click();
+
+      await expect(page.getByRole('alert')).toContainText('Invalid promo code');
+      await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    });
+
+    test('shows expired promo code error', async ({ page }) => {
+      await stubPricingData(page, {
+        promoValidation: { isValid: false, errorMessage: 'This promo code has expired' },
+      });
+      await page.goto('/pricing');
+
+      await page.getByRole('button', { name: /Have a promo code/ }).click();
+      await page.getByRole('textbox', { name: 'Promo code' }).fill('EXPIRED');
+      await page.getByRole('button', { name: 'Apply' }).click();
+
+      await expect(page.getByRole('alert')).toContainText('expired');
+    });
+  });
+
+  test.describe('Promo Code URL Parameter', () => {
+    test('auto-validates promo from URL parameter', async ({ page }) => {
+      await stubPricingData(page, {
+        promoValidation: { isValid: true, code: 'URLCODE', discountDescription: '15% off' },
+      });
+      await page.goto('/pricing?promo=URLCODE');
+
+      // Should auto-apply and show success
+      await expect(page.getByText('Promo Code Applied')).toBeVisible();
+      await expect(page.getByText('URLCODE')).toBeVisible();
+    });
+
+    test('handles invalid URL promo gracefully', async ({ page }) => {
+      await stubPricingData(page, {
+        promoValidation: { isValid: false, errorMessage: 'Invalid promo code' },
+      });
+      await page.goto('/pricing?promo=BADCODE');
+
+      // Should show error, not crash
+      await expect(page.getByRole('alert')).toContainText('Invalid promo code');
+    });
+
+    test('updates URL when promo applied manually', async ({ page }) => {
+      await stubPricingData(page, {
+        promoValidation: { isValid: true, code: 'MANUAL', discountDescription: '10% off' },
+      });
+      await page.goto('/pricing');
+
+      await page.getByRole('button', { name: /Have a promo code/ }).click();
+      await page.getByRole('textbox', { name: 'Promo code' }).fill('MANUAL');
+      await page.getByRole('button', { name: 'Apply' }).click();
+
+      await expect(page.getByText('Promo Code Applied')).toBeVisible();
+
+      // URL should include promo parameter
+      await expect(page).toHaveURL(/promo=MANUAL/);
+    });
+
+    test('clears URL param when promo removed', async ({ page }) => {
+      await stubPricingData(page, {
+        promoValidation: { isValid: true, code: 'REMOVE', discountDescription: '20% off' },
+      });
+      await page.goto('/pricing?promo=REMOVE');
+
+      await expect(page.getByText('Promo Code Applied')).toBeVisible();
+
+      // Remove promo
+      await page.getByRole('button', { name: 'Remove promo code' }).click();
+
+      // URL should not include promo parameter
+      await expect(page).not.toHaveURL(/promo=/);
+    });
   });
 
   test.describe('CTA Section', () => {

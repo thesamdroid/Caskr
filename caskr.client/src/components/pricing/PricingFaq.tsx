@@ -9,6 +9,8 @@ export interface PricingFaqProps {
   allowMultiple?: boolean;
   defaultOpenIndex?: number;
   showSearch?: boolean;
+  /** Callback when a FAQ item is opened (for analytics) */
+  onFaqOpen?: (questionId: string, questionText: string) => void;
 }
 
 /**
@@ -20,6 +22,7 @@ export function PricingFaq({
   allowMultiple = false,
   defaultOpenIndex,
   showSearch = false,
+  onFaqOpen,
 }: PricingFaqProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -119,6 +122,7 @@ export function PricingFaq({
             defaultOpenIndex={defaultOpenIndex}
             variant="separated"
             className="pricing-faq-accordion"
+            onItemOpen={onFaqOpen}
           />
         )}
 

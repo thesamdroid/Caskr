@@ -34,6 +34,16 @@ export interface PricingFaqStub {
   sortOrder: number;
 }
 
+export interface PromoValidationStub {
+  isValid: boolean;
+  code?: string;
+  discountDescription?: string;
+  errorMessage?: string;
+  discountType?: 'percentage' | 'fixedAmount' | 'freeMonths';
+  discountValue?: number;
+  applicableTierIds?: number[];
+}
+
 export interface PricingStubOptions {
   tiers?: PricingTierStub[];
   featuresByCategory?: Array<{
@@ -48,7 +58,15 @@ export interface PricingStubOptions {
   }>;
   faqs?: PricingFaqStub[];
   pricingResponses?: Array<{ status: number; body?: unknown }>;
-  promoValidation?: { isValid: boolean; code?: string; discountDescription?: string; errorMessage?: string };
+  promoValidation?: PromoValidationStub;
+  promoValidationDelay?: number;
+  promoApplication?: {
+    success: boolean;
+    discountedMonthlyPriceCents?: number;
+    discountedAnnualPriceCents?: number;
+    originalMonthlyPriceCents?: number;
+    originalAnnualPriceCents?: number;
+  };
 }
 
 export const defaultPricingTiers: PricingTierStub[] = [
@@ -241,6 +259,11 @@ export const stubPricingData = async (page: Page, options: PricingStubOptions = 
   });
 
   await page.route('**/api/public/pricing/validate-promo', async (route) => {
+    // Support delay for testing loading states
+    if (options.promoValidationDelay) {
+      await new Promise(resolve => setTimeout(resolve, options.promoValidationDelay));
+    }
+
     const validation = options.promoValidation ?? { isValid: false, errorMessage: 'Invalid promo code' };
     await route.fulfill({
       status: 200,
@@ -251,14 +274,38 @@ export const stubPricingData = async (page: Page, options: PricingStubOptions = 
 
   await page.route('**/api/public/pricing/apply-promo', async (route) => {
     const body = route.request().postDataJSON?.();
+    const tierId = body?.tierId ?? 1;
+    const tier = tiers.find(t => t.id === tierId);
+
+    const application = options.promoApplication ?? (options.promoValidation?.isValid ? {
+      success: true,
+      code: body?.code,
+      tierId,
+      discountType: options.promoValidation.discountType ?? 'percentage',
+      discountValue: options.promoValidation.discountValue ?? 20,
+      originalMonthlyPriceCents: tier?.monthlyPriceCents,
+      discountedMonthlyPriceCents: tier?.monthlyPriceCents
+        ? Math.round(tier.monthlyPriceCents * 0.8)
+        : undefined,
+      originalAnnualPriceCents: tier?.annualPriceCents,
+      discountedAnnualPriceCents: tier?.annualPriceCents
+        ? Math.round(tier.annualPriceCents * 0.8)
+        : undefined,
+    } : { success: false });
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        success: options.promoValidation?.isValid ?? false,
-        code: body?.code,
-        tierId: body?.tierId,
-      }),
+      body: JSON.stringify(application),
+    });
+  });
+
+  // Mock analytics endpoint
+  await page.route('**/api/analytics/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true }),
     });
   });
 };
