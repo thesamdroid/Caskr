@@ -303,5 +303,31 @@ public class PublicPricingControllerTests : IDisposable
         Assert.Equal(429, statusResult.StatusCode);
     }
 
+    [Fact]
+    public async Task RateLimiting_ReturnsConsistentPayloadAcrossEndpoints()
+    {
+        _pricingServiceMock.Setup(s => s.GetPricingPageDataAsync())
+            .ReturnsAsync(new PricingPageDataDto
+            {
+                Tiers = new List<PricingTierDto>(),
+                FeaturesByCategory = new List<PricingFeatureCategoryDto>(),
+                Faqs = new List<PricingFaqDto>()
+            });
+
+        for (int i = 0; i < 100; i++)
+        {
+            await _controller.GetPricingPageData();
+        }
+
+        var result = await _controller.GetPricingPageData();
+
+        var statusResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(429, statusResult.StatusCode);
+
+        var messageProperty = statusResult.Value?.GetType().GetProperty("message");
+        Assert.NotNull(messageProperty);
+        Assert.Equal("Rate limit exceeded. Please try again later.", messageProperty!.GetValue(statusResult.Value));
+    }
+
     #endregion
 }
