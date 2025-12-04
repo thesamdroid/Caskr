@@ -416,7 +416,7 @@ Phase 2: Capacity Analysis (4 tasks)
 - Investor portal replaces $2K/mo custom development
 - **Net ROI: 4-5x on Growth tier**
 
-**Implementation:** Seeder created at `PricingDataSeeder.cs` - ready to deploy
+**Implementation:** SQL seed script at `Database/initdb.d/19-seed-pricing-data.sql` - runs on database initialization
 
 ---
 
