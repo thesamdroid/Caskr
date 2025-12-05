@@ -4,11 +4,10 @@ FROM mcr.microsoft.com/playwright/dotnet:v1.47.0-jammy
 
 WORKDIR /workspace
 
-# Restore server dependencies
+# Restore server dependencies (restore specific projects, not solution, to avoid client project dependency)
 COPY Caskr.Server/*.csproj ./Caskr.Server/
 COPY Caskr.Server.Tests/*.csproj ./Caskr.Server.Tests/
-COPY Caskr.sln ./
-RUN dotnet restore
+RUN dotnet restore Caskr.Server.Tests/Caskr.Server.Tests.csproj
 
 # Restore client dependencies
 COPY package.json package-lock.json ./
