@@ -24,11 +24,12 @@ function WarehousesPage() {
   const dispatch = useAppDispatch()
   const warehouses = useAppSelector(state => state.warehouses.items)
   const loading = useAppSelector(state => state.warehouses.loading)
+  const authUser = useAppSelector(state => state.auth.user)
+  const companyId = authUser?.companyId ?? 1
   const [showModal, setShowModal] = useState(false)
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
   const [showInactive, setShowInactive] = useState(false)
   const [confirmDeactivate, setConfirmDeactivate] = useState<Warehouse | null>(null)
-  const companyId = 1 // TODO: Get from auth context
 
   useEffect(() => {
     dispatch(fetchWarehouses({ companyId, includeInactive: showInactive }))

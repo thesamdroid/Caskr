@@ -2,6 +2,10 @@ using System.Security.Claims;
 using Caskr.server.Models;
 using Caskr.server.Models.SupplyChain;
 using Caskr.server.Services;
+using iText.Kernel.Pdf;
+using iText.Layout;
+using iText.Layout.Element;
+using iText.Layout.Properties;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -754,6 +758,7 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
     {
         var po = await _dbContext.PurchaseOrders
             .Include(p => p.Supplier)
+            .Include(p => p.Company)
             .Include(p => p.Items)
                 .ThenInclude(i => i.SupplierProduct)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -769,21 +774,96 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
             return Forbid();
         }
 
-        // For now, return a simple text-based response
-        // TODO: Implement full PDF generation with iText7
-        var content = $"Purchase Order: {po.PoNumber}\n";
-        content += $"Supplier: {po.Supplier?.SupplierName}\n";
-        content += $"Date: {po.OrderDate:yyyy-MM-dd}\n";
-        content += $"Total: {po.TotalAmount:C}\n\n";
-        content += "Items:\n";
+        _logger.LogInformation("Generating PDF for purchase order {PoNumber}", po.PoNumber);
 
-        foreach (var item in po.Items)
+        using var ms = new MemoryStream();
+        using (var writer = new PdfWriter(ms))
+        using (var pdf = new PdfDocument(writer))
+        using (var document = new Document(pdf))
         {
-            content += $"- {item.SupplierProduct?.ProductName}: {item.Quantity} x {item.UnitPrice:C} = {item.TotalPrice:C}\n";
+            // Title
+            document.Add(new Paragraph("PURCHASE ORDER")
+                .SetFontSize(20)
+                .SetBold()
+                .SetTextAlignment(TextAlignment.CENTER));
+
+            document.Add(new Paragraph(po.PoNumber)
+                .SetFontSize(14)
+                .SetTextAlignment(TextAlignment.CENTER));
+
+            document.Add(new Paragraph("\n"));
+
+            // Company and Supplier Info
+            var infoTable = new Table(2).UseAllAvailableWidth();
+
+            // Company (From)
+            var companyCell = new Cell()
+                .Add(new Paragraph("FROM:").SetBold())
+                .Add(new Paragraph(po.Company?.CompanyName ?? ""))
+                .SetBorder(iText.Layout.Borders.Border.NO_BORDER);
+            infoTable.AddCell(companyCell);
+
+            // Supplier (To)
+            var supplierCell = new Cell()
+                .Add(new Paragraph("TO:").SetBold())
+                .Add(new Paragraph(po.Supplier?.SupplierName ?? ""))
+                .Add(new Paragraph(po.Supplier?.ContactEmail ?? ""))
+                .SetBorder(iText.Layout.Borders.Border.NO_BORDER);
+            infoTable.AddCell(supplierCell);
+
+            document.Add(infoTable);
+            document.Add(new Paragraph("\n"));
+
+            // Order Details
+            document.Add(new Paragraph($"Order Date: {po.OrderDate:MMMM dd, yyyy}").SetFontSize(11));
+            if (po.ExpectedDeliveryDate.HasValue)
+            {
+                document.Add(new Paragraph($"Expected Delivery: {po.ExpectedDeliveryDate:MMMM dd, yyyy}").SetFontSize(11));
+            }
+            document.Add(new Paragraph($"Status: {po.Status}").SetFontSize(11));
+            document.Add(new Paragraph("\n"));
+
+            // Items Table
+            document.Add(new Paragraph("Order Items").SetBold().SetFontSize(14));
+
+            var itemsTable = new Table(new float[] { 3, 1, 1, 1 }).UseAllAvailableWidth();
+
+            // Header
+            itemsTable.AddHeaderCell(new Cell().Add(new Paragraph("Product").SetBold()));
+            itemsTable.AddHeaderCell(new Cell().Add(new Paragraph("Qty").SetBold().SetTextAlignment(TextAlignment.CENTER)));
+            itemsTable.AddHeaderCell(new Cell().Add(new Paragraph("Unit Price").SetBold().SetTextAlignment(TextAlignment.RIGHT)));
+            itemsTable.AddHeaderCell(new Cell().Add(new Paragraph("Total").SetBold().SetTextAlignment(TextAlignment.RIGHT)));
+
+            foreach (var item in po.Items)
+            {
+                itemsTable.AddCell(new Cell().Add(new Paragraph(item.SupplierProduct?.ProductName ?? "Unknown")));
+                itemsTable.AddCell(new Cell().Add(new Paragraph($"{item.Quantity}").SetTextAlignment(TextAlignment.CENTER)));
+                itemsTable.AddCell(new Cell().Add(new Paragraph($"{item.UnitPrice:C}").SetTextAlignment(TextAlignment.RIGHT)));
+                itemsTable.AddCell(new Cell().Add(new Paragraph($"{item.TotalPrice:C}").SetTextAlignment(TextAlignment.RIGHT)));
+            }
+
+            document.Add(itemsTable);
+            document.Add(new Paragraph("\n"));
+
+            // Total
+            document.Add(new Paragraph($"Total Amount: {po.TotalAmount:C}")
+                .SetBold()
+                .SetFontSize(14)
+                .SetTextAlignment(TextAlignment.RIGHT));
+
+            // Notes
+            if (!string.IsNullOrWhiteSpace(po.Notes))
+            {
+                document.Add(new Paragraph("\n"));
+                document.Add(new Paragraph("Notes:").SetBold());
+                document.Add(new Paragraph(po.Notes));
+            }
         }
 
-        var bytes = System.Text.Encoding.UTF8.GetBytes(content);
-        return File(bytes, "text/plain", $"{po.PoNumber}.txt");
+        var pdfBytes = ms.ToArray();
+        _logger.LogInformation("Successfully generated PDF for purchase order {PoNumber}. Size: {Size} bytes", po.PoNumber, pdfBytes.Length);
+
+        return File(pdfBytes, "application/pdf", $"{po.PoNumber}.pdf");
     }
 
     private async Task<User?> GetCurrentUserAsync()

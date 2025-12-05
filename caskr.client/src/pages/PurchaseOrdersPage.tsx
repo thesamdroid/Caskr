@@ -66,6 +66,8 @@ function PurchaseOrdersPage() {
   const purchaseOrders = useAppSelector(state => state.purchaseOrders.items)
   const loading = useAppSelector(state => state.purchaseOrders.loading)
   const suppliers = useAppSelector(state => state.suppliers.items)
+  const authUser = useAppSelector(state => state.auth.user)
+  const companyId = authUser?.companyId ?? 1
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | ''>('')
@@ -81,8 +83,6 @@ function PurchaseOrdersPage() {
   const [emailingPO, setEmailingPO] = useState<PurchaseOrder | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<PurchaseOrder | null>(null)
   const [confirmCancel, setConfirmCancel] = useState<PurchaseOrder | null>(null)
-
-  const companyId = 1 // TODO: Get from auth context
 
   useEffect(() => {
     dispatch(fetchSuppliers({ companyId, includeInactive: false }))

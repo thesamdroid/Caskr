@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using Caskr.server.Models;
+using Caskr.server.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -97,12 +98,14 @@ public sealed class WebhookDeliveryWorker : IHostedService, IDisposable
     {
         await using var scope = _serviceScopeFactory.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CaskrDbContext>();
+        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
         var now = DateTime.UtcNow;
 
         // Query pending and retrying deliveries that are due for processing
         var pendingDeliveries = await dbContext.WebhookDeliveries
             .Include(d => d.Subscription)
+                .ThenInclude(s => s.CreatedByUser)
             .Where(d => (d.DeliveryStatus == WebhookDeliveryStatus.Pending ||
                         d.DeliveryStatus == WebhookDeliveryStatus.Retrying) &&
                        (d.NextRetryAt == null || d.NextRetryAt <= now))
@@ -130,13 +133,14 @@ public sealed class WebhookDeliveryWorker : IHostedService, IDisposable
                 continue;
             }
 
-            await ProcessDeliveryAsync(delivery, dbContext, cancellationToken);
+            await ProcessDeliveryAsync(delivery, dbContext, emailService, cancellationToken);
         }
     }
 
     private async Task ProcessDeliveryAsync(
         WebhookDelivery delivery,
         CaskrDbContext dbContext,
+        IEmailService emailService,
         CancellationToken cancellationToken)
     {
         var subscription = delivery.Subscription;
@@ -187,7 +191,7 @@ public sealed class WebhookDeliveryWorker : IHostedService, IDisposable
             else
             {
                 // Failure - schedule retry or mark as failed
-                await HandleFailureAsync(delivery, $"HTTP {statusCode}: {delivery.ResponseBody}");
+                await HandleFailureAsync(delivery, $"HTTP {statusCode}: {delivery.ResponseBody}", emailService);
 
                 _logger.LogWarning(
                     "Webhook delivery {DeliveryId} to {Url} failed with status {StatusCode}. Retry {RetryCount}/{MaxRetries}",
@@ -200,7 +204,7 @@ public sealed class WebhookDeliveryWorker : IHostedService, IDisposable
         }
         catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
         {
-            await HandleFailureAsync(delivery, $"Request timed out after {HttpTimeoutSeconds} seconds");
+            await HandleFailureAsync(delivery, $"Request timed out after {HttpTimeoutSeconds} seconds", emailService);
 
             _logger.LogWarning(
                 "Webhook delivery {DeliveryId} to {Url} timed out. Retry {RetryCount}/{MaxRetries}",
@@ -211,7 +215,7 @@ public sealed class WebhookDeliveryWorker : IHostedService, IDisposable
         }
         catch (HttpRequestException ex)
         {
-            await HandleFailureAsync(delivery, $"Network error: {ex.Message}");
+            await HandleFailureAsync(delivery, $"Network error: {ex.Message}", emailService);
 
             _logger.LogWarning(
                 ex,
@@ -223,7 +227,7 @@ public sealed class WebhookDeliveryWorker : IHostedService, IDisposable
         }
         catch (Exception ex)
         {
-            await HandleFailureAsync(delivery, $"Unexpected error: {ex.Message}");
+            await HandleFailureAsync(delivery, $"Unexpected error: {ex.Message}", emailService);
 
             _logger.LogError(
                 ex,
@@ -237,7 +241,7 @@ public sealed class WebhookDeliveryWorker : IHostedService, IDisposable
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private Task HandleFailureAsync(WebhookDelivery delivery, string errorMessage)
+    private async Task HandleFailureAsync(WebhookDelivery delivery, string errorMessage, IEmailService emailService)
     {
         delivery.RetryCount++;
         delivery.ResponseBody = errorMessage;
@@ -255,7 +259,8 @@ public sealed class WebhookDeliveryWorker : IHostedService, IDisposable
                 MaxRetryCount,
                 delivery.SubscriptionId);
 
-            // TODO: Send alert email to subscription creator
+            // Send alert email to subscription creator
+            await SendFailureAlertEmailAsync(delivery, errorMessage, emailService);
         }
         else
         {
@@ -270,7 +275,50 @@ public sealed class WebhookDeliveryWorker : IHostedService, IDisposable
                 delivery.RetryCount,
                 delivery.NextRetryAt);
         }
+    }
 
-        return Task.CompletedTask;
+    private async Task SendFailureAlertEmailAsync(WebhookDelivery delivery, string errorMessage, IEmailService emailService)
+    {
+        var subscription = delivery.Subscription;
+        var creatorEmail = subscription.CreatedByUser?.Email;
+
+        if (string.IsNullOrEmpty(creatorEmail))
+        {
+            _logger.LogWarning(
+                "Cannot send failure alert for webhook delivery {DeliveryId}: no creator email available",
+                delivery.Id);
+            return;
+        }
+
+        var subject = $"Webhook Delivery Failed: {subscription.Name}";
+        var body = $@"Your webhook subscription ""{subscription.Name}"" has permanently failed after {MaxRetryCount} delivery attempts.
+
+Subscription Details:
+- Name: {subscription.Name}
+- Target URL: {subscription.TargetUrl}
+- Event Type: {delivery.EventType}
+
+Last Error: {errorMessage}
+
+Please check your webhook endpoint and update the subscription if necessary.
+
+This is an automated message from Caskr.";
+
+        try
+        {
+            await emailService.SendEmailAsync(creatorEmail, subject, body);
+            _logger.LogInformation(
+                "Sent failure alert email to {Email} for webhook delivery {DeliveryId}",
+                creatorEmail,
+                delivery.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to send failure alert email to {Email} for webhook delivery {DeliveryId}",
+                creatorEmail,
+                delivery.Id);
+        }
     }
 }
