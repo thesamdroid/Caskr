@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Caskr.server
 {
@@ -29,10 +30,17 @@ public static void BindServices(this IServiceCollection services, IConfiguration
 
             foreach (var type in bindableTypes)
             {
-                var interfaces = type.GetInterfaces();
+                var interfaces = type.GetInterfaces()
+                    // Exclude IHostedService and IDisposable - these are handled separately
+                    .Where(i => i != typeof(IHostedService) &&
+                                i != typeof(IDisposable) &&
+                                !i.IsAssignableTo(typeof(IHostedService)))
+                    .ToArray();
+
                 if (interfaces.Length == 0)
                 {
-                    throw new Exception($"Type {type.Name} does not implement any interfaces.");
+                    // Skip types that only implement IHostedService/IDisposable
+                    continue;
                 }
                 foreach (var @interface in interfaces)
                 {

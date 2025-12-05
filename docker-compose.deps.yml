@@ -1,0 +1,58 @@
+version: '3.9'
+
+# Local development - Dependencies only
+# Use this if you can't pull .NET images from MCR
+#
+# Usage:
+#   1. Start dependencies: docker-compose -f docker-compose.deps.yml up -d
+#   2. Run .NET app locally: dotnet run --project Caskr.Server
+#
+# Services available:
+#   - PostgreSQL: localhost:5432 (postgres/localdev123)
+#   - Keycloak:   localhost:8080 (admin/admin123)
+
+services:
+  # PostgreSQL Database
+  caskr-db:
+    image: postgres:17-alpine
+    container_name: caskr-db-local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdev123
+      POSTGRES_DB: caskr-db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data_deps:/var/lib/postgresql/data
+      # Mount only the schema and migration files (not init.db which has ordering issues)
+      - ./Database/initdb.d/01-schema-init.sql:/docker-entrypoint-initdb.d/01-schema-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d caskr-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caskr-deps
+
+  # Keycloak Authentication Server (using in-memory H2 database)
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.1.1
+    container_name: caskr-keycloak-local
+    restart: unless-stopped
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+    # Force in-memory H2 database via command line (overrides any cached config)
+    command: ["start-dev", "--db=dev-mem"]
+    ports:
+      - "8080:8080"
+    networks:
+      - caskr-deps
+
+volumes:
+  postgres_data_deps:
+
+networks:
+  caskr-deps:
+    driver: bridge

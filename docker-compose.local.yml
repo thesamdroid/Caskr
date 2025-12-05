@@ -35,6 +35,11 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin123
+      # PostgreSQL connection for Keycloak (separate 'keycloak' database)
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://caskr-db:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: localdev123
     ports:
       - "8080:8080"
     depends_on:
