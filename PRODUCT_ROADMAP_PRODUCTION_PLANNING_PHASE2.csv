@@ -1,0 +1,863 @@
+Task ID,Task Name,Type,Story Points,Dependencies,Acceptance Criteria,Detailed AI Prompt
+PROD-009,Capacity planning database schema,Database,5,PROD-001,"- CapacityPlan table created with all required columns
+- CapacityAllocation table created for resource assignments
+- CapacityConstraint table for defining limits
+- Indexes optimized for date range queries
+- Migration runs successfully
+- All existing tests pass
+- New model configuration tests added","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL. The codebase follows clean architecture patterns with services, controllers, and models separated into logical namespaces.
+
+## Task: Create Capacity Planning Database Schema
+
+### Context
+Distilleries need to understand their production capacity to plan effectively. This schema enables tracking of capacity constraints, planned vs actual utilization, and helps identify bottlenecks before they impact production. This builds on the production planning schema from PROD-001.
+
+### Requirements
+
+Create the following Entity Framework Core models in the `Caskr.Server/Models/Production/` directory:
+
+**1. CapacityPlan Model**
+- Id (int, primary key)
+- CompanyId (int, foreign key to Companies)
+- Name (string, max 200 chars, required)
+- Description (string, max 1000 chars, nullable)
+- PlanPeriodStart (DateTime, required) - Start of planning period
+- PlanPeriodEnd (DateTime, required) - End of planning period
+- PlanType (enum: Weekly, Monthly, Quarterly, Annual)
+- Status (enum: Draft, Active, Completed, Archived)
+- TargetProofGallons (decimal, nullable) - Production target
+- TargetBottles (int, nullable) - Bottling target
+- TargetBatches (int, nullable) - Number of batches target
+- Notes (string, max 2000 chars, nullable)
+- CreatedByUserId (string, foreign key to users)
+- CreatedAt, UpdatedAt (DateTime)
+
+**2. CapacityAllocation Model**
+- Id (int, primary key)
+- CapacityPlanId (int, foreign key to CapacityPlan)
+- EquipmentId (int, foreign key to Equipment)
+- AllocationType (enum: Production, Maintenance, Buffer, Reserved)
+- StartDate (DateTime, required)
+- EndDate (DateTime, required)
+- HoursAllocated (decimal, required)
+- ProductionType (enum: Mashing, Fermentation, Distillation, Barreling, Bottling, Other, nullable)
+- Notes (string, max 500 chars, nullable)
+- CreatedAt, UpdatedAt (DateTime)
+
+**3. CapacityConstraint Model**
+- Id (int, primary key)
+- CompanyId (int, foreign key to Companies)
+- EquipmentId (int, nullable foreign key - null means company-wide constraint)
+- ConstraintType (enum: MaxHoursPerDay, MaxHoursPerWeek, MaxRunsPerDay, MaxProofGallonsPerRun, MinTimeBetweenRuns, MaxConcurrentRuns)
+- ConstraintValue (decimal, required)
+- EffectiveFrom (DateTime, required)
+- EffectiveTo (DateTime, nullable) - null means indefinitely
+- Reason (string, max 500 chars, nullable)
+- IsActive (bool, default true)
+- CreatedByUserId (string)
+- CreatedAt, UpdatedAt (DateTime)
+
+**4. CapacitySnapshot Model (for historical tracking)**
+- Id (int, primary key)
+- CompanyId (int, foreign key)
+- SnapshotDate (DateTime, required)
+- EquipmentId (int, foreign key)
+- TotalCapacityHours (decimal) - Total available hours
+- AllocatedHours (decimal) - Hours allocated to production
+- MaintenanceHours (decimal) - Hours for maintenance
+- UtilizationPercent (decimal) - Calculated percentage
+- PlannedProofGallons (decimal, nullable)
+- ActualProofGallons (decimal, nullable)
+- CreatedAt (DateTime)
+
+### Database Configuration
+
+Add entity configurations in CaskrDbContext.cs following existing patterns:
+- Use snake_case for column names
+- Add composite indexes for (company_id, plan_period_start, plan_period_end)
+- Add indexes on (equipment_id, start_date, end_date) for allocation queries
+- Configure cascade delete: CapacityPlan deletion cascades to allocations
+- Add check constraints: EndDate > StartDate, HoursAllocated >= 0
+
+### Refactoring Opportunities
+
+1. Look at existing patterns for temporal data (effective dates, history tracking)
+2. Check if there's a base class for company-scoped entities to extend
+3. Consider if constraint validation should use a specification pattern
+4. Look for existing audit logging patterns to ensure snapshots are captured
+
+### Testing Requirements
+
+Create `Caskr.Server.Tests/CapacityModelConfigurationTests.cs` that verifies:
+- All models can be created and saved to the database
+- Foreign key relationships work correctly (CapacityPlan -> Allocations)
+- Cascade delete removes allocations when plan is deleted
+- Constraints with equipment_id = null are company-wide
+- Date validation constraints work (end > start)
+- Overlapping allocations for same equipment are detected
+
+Follow existing test patterns in `Caskr.Server.Tests/ProductionModelConfigurationTests.cs`.
+
+### Build Verification
+
+After implementation:
+1. Run `dotnet build` to ensure no compilation errors
+2. Run `dotnet test` to verify all existing tests still pass
+3. Create and apply EF migration: `dotnet ef migrations add AddCapacityPlanningSchema`
+4. Verify migration applies cleanly to a fresh database
+5. Test that indexes are created correctly: `\d+ capacity_plans` in psql
+
+### Files to Create/Modify
+- Create: `Caskr.Server/Models/Production/CapacityPlan.cs`
+- Create: `Caskr.Server/Models/Production/CapacityAllocation.cs`
+- Create: `Caskr.Server/Models/Production/CapacityConstraint.cs`
+- Create: `Caskr.Server/Models/Production/CapacitySnapshot.cs`
+- Modify: `Caskr.Server/Models/Production/ProductionEnums.cs` (add new enums)
+- Modify: `Caskr.Server/Models/CaskrDbContext.cs` (add DbSets and configurations)
+- Create: `Caskr.Server.Tests/CapacityModelConfigurationTests.cs`"
+PROD-010,Capacity analysis service,Backend,8,PROD-009,"- CapacityAnalysisService created with full analysis capabilities
+- Utilization calculations working correctly
+- Bottleneck detection implemented
+- Forecasting based on historical data
+- What-if scenario analysis
+- All methods have unit tests
+- Service registered in DI container","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL.
+
+## Task: Implement Capacity Analysis Service
+
+### Context
+With the capacity planning database schema in place (PROD-009), we need a service layer to analyze production capacity, identify bottlenecks, forecast utilization, and support what-if scenario planning. This service helps distilleries optimize their production schedule and make data-driven investment decisions.
+
+### Requirements
+
+Create `Caskr.Server/Services/Production/CapacityAnalysisService.cs` with the following capabilities:
+
+**1. Capacity Analysis Interface**
+```csharp
+public interface ICapacityAnalysisService
+{
+    // Current Capacity Analysis
+    Task<CapacityOverview> GetCapacityOverviewAsync(int companyId, DateTime start, DateTime end);
+    Task<EquipmentCapacityDetail> GetEquipmentCapacityAsync(int equipmentId, DateTime start, DateTime end);
+    Task<IEnumerable<CapacityByProductionType>> GetCapacityByTypeAsync(int companyId, DateTime start, DateTime end);
+
+    // Utilization Analysis
+    Task<UtilizationReport> CalculateUtilizationAsync(int companyId, DateTime start, DateTime end);
+    Task<IEnumerable<EquipmentUtilization>> GetEquipmentUtilizationAsync(int companyId, DateTime start, DateTime end);
+    Task<UtilizationTrend> GetUtilizationTrendAsync(int companyId, int periodMonths = 6);
+
+    // Bottleneck Detection
+    Task<IEnumerable<Bottleneck>> IdentifyBottlenecksAsync(int companyId, DateTime start, DateTime end);
+    Task<BottleneckAnalysis> AnalyzeBottleneckAsync(int equipmentId, DateTime start, DateTime end);
+    Task<IEnumerable<BottleneckResolution>> SuggestResolutionsAsync(Bottleneck bottleneck);
+
+    // Capacity Planning
+    Task<CapacityPlan> CreateCapacityPlanAsync(CreateCapacityPlanDto dto, int companyId, string userId);
+    Task<CapacityPlan> UpdateCapacityPlanAsync(int planId, UpdateCapacityPlanDto dto, int companyId);
+    Task<CapacityValidation> ValidateCapacityPlanAsync(int planId);
+
+    // Forecasting
+    Task<CapacityForecast> ForecastCapacityAsync(int companyId, int weeksAhead, ForecastMethod method = ForecastMethod.MovingAverage);
+    Task<DemandForecast> ForecastDemandAsync(int companyId, int weeksAhead);
+    Task<GapAnalysis> AnalyzeCapacityGapAsync(int companyId, DateTime start, DateTime end);
+
+    // What-If Scenarios
+    Task<ScenarioResult> RunScenarioAsync(WhatIfScenarioDto scenario);
+    Task<IEnumerable<ScenarioComparison>> CompareScenarioResultsAsync(List<int> scenarioIds);
+
+    // Snapshots
+    Task CaptureCapacitySnapshotAsync(int companyId, DateTime snapshotDate);
+    Task<IEnumerable<CapacitySnapshot>> GetHistoricalSnapshotsAsync(int companyId, DateTime start, DateTime end);
+}
+```
+
+**2. DTOs and Response Models**
+
+Create in `Caskr.Server/Services/Production/CapacityDtos.cs`:
+
+```csharp
+public record CapacityOverview(
+    int TotalEquipmentCount,
+    decimal TotalCapacityHours,
+    decimal AllocatedHours,
+    decimal AvailableHours,
+    decimal OverallUtilizationPercent,
+    List<EquipmentCapacitySummary> EquipmentSummaries,
+    List<CapacityAlert> Alerts
+);
+
+public record Bottleneck(
+    int EquipmentId,
+    string EquipmentName,
+    BottleneckSeverity Severity,
+    decimal UtilizationPercent,
+    int AffectedProductionRuns,
+    TimeSpan AverageWaitTime,
+    decimal EstimatedLostCapacity,
+    string Description
+);
+
+public enum BottleneckSeverity { Low, Medium, High, Critical }
+
+public record BottleneckResolution(
+    ResolutionType Type,
+    string Description,
+    decimal EstimatedCostImpact,
+    decimal EstimatedCapacityGain,
+    TimeSpan EstimatedImplementationTime,
+    List<string> Prerequisites
+);
+
+public enum ResolutionType {
+    AddEquipment,
+    ExtendHours,
+    OptimizeSchedule,
+    ReduceMaintenanceTime,
+    AddShift,
+    Outsource
+}
+
+public record WhatIfScenarioDto(
+    string Name,
+    List<ScenarioChange> Changes,
+    DateTime EvaluationPeriodStart,
+    DateTime EvaluationPeriodEnd
+);
+
+public record ScenarioChange(
+    ScenarioChangeType Type,
+    int? EquipmentId,
+    Dictionary<string, object> Parameters
+);
+
+public enum ScenarioChangeType {
+    AddEquipment,
+    RemoveEquipment,
+    ChangeCapacity,
+    AddConstraint,
+    RemoveConstraint,
+    ChangeOperatingHours,
+    AddProductionRun
+}
+
+public record ScenarioResult(
+    int ScenarioId,
+    string ScenarioName,
+    CapacityOverview ProjectedCapacity,
+    List<Bottleneck> ProjectedBottlenecks,
+    decimal CapacityChangePercent,
+    decimal CostImpact,
+    string Summary
+);
+
+public record CapacityForecast(
+    DateTime GeneratedAt,
+    ForecastMethod Method,
+    List<WeeklyForecast> WeeklyForecasts,
+    decimal ConfidenceLevel,
+    List<string> Assumptions
+);
+```
+
+**3. Analysis Algorithms**
+
+Implement these key algorithms:
+
+*Utilization Calculation:*
+```
+Utilization % = (Allocated Hours + Maintenance Hours) / Total Available Hours * 100
+Available Hours = Operating Hours - Scheduled Downtime - Constraints
+```
+
+*Bottleneck Detection:*
+- Equipment with >85% utilization = Medium severity
+- Equipment with >95% utilization = High severity
+- Equipment causing >2 schedule delays = Critical
+- Consider downstream impact (e.g., still bottleneck affects fermentation)
+
+*Forecast Methods:*
+- MovingAverage: Last N weeks average
+- ExponentialSmoothing: Weighted recent data higher
+- LinearRegression: Trend-based projection
+- SeasonalAdjusted: Account for seasonal patterns
+
+### Refactoring Opportunities
+
+1. Look at existing analytics/reporting patterns in the codebase
+2. Check for existing forecast/projection implementations
+3. Consider using a strategy pattern for different forecast methods
+4. Look for existing constraint validation patterns
+5. Check if there's a caching layer for expensive calculations
+
+### Testing Requirements
+
+Create `Caskr.Server.Tests/Services/CapacityAnalysisServiceTests.cs`:
+
+**Utilization Tests**
+- CalculateUtilization_NoAllocations_ReturnsZeroPercent
+- CalculateUtilization_FullyBooked_Returns100Percent
+- CalculateUtilization_WithMaintenance_IncludesInCalculation
+- GetUtilizationTrend_ReturnsCorrectMonthlyAverages
+
+**Bottleneck Tests**
+- IdentifyBottlenecks_HighUtilization_ReturnsBottleneck
+- IdentifyBottlenecks_NoIssues_ReturnsEmpty
+- AnalyzeBottleneck_ReturnsAffectedRuns
+- SuggestResolutions_ReturnsOrderedByCostEffectiveness
+
+**Forecast Tests**
+- ForecastCapacity_MovingAverage_CalculatesCorrectly
+- ForecastCapacity_InsufficientData_ThrowsException
+- ForecastDemand_BasedOnHistoricalOrders_Accurate
+
+**What-If Tests**
+- RunScenario_AddEquipment_ShowsCapacityIncrease
+- RunScenario_RemoveEquipment_ShowsBottleneck
+- CompareScenarios_ReturnsRankedResults
+
+### Dependency Injection
+
+Register the service in `Program.cs`:
+```csharp
+services.AddScoped<ICapacityAnalysisService, CapacityAnalysisService>();
+```
+
+### Build Verification
+
+1. Run `dotnet build` - no compilation errors
+2. Run `dotnet test` - all tests pass including new ones
+3. Verify service can be injected and basic operations work
+4. Test calculation accuracy with sample data
+
+### Files to Create/Modify
+- Create: `Caskr.Server/Services/Production/ICapacityAnalysisService.cs`
+- Create: `Caskr.Server/Services/Production/CapacityAnalysisService.cs`
+- Create: `Caskr.Server/Services/Production/CapacityDtos.cs`
+- Create: `Caskr.Server/Services/Production/ForecastStrategies/` (forecast implementations)
+- Modify: `Program.cs` or DI configuration to register service
+- Create: `Caskr.Server.Tests/Services/CapacityAnalysisServiceTests.cs`"
+PROD-011,Capacity planning API endpoints,API,5,PROD-010,"- All capacity analysis endpoints implemented
+- What-if scenario endpoints working
+- Forecast endpoints returning data
+- Export endpoints (CSV/PDF) functional
+- All endpoints have integration tests
+- Swagger documentation complete
+- Authorization properly configured","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL.
+
+## Task: Create Capacity Planning API Endpoints
+
+### Context
+With the CapacityAnalysisService implemented (PROD-010), we need REST API endpoints to expose capacity planning functionality to the frontend. The API should support the capacity dashboard, bottleneck analysis, forecasting, and what-if scenario planning.
+
+### Requirements
+
+Create `Caskr.Server/Controllers/CapacityController.cs` with the following endpoints:
+
+**1. Capacity Overview Endpoints**
+```
+GET    /api/capacity/overview                    - Get capacity overview for date range
+       Query params: startDate, endDate
+       Returns: CapacityOverview with equipment summaries and alerts
+
+GET    /api/capacity/equipment/{id}              - Get detailed capacity for specific equipment
+       Query params: startDate, endDate
+       Returns: EquipmentCapacityDetail with utilization and bookings
+
+GET    /api/capacity/by-type                     - Get capacity breakdown by production type
+       Query params: startDate, endDate
+       Returns: Array of CapacityByProductionType
+```
+
+**2. Utilization Endpoints**
+```
+GET    /api/capacity/utilization                 - Calculate utilization report
+       Query params: startDate, endDate, groupBy (day|week|month)
+       Returns: UtilizationReport with breakdowns
+
+GET    /api/capacity/utilization/trend           - Get historical utilization trend
+       Query params: months (default: 6)
+       Returns: UtilizationTrend with monthly data points
+
+GET    /api/capacity/utilization/equipment       - Get per-equipment utilization
+       Query params: startDate, endDate
+       Returns: Array of EquipmentUtilization
+```
+
+**3. Bottleneck Analysis Endpoints**
+```
+GET    /api/capacity/bottlenecks                 - Identify current bottlenecks
+       Query params: startDate, endDate, minSeverity (Low|Medium|High|Critical)
+       Returns: Array of Bottleneck objects
+
+GET    /api/capacity/bottlenecks/{equipmentId}   - Detailed bottleneck analysis
+       Query params: startDate, endDate
+       Returns: BottleneckAnalysis with affected runs and wait times
+
+GET    /api/capacity/bottlenecks/{equipmentId}/resolutions - Get resolution suggestions
+       Returns: Array of BottleneckResolution ranked by effectiveness
+```
+
+**4. Capacity Plan Management**
+```
+POST   /api/capacity/plans                       - Create new capacity plan
+       Body: CreateCapacityPlanDto
+       Returns: Created CapacityPlan
+
+GET    /api/capacity/plans                       - List capacity plans
+       Query params: status, planType, pageNumber, pageSize
+       Returns: PagedResult<CapacityPlanSummary>
+
+GET    /api/capacity/plans/{id}                  - Get capacity plan details
+       Returns: CapacityPlan with allocations
+
+PUT    /api/capacity/plans/{id}                  - Update capacity plan
+       Body: UpdateCapacityPlanDto
+       Returns: Updated CapacityPlan
+
+DELETE /api/capacity/plans/{id}                  - Delete/archive capacity plan
+       Returns: 204 No Content
+
+POST   /api/capacity/plans/{id}/validate         - Validate capacity plan against constraints
+       Returns: CapacityValidation with issues list
+
+POST   /api/capacity/plans/{id}/activate         - Activate a draft plan
+       Returns: Updated CapacityPlan with status = Active
+```
+
+**5. Forecasting Endpoints**
+```
+GET    /api/capacity/forecast                    - Get capacity forecast
+       Query params: weeksAhead (default: 12), method (MovingAverage|Exponential|Linear|Seasonal)
+       Returns: CapacityForecast with weekly projections
+
+GET    /api/capacity/forecast/demand             - Get demand forecast
+       Query params: weeksAhead
+       Returns: DemandForecast based on historical orders
+
+GET    /api/capacity/gap-analysis                - Analyze capacity vs demand gap
+       Query params: startDate, endDate
+       Returns: GapAnalysis with recommendations
+```
+
+**6. What-If Scenario Endpoints**
+```
+POST   /api/capacity/scenarios                   - Create and run what-if scenario
+       Body: WhatIfScenarioDto
+       Returns: ScenarioResult with projected impact
+
+GET    /api/capacity/scenarios/{id}              - Get saved scenario result
+       Returns: ScenarioResult
+
+POST   /api/capacity/scenarios/compare           - Compare multiple scenarios
+       Body: { scenarioIds: [1, 2, 3] }
+       Returns: Array of ScenarioComparison with rankings
+```
+
+**7. Export Endpoints**
+```
+GET    /api/capacity/export/utilization          - Export utilization report
+       Query params: startDate, endDate, format (csv|pdf)
+       Returns: File download
+
+GET    /api/capacity/export/forecast             - Export forecast report
+       Query params: weeksAhead, format (csv|pdf)
+       Returns: File download
+
+GET    /api/capacity/plans/{id}/export           - Export capacity plan
+       Query params: format (csv|pdf)
+       Returns: File download
+```
+
+**8. Constraint Management Endpoints**
+```
+GET    /api/capacity/constraints                 - List capacity constraints
+       Query params: equipmentId (optional), activeOnly (default: true)
+       Returns: Array of CapacityConstraint
+
+POST   /api/capacity/constraints                 - Create constraint
+       Body: CreateConstraintDto
+       Returns: Created CapacityConstraint
+
+PUT    /api/capacity/constraints/{id}            - Update constraint
+       Body: UpdateConstraintDto
+       Returns: Updated CapacityConstraint
+
+DELETE /api/capacity/constraints/{id}            - Deactivate constraint
+       Returns: 204 No Content
+```
+
+### Response DTOs
+
+Create in `Caskr.Server/Services/Production/CapacityDtos.cs` (extend existing file):
+
+```csharp
+public record CapacityOverviewResponse(
+    int TotalEquipmentCount,
+    decimal TotalCapacityHours,
+    decimal AllocatedHours,
+    decimal AvailableHours,
+    decimal OverallUtilizationPercent,
+    List<EquipmentCapacitySummaryResponse> Equipment,
+    List<CapacityAlertResponse> Alerts,
+    DateTime PeriodStart,
+    DateTime PeriodEnd
+);
+
+public record BottleneckResponse(
+    int EquipmentId,
+    string EquipmentName,
+    string EquipmentType,
+    string Severity,
+    decimal UtilizationPercent,
+    int AffectedProductionRuns,
+    string AverageWaitTime,
+    string Description,
+    List<AffectedRunSummary> AffectedRuns
+);
+
+public record ForecastResponse(
+    DateTime GeneratedAt,
+    string Method,
+    decimal ConfidenceLevel,
+    List<WeeklyForecastResponse> Weeks,
+    TrendIndicator Trend,
+    List<string> Assumptions
+);
+```
+
+### Authorization
+
+- All endpoints require authentication
+- Use existing company-scoping pattern
+- CapacityPlan creation/modification requires Manager role
+- Constraint management requires Admin role
+- Follow patterns in existing controllers
+
+### Refactoring Opportunities
+
+1. Look at existing export patterns (PDF/CSV generation)
+2. Check for existing pagination helpers
+3. Consider creating a base CapacityControllerBase for shared logic
+4. Look at how validation errors are formatted in other controllers
+5. Check for existing role-based authorization attributes
+
+### Testing Requirements
+
+Create `Caskr.Server.Tests/Controllers/CapacityControllerTests.cs`:
+
+**Authorization Tests**
+- AllEndpoints_WithoutAuth_Returns401
+- ConstraintEndpoints_NonAdmin_Returns403
+- PlanModification_NonManager_Returns403
+
+**Overview Tests**
+- GetOverview_ValidDateRange_ReturnsOverview
+- GetOverview_InvalidDateRange_Returns400
+- GetEquipmentCapacity_NotFound_Returns404
+
+**Bottleneck Tests**
+- GetBottlenecks_WithData_ReturnsBottlenecks
+- GetBottlenecks_FilterBySeverity_FiltersCorrectly
+- GetResolutions_ReturnsOrderedSuggestions
+
+**Plan Tests**
+- CreatePlan_ValidData_Returns201
+- CreatePlan_OverlappingPeriod_Returns400
+- ValidatePlan_WithIssues_ReturnsValidationErrors
+- ActivatePlan_DraftStatus_UpdatesToActive
+
+**Forecast Tests**
+- GetForecast_DefaultParams_ReturnsData
+- GetForecast_InvalidMethod_Returns400
+- GetGapAnalysis_ReturnsRecommendations
+
+**Scenario Tests**
+- RunScenario_ValidData_ReturnsResult
+- CompareScenarios_MultipleIds_ReturnsRanked
+
+**Export Tests**
+- ExportUtilization_CSV_ReturnsFile
+- ExportUtilization_PDF_ReturnsFile
+
+Use `WebApplicationFactory` for integration tests.
+
+### Swagger Documentation
+
+Add comprehensive XML documentation:
+```csharp
+/// <summary>
+/// Get capacity overview for a date range
+/// </summary>
+/// <param name=""startDate"">Start of analysis period</param>
+/// <param name=""endDate"">End of analysis period</param>
+/// <returns>Capacity overview with equipment summaries and alerts</returns>
+[ProducesResponseType(typeof(CapacityOverviewResponse), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+```
+
+### Build Verification
+
+1. Run `dotnet build` - no compilation errors
+2. Run `dotnet test` - all tests pass
+3. Start application and verify Swagger UI shows new endpoints
+4. Test key endpoints manually with Swagger UI
+5. Verify authorization works correctly
+
+### Files to Create/Modify
+- Create: `Caskr.Server/Controllers/CapacityController.cs`
+- Modify: `Caskr.Server/Services/Production/CapacityDtos.cs` (add response DTOs)
+- Create: `Caskr.Server.Tests/Controllers/CapacityControllerTests.cs`"
+PROD-012,Capacity planning dashboard,Frontend,8,"PROD-011, PROD-008","- Capacity overview displays correctly
+- Utilization charts working
+- Bottleneck visualizations clear
+- Forecast graphs interactive
+- What-if scenario builder functional
+- Export buttons work
+- Mobile responsive
+- Full test coverage","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL. The frontend uses React with TypeScript, Redux Toolkit for state management.
+
+## Task: Build Capacity Planning Dashboard
+
+### Context
+With the capacity planning API endpoints ready (PROD-011), we need a comprehensive dashboard that allows distillery managers to visualize capacity, identify bottlenecks, view forecasts, and run what-if scenarios. This dashboard integrates with the production dashboard (PROD-008) and provides deeper capacity analytics.
+
+### Requirements
+
+**1. Dashboard Layout**
+
+Create `caskr.client/src/pages/CapacityDashboard.tsx`:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Capacity Planning                    [Date Range ▼] [Export ▼] [⚙]    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌────────────────┐ ┌────────────────┐ ┌────────────────┐ ┌───────────┐│
+│  │ TOTAL CAPACITY │ │  ALLOCATED     │ │  AVAILABLE     │ │ ALERTS    ││
+│  │  2,400 hrs     │ │  1,920 hrs     │ │  480 hrs       │ │ 3 ⚠️      ││
+│  │  this month    │ │  80%           │ │  20%           │ │           ││
+│  └────────────────┘ └────────────────┘ └────────────────┘ └───────────┘│
+│                                                                         │
+│  ┌────────────────────────────────────────────────────────────────────┐ │
+│  │  EQUIPMENT UTILIZATION                                   [View ▼] │ │
+│  │  ┌─────────────────────────────────────────────────────────────┐  │ │
+│  │  │  Still #1      [██████████████████████████████████░░░] 92%  │  │ │
+│  │  │  Still #2      [████████████████████████░░░░░░░░░░░░░] 65%  │  │ │
+│  │  │  Fermenter 1   [██████████████████████████████████████] 98% ⚠│  │ │
+│  │  │  Fermenter 2   [██████████████████░░░░░░░░░░░░░░░░░░░] 45%  │  │ │
+│  │  │  Bottling Line [████████████░░░░░░░░░░░░░░░░░░░░░░░░░] 30%  │  │ │
+│  │  └─────────────────────────────────────────────────────────────┘  │ │
+│  └────────────────────────────────────────────────────────────────────┘ │
+│                                                                         │
+│  ┌─────────────────────────────────┐  ┌────────────────────────────────┐│
+│  │  BOTTLENECK ANALYSIS            │  │  CAPACITY FORECAST (12 weeks)  ││
+│  │  ──────────────────────────────│  │  ───────────────────────────── ││
+│  │  🔴 Fermenter 1 (Critical)     │  │       ┌──────────────────────┐ ││
+│  │     98% utilization            │  │  100% │    ╱‾‾‾‾╲           │ ││
+│  │     Affecting 4 runs           │  │   80% │   ╱      ╲          │ ││
+│  │     [View Details] [Resolve]   │  │   60% │──╱        ╲─────────│ ││
+│  │                                │  │   40% │                      │ ││
+│  │  🟡 Still #1 (Medium)          │  │   20% │                      │ ││
+│  │     92% utilization            │  │       └──────────────────────┘ ││
+│  │     [View Details]             │  │        W1  W4  W8  W12         ││
+│  │                                │  │  [Change Method ▼]             ││
+│  └─────────────────────────────────┘  └────────────────────────────────┘│
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐│
+│  │  WHAT-IF SCENARIO BUILDER                               [+ New]    ││
+│  │  ─────────────────────────────────────────────────────────────────  ││
+│  │  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────┐ ││
+│  │  │ Add Still #3        │  │ Extend Hours (+2/day)│  │ Current    │ ││
+│  │  │ +15% capacity       │  │ +12% capacity       │  │ Baseline   │ ││
+│  │  │ $45,000 cost        │  │ $8,000/mo cost      │  │ 80% util   │ ││
+│  │  │ [Compare]           │  │ [Compare]           │  │            │ ││
+│  │  └─────────────────────┘  └─────────────────────┘  └─────────────┘ ││
+│  └─────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**2. Component Structure**
+
+Create in `caskr.client/src/components/capacity/`:
+
+```
+capacity/
+├── CapacityDashboard.tsx           # Main dashboard page
+├── CapacityDashboard.css           # Styles
+├── CapacityStatCards.tsx           # Top metric cards
+├── EquipmentUtilizationChart.tsx   # Horizontal bar chart
+├── BottleneckPanel.tsx             # Bottleneck list with actions
+├── BottleneckDetailModal.tsx       # Detailed bottleneck analysis
+├── ResolutionSuggestions.tsx       # Resolution recommendations
+├── CapacityForecastChart.tsx       # Line chart with forecast
+├── ForecastMethodSelector.tsx      # Dropdown for forecast method
+├── WhatIfScenarioBuilder.tsx       # Scenario creation UI
+├── ScenarioCard.tsx                # Individual scenario display
+├── ScenarioComparisonModal.tsx     # Side-by-side comparison
+├── CapacityAlerts.tsx              # Alert notifications
+├── DateRangeSelector.tsx           # Date range picker
+├── ExportMenu.tsx                  # Export dropdown
+└── index.ts
+```
+
+**3. Charts and Visualizations**
+
+Use chart library (check what's already in the project - likely Chart.js or Recharts):
+
+*Utilization Chart:*
+- Horizontal bar chart
+- Color gradient based on utilization (green < 70%, yellow 70-85%, red > 85%)
+- Click bar to drill into equipment details
+- Animate on load and updates
+
+*Forecast Chart:*
+- Line chart with confidence interval bands
+- Interactive tooltips with weekly values
+- Toggle between forecast methods
+- Show actual vs forecast comparison
+
+*Bottleneck Visualization:*
+- Severity-based color coding (Critical=red, High=orange, Medium=yellow)
+- Animated pulse effect for critical items
+- Expandable details on click
+
+**4. What-If Scenario Builder**
+
+Features:
+- Add scenario with name and changes
+- Available change types:
+  - Add Equipment: Select type, set capacity
+  - Remove Equipment: Select from existing
+  - Change Operating Hours: Adjust daily hours
+  - Add Constraint: New limit
+  - Remove Constraint: Disable existing
+- Real-time preview of impact
+- Save scenarios for comparison
+- Compare up to 3 scenarios side-by-side
+
+**5. State Management**
+
+Add to Redux store `caskr.client/src/features/capacitySlice.ts`:
+
+```typescript
+interface CapacityState {
+  overview: CapacityOverview | null;
+  utilization: EquipmentUtilization[];
+  bottlenecks: Bottleneck[];
+  forecast: CapacityForecast | null;
+  forecastMethod: ForecastMethod;
+  scenarios: WhatIfScenario[];
+  selectedScenarioIds: number[];
+  dateRange: { start: string; end: string };
+  isLoading: boolean;
+  error: string | null;
+}
+
+// Async thunks
+export const fetchCapacityOverview = createAsyncThunk(...);
+export const fetchBottlenecks = createAsyncThunk(...);
+export const fetchForecast = createAsyncThunk(...);
+export const runScenario = createAsyncThunk(...);
+export const compareScenarios = createAsyncThunk(...);
+```
+
+**6. API Integration**
+
+Create `caskr.client/src/api/capacityApi.ts`:
+
+```typescript
+export const capacityApi = {
+  getOverview: (start: Date, end: Date) =>
+    api.get('/capacity/overview', { params: { startDate: start, endDate: end } }),
+  getUtilization: (start: Date, end: Date) =>
+    api.get('/capacity/utilization/equipment', { params: { startDate: start, endDate: end } }),
+  getBottlenecks: (start: Date, end: Date, minSeverity?: string) =>
+    api.get('/capacity/bottlenecks', { params: { startDate: start, endDate: end, minSeverity } }),
+  getBottleneckResolutions: (equipmentId: number) =>
+    api.get(`/capacity/bottlenecks/${equipmentId}/resolutions`),
+  getForecast: (weeksAhead: number, method: string) =>
+    api.get('/capacity/forecast', { params: { weeksAhead, method } }),
+  runScenario: (data: WhatIfScenarioDto) =>
+    api.post('/capacity/scenarios', data),
+  compareScenarios: (scenarioIds: number[]) =>
+    api.post('/capacity/scenarios/compare', { scenarioIds }),
+  exportUtilization: (start: Date, end: Date, format: 'csv' | 'pdf') =>
+    api.get('/capacity/export/utilization', {
+      params: { startDate: start, endDate: end, format },
+      responseType: 'blob'
+    }),
+};
+```
+
+### Refactoring Opportunities
+
+1. Look at existing dashboard patterns in the project
+2. Check for reusable chart components
+3. Look for existing export functionality patterns
+4. Check for date picker components already in use
+5. Review modal patterns for consistency
+
+### Testing Requirements
+
+Create tests in `caskr.client/tests/capacity/`:
+
+**Component Tests** (`capacityDashboard.spec.ts`):
+- Dashboard renders all sections
+- CapacityStatCards display correct values
+- EquipmentUtilizationChart renders bars proportionally
+- BottleneckPanel shows items sorted by severity
+- ForecastChart renders with correct data points
+- ScenarioBuilder creates valid scenarios
+
+**Interaction Tests**:
+- Clicking bottleneck opens detail modal
+- Changing date range refetches data
+- Changing forecast method updates chart
+- Creating scenario shows in list
+- Comparing scenarios opens comparison modal
+- Export button downloads file
+
+**Integration Tests** (`capacityIntegration.spec.ts`):
+- Dashboard loads data on mount
+- Error state displays correctly
+- Loading skeletons show while fetching
+- Bottleneck resolutions load on demand
+
+### Accessibility Requirements
+
+- All charts have text alternatives/descriptions
+- Keyboard navigation for all interactive elements
+- ARIA labels for metric cards
+- Screen reader announces alerts
+- Color is not sole indicator (add icons/patterns)
+- Focus management in modals
+
+### Mobile Responsiveness
+
+- Stack stat cards on mobile
+- Horizontal scroll for utilization chart
+- Full-width bottleneck cards
+- Collapsed forecast with expandable details
+- Bottom sheet for scenario builder
+- Swipe to compare scenarios
+
+### Build Verification
+
+1. Run `npm run build` - no compilation errors
+2. Run `npm test` - all tests pass
+3. Run `npm run lint` - no linting errors
+4. Manual test all dashboard features
+5. Test export functionality
+6. Test on mobile viewport
+7. Verify accessibility with screen reader
+
+### Files to Create/Modify
+- Create: `caskr.client/src/pages/CapacityDashboard.tsx`
+- Create: `caskr.client/src/components/capacity/CapacityDashboard.css`
+- Create: `caskr.client/src/components/capacity/*.tsx` (all components listed)
+- Create: `caskr.client/src/features/capacitySlice.ts`
+- Create: `caskr.client/src/api/capacityApi.ts`
+- Create: `caskr.client/src/types/capacity.ts`
+- Modify: App routing to add /capacity route
+- Create: `caskr.client/tests/capacity/capacityDashboard.spec.ts`
+- Create: `caskr.client/tests/capacity/capacityIntegration.spec.ts`"
