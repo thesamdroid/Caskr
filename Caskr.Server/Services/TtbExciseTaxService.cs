@@ -1,4 +1,5 @@
 using Caskr.server.Models;
+using Caskr.Server.Services;
 using Intuit.Ipp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CaskrCompany = Caskr.server.Models.Company;
 
 namespace Caskr.server.Services;
 
@@ -357,7 +359,7 @@ public class TtbExciseTaxService : ITtbExciseTaxService
         return report;
     }
 
-    private (bool IsEligible, string Reason) DetermineEligibility(Company company)
+    private (bool IsEligible, string Reason) DetermineEligibility(CaskrCompany company)
     {
         // Check explicit eligibility flag
         if (!company.IsEligibleForReducedExciseTaxRate)

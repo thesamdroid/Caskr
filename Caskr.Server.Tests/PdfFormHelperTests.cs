@@ -2,6 +2,7 @@ using Caskr.server.Models;
 using Caskr.server.Services;
 using iText.Forms;
 using iText.Forms.Fields;
+using iText.Forms.Fields.Properties;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 using Microsoft.Extensions.Logging;
@@ -63,7 +64,10 @@ public class PdfFormHelperTests
         using var writer = new PdfWriter(ms);
         using var pdfDoc = new PdfDocument(writer);
         var form = PdfAcroForm.GetAcroForm(pdfDoc, true);
-        var field = PdfFormField.CreateText(pdfDoc, new Rectangle(0, 0, 100, 20), "brand", "seed");
+        var field = new TextFormFieldBuilder(pdfDoc, "brand")
+            .SetWidgetRectangle(new Rectangle(0, 0, 100, 20))
+            .CreateText();
+        field.SetValue("seed");
         form.AddField(field);
 
         PdfFormHelper.SetFieldSafe(form, "brand", "Barrel A", NullLogger.Instance);
@@ -78,7 +82,10 @@ public class PdfFormHelperTests
         using var writer = new PdfWriter(ms);
         using var pdfDoc = new PdfDocument(writer);
         var form = PdfAcroForm.GetAcroForm(pdfDoc, true);
-        var field = PdfFormField.CreateText(pdfDoc, new Rectangle(0, 0, 100, 20), "brand", "seed");
+        var field = new TextFormFieldBuilder(pdfDoc, "brand")
+            .SetWidgetRectangle(new Rectangle(0, 0, 100, 20))
+            .CreateText();
+        field.SetValue("seed");
         form.AddField(field);
 
         PdfFormHelper.SetFieldSafe(form, "brand", "  \t", NullLogger.Instance);
@@ -93,20 +100,20 @@ public class PdfFormHelperTests
         using var writer = new PdfWriter(ms);
         using var pdfDoc = new PdfDocument(writer);
         var form = PdfAcroForm.GetAcroForm(pdfDoc, true);
-        var logger = new ListLogger<PdfFormHelper>();
+        var logger = new ListLogger();
 
         PdfFormHelper.SetFieldSafe(form, "nonexistent", "Value", logger);
 
-        Assert.Empty(form.GetFormFields());
+        Assert.Empty(form.GetAllFormFields());
         Assert.Contains(logger.Entries, entry => entry.LogLevel == LogLevel.Debug && entry.Message.Contains("not found", StringComparison.OrdinalIgnoreCase));
     }
 }
 
-internal class ListLogger<T> : ILogger<T>
+internal class ListLogger : ILogger
 {
     public List<LoggedEntry> Entries { get; } = new();
 
-    public IDisposable BeginScope<TState>(TState state) => NullScope.Instance;
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
 
     public bool IsEnabled(LogLevel logLevel) => true;
 

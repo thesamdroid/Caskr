@@ -761,7 +761,7 @@ public class CapacityAnalysisService : ICapacityAnalysisService
         var historicalOrders = await _context.Orders
             .Where(o => o.CompanyId == companyId && o.CreatedAt >= DateTime.UtcNow.AddMonths(-12))
             .GroupBy(o => new { o.CreatedAt.Year, Week = (o.CreatedAt.DayOfYear / 7) })
-            .Select(g => new { g.Key.Year, g.Key.Week, Count = g.Count(), TotalQuantity = g.Sum(o => o.Quantity ?? 0) })
+            .Select(g => new { g.Key.Year, g.Key.Week, Count = g.Count(), TotalQuantity = g.Sum(o => o.Quantity) })
             .ToListAsync();
 
         var forecasts = new List<WeeklyDemandForecast>();

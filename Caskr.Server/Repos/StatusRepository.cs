@@ -30,6 +30,7 @@ namespace Caskr.server.Repos
 
         public async Task<Status> AddStatusAsync(Status? status)
         {
+            ArgumentNullException.ThrowIfNull(status);
             var createdStatus = await dbContext.Statuses.AddAsync(status);
             await dbContext.SaveChangesAsync();
             return createdStatus.Entity!;

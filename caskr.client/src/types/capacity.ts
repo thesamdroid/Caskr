@@ -28,6 +28,8 @@ export interface CapacityOverview {
   alerts: CapacityAlert[]
   periodStart: string
   periodEnd: string
+  // Extended UI properties
+  averageUtilization?: number
 }
 
 export interface EquipmentUtilization {
@@ -38,6 +40,10 @@ export interface EquipmentUtilization {
   hoursAvailable: number
   hoursAllocated: number
   hoursInMaintenance: number
+  // Extended UI properties
+  totalHours?: number
+  usedHours?: number
+  availableHours?: number
 }
 
 export interface Bottleneck {
@@ -49,6 +55,10 @@ export interface Bottleneck {
   affectedProductionRuns: number
   averageWaitTime: string
   description: string
+  // Extended UI properties
+  impactPercent?: number
+  currentUtilization?: number
+  recommendations?: string[]
 }
 
 export interface BottleneckResolution {
@@ -69,6 +79,10 @@ export interface WeeklyForecast {
   upperBound: number
   predictedHoursUsed: number
   availableHours: number
+  // Extended UI properties
+  weekStartDate?: string
+  predictedDemand?: number
+  availableCapacity?: number
 }
 
 export interface CapacityForecast {
@@ -78,6 +92,11 @@ export interface CapacityForecast {
   weeks: WeeklyForecast[]
   trend: string
   assumptions: string[]
+  // Extended UI properties
+  predictedDemandHours?: number
+  availableCapacityHours?: number
+  weeklyForecasts?: WeeklyForecast[]
+  recommendations?: string[]
 }
 
 export interface CapacityPlanSummary {
@@ -93,6 +112,9 @@ export interface CapacityPlanSummary {
   targetBatches?: number
   allocationCount: number
   createdAt: string
+  // Alias properties for UI convenience
+  startDate?: string
+  endDate?: string
 }
 
 export interface CapacityAllocation {
@@ -132,10 +154,16 @@ export interface ScenarioChange {
 }
 
 export interface WhatIfScenario {
-  name: string
-  changes: ScenarioChange[]
-  evaluationPeriodStart: string
-  evaluationPeriodEnd: string
+  name?: string
+  changes?: ScenarioChange[]
+  evaluationPeriodStart?: string
+  evaluationPeriodEnd?: string
+  // Extended UI properties for what-if analysis
+  demandChangePercent?: number
+  capacityChangePercent?: number
+  newEquipmentIds?: number[]
+  removedEquipmentIds?: number[]
+  efficiencyFactors?: Record<string, number>
 }
 
 export interface ScenarioResult {
@@ -146,6 +174,12 @@ export interface ScenarioResult {
   capacityChangePercent: number
   costImpact: number
   summary: string
+  // Extended scenario properties for UI
+  projectedUtilization?: number
+  capacityGap?: number
+  recommendations?: string[]
+  bottlenecks?: Bottleneck[]
+  isFeasible?: boolean
 }
 
 export interface GapAnalysis {
@@ -158,6 +192,9 @@ export interface GapAnalysis {
   hasCapacityShortfall: boolean
   weeklyBreakdown: WeeklyGap[]
   recommendations: string[]
+  // Extended UI properties
+  requiredCapacity?: number
+  availableCapacity?: number
 }
 
 export interface WeeklyGap {
@@ -168,12 +205,25 @@ export interface WeeklyGap {
   gapPercent: number
 }
 
+export interface TrendDataPoint {
+  date: string
+  value: number
+  label?: string
+  // Extended UI properties
+  utilizationPercent?: number
+  period?: string
+}
+
 export interface UtilizationTrend {
   periodStart: string
   periodEnd: string
   monthlyData: MonthlyUtilization[]
   trendDirection: number
   trendDescription: string
+  // Extended UI properties
+  averageUtilization?: number
+  peakUtilization?: number
+  dataPoints?: TrendDataPoint[]
 }
 
 export interface MonthlyUtilization {

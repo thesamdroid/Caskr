@@ -4,6 +4,7 @@ import './PricingFaq.css';
 
 export interface PricingFaqProps {
   faqs: PricingFaqType[];
+  onFaqOpen?: (questionId: string, questionText: string) => void;
 }
 
 /**
@@ -11,12 +12,16 @@ export interface PricingFaqProps {
  * Only one item open at a time.
  * Smooth expand/collapse animation.
  */
-export function PricingFaq({ faqs }: PricingFaqProps) {
+export function PricingFaq({ faqs, onFaqOpen }: PricingFaqProps) {
   const [openId, setOpenId] = useState<number | null>(null);
 
-  const handleToggle = useCallback((id: number) => {
+  const handleToggle = useCallback((id: number, question: string) => {
+    const isOpening = openId !== id;
     setOpenId(prev => (prev === id ? null : id));
-  }, []);
+    if (isOpening && onFaqOpen) {
+      onFaqOpen(String(id), question);
+    }
+  }, [openId, onFaqOpen]);
 
   if (faqs.length === 0) {
     return null;
@@ -43,7 +48,7 @@ export function PricingFaq({ faqs }: PricingFaqProps) {
               key={faq.id}
               faq={faq}
               isOpen={openId === faq.id}
-              onToggle={() => handleToggle(faq.id)}
+              onToggle={() => handleToggle(faq.id, faq.question)}
             />
           ))}
         </div>

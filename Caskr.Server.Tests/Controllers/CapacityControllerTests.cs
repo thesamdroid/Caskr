@@ -58,8 +58,7 @@ public class CapacityControllerTests : IDisposable
             Email = "test@example.com",
             CompanyId = company.Id,
             UserTypeId = userType.Id,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow
         };
         _context.Users.Add(user);
         await _context.SaveChangesAsync();

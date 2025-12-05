@@ -14,7 +14,7 @@ public class BinderTests
     public void BindServicesRegistersTypicalDependencies()
     {
         var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>()).Build();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build();
         services.BindServices(configuration);
         var provider = services.BuildServiceProvider();
 

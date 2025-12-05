@@ -4,7 +4,7 @@ namespace Caskr.server.Models;
 /// Result of executing a dynamic report. Contains column definitions, data rows,
 /// pagination info, and execution metadata.
 /// </summary>
-public sealed class ReportResult
+public sealed record ReportResult
 {
     /// <summary>
     /// Column definitions including name, display name, and data type.

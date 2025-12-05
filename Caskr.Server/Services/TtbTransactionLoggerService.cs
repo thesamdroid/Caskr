@@ -119,7 +119,7 @@ public class TtbTransactionLoggerService(
         var order = await dbContext.Orders
             .Include(o => o.SpiritType)
             .Include(o => o.Batch)
-                .ThenInclude(b => b.MashBill)
+                .ThenInclude(b => b!.MashBill)
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == orderId)
             ?? throw new InvalidOperationException($"Order {orderId} was not found.");
@@ -153,7 +153,7 @@ public class TtbTransactionLoggerService(
         var order = await dbContext.Orders
             .Include(o => o.SpiritType)
             .Include(o => o.Batch)
-                .ThenInclude(b => b.MashBill)
+                .ThenInclude(b => b!.MashBill)
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == transferId)
             ?? throw new InvalidOperationException($"Transfer {transferId} is not available. Transfers are represented by orders until a dedicated aggregate exists.");

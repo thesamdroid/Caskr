@@ -52,8 +52,7 @@ public class ProductionModelConfigurationTests : IDisposable
             Email = "test@example.com",
             CompanyId = companyId,
             UserTypeId = userType.Id,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow
         };
         _context.Users.Add(user);
         await _context.SaveChangesAsync();

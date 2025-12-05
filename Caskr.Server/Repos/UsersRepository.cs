@@ -47,6 +47,7 @@ namespace Caskr.server.Repos
 
         public async Task<User> AddUserAsync(User? newUser)
         {
+            ArgumentNullException.ThrowIfNull(newUser);
             var createdUser = await dbContext.Users.AddAsync(newUser);
             await dbContext.SaveChangesAsync();
             return createdUser.Entity!;

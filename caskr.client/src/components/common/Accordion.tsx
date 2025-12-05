@@ -4,7 +4,7 @@ import './Accordion.css';
 
 export interface AccordionItemData {
   id: string;
-  title: string;
+  title: string | React.ReactNode;
   content: string | React.ReactNode;
   defaultOpen?: boolean;
 }
