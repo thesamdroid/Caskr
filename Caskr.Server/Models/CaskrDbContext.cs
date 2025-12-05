@@ -4,6 +4,7 @@ using Caskr.server.Models.Portal;
 using Caskr.server.Models.Crm;
 using Caskr.server.Models.SupplyChain;
 using Caskr.server.Models.Pricing;
+using Caskr.server.Models.Production;
 
 namespace Caskr.server.Models;
 
@@ -147,6 +148,15 @@ public partial class CaskrDbContext : DbContext
     public virtual DbSet<PricingPromotion> PricingPromotions { get; set; } = null!;
 
     public virtual DbSet<PricingAuditLog> PricingAuditLogs { get; set; } = null!;
+
+    // Production Planning entities (PROD-001)
+    public virtual DbSet<ProductionRun> ProductionRuns { get; set; } = null!;
+
+    public virtual DbSet<Equipment> Equipment { get; set; } = null!;
+
+    public virtual DbSet<EquipmentBooking> EquipmentBookings { get; set; } = null!;
+
+    public virtual DbSet<ProductionCalendarEvent> ProductionCalendarEvents { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -2401,6 +2411,262 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.ChangedByUserId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_pricing_audit_logs_user");
+        });
+
+        // ProductionRun configuration
+        modelBuilder.Entity<ProductionRun>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("production_runs_pkey");
+
+            entity.ToTable("production_runs");
+
+            entity.HasIndex(e => e.CompanyId)
+                .HasDatabaseName("idx_production_runs_company_id");
+
+            entity.HasIndex(e => e.ScheduledStartDate)
+                .HasDatabaseName("idx_production_runs_scheduled_start_date");
+
+            entity.HasIndex(e => e.Status)
+                .HasDatabaseName("idx_production_runs_status");
+
+            entity.HasIndex(e => e.ProductionType)
+                .HasDatabaseName("idx_production_runs_production_type");
+
+            entity.HasIndex(e => e.BatchId)
+                .HasDatabaseName("idx_production_runs_batch_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(200)
+                .HasColumnName("name");
+            entity.Property(e => e.Description)
+                .HasMaxLength(1000)
+                .HasColumnName("description");
+            entity.Property(e => e.ProductionType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasColumnName("production_type");
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(ProductionRunStatus.Scheduled)
+                .HasColumnName("status");
+            entity.Property(e => e.ScheduledStartDate).HasColumnName("scheduled_start_date");
+            entity.Property(e => e.ScheduledEndDate).HasColumnName("scheduled_end_date");
+            entity.Property(e => e.ActualStartDate).HasColumnName("actual_start_date");
+            entity.Property(e => e.ActualEndDate).HasColumnName("actual_end_date");
+            entity.Property(e => e.BatchId).HasColumnName("batch_id");
+            entity.Property(e => e.Notes)
+                .HasMaxLength(2000)
+                .HasColumnName("notes");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            // Check constraint for date validation
+            entity.ToTable(t => t.HasCheckConstraint(
+                "ck_production_runs_dates",
+                "scheduled_end_date > scheduled_start_date"));
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_production_runs_company");
+
+            entity.HasOne(d => d.Batch)
+                .WithMany()
+                .HasForeignKey(d => d.BatchId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_production_runs_batch");
+
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_production_runs_created_by_user");
+        });
+
+        // Equipment configuration
+        modelBuilder.Entity<Equipment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("equipment_pkey");
+
+            entity.ToTable("equipment");
+
+            entity.HasIndex(e => e.CompanyId)
+                .HasDatabaseName("idx_equipment_company_id");
+
+            entity.HasIndex(e => e.EquipmentType)
+                .HasDatabaseName("idx_equipment_type");
+
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("idx_equipment_is_active");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.EquipmentType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasColumnName("equipment_type");
+            entity.Property(e => e.Capacity)
+                .HasColumnType("decimal(12,2)")
+                .HasColumnName("capacity");
+            entity.Property(e => e.CapacityUnit)
+                .HasMaxLength(20)
+                .HasColumnName("capacity_unit");
+            entity.Property(e => e.Location)
+                .HasMaxLength(200)
+                .HasColumnName("location");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.MaintenanceNotes)
+                .HasMaxLength(1000)
+                .HasColumnName("maintenance_notes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_equipment_company");
+        });
+
+        // EquipmentBooking configuration
+        modelBuilder.Entity<EquipmentBooking>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("equipment_bookings_pkey");
+
+            entity.ToTable("equipment_bookings");
+
+            entity.HasIndex(e => e.ProductionRunId)
+                .HasDatabaseName("idx_equipment_bookings_production_run_id");
+
+            entity.HasIndex(e => e.EquipmentId)
+                .HasDatabaseName("idx_equipment_bookings_equipment_id");
+
+            entity.HasIndex(e => new { e.EquipmentId, e.StartTime, e.EndTime })
+                .HasDatabaseName("idx_equipment_bookings_time_range");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ProductionRunId).HasColumnName("production_run_id");
+            entity.Property(e => e.EquipmentId).HasColumnName("equipment_id");
+            entity.Property(e => e.StartTime).HasColumnName("start_time");
+            entity.Property(e => e.EndTime).HasColumnName("end_time");
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(EquipmentBookingStatus.Tentative)
+                .HasColumnName("status");
+            entity.Property(e => e.Notes)
+                .HasMaxLength(500)
+                .HasColumnName("notes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            // Check constraint for date validation
+            entity.ToTable(t => t.HasCheckConstraint(
+                "ck_equipment_bookings_times",
+                "end_time > start_time"));
+
+            entity.HasOne(d => d.ProductionRun)
+                .WithMany(p => p.EquipmentBookings)
+                .HasForeignKey(d => d.ProductionRunId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_equipment_bookings_production_run");
+
+            entity.HasOne(d => d.Equipment)
+                .WithMany(p => p.Bookings)
+                .HasForeignKey(d => d.EquipmentId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_equipment_bookings_equipment");
+        });
+
+        // ProductionCalendarEvent configuration
+        modelBuilder.Entity<ProductionCalendarEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("production_calendar_events_pkey");
+
+            entity.ToTable("production_calendar_events");
+
+            entity.HasIndex(e => e.CompanyId)
+                .HasDatabaseName("idx_production_calendar_events_company_id");
+
+            entity.HasIndex(e => new { e.StartDate, e.EndDate })
+                .HasDatabaseName("idx_production_calendar_events_dates");
+
+            entity.HasIndex(e => e.EventType)
+                .HasDatabaseName("idx_production_calendar_events_event_type");
+
+            entity.HasIndex(e => e.ProductionRunId)
+                .HasDatabaseName("idx_production_calendar_events_production_run_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Title)
+                .HasMaxLength(200)
+                .HasColumnName("title");
+            entity.Property(e => e.EventType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasColumnName("event_type");
+            entity.Property(e => e.StartDate).HasColumnName("start_date");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.AllDay)
+                .HasDefaultValue(false)
+                .HasColumnName("all_day");
+            entity.Property(e => e.Color)
+                .HasMaxLength(7)
+                .HasColumnName("color");
+            entity.Property(e => e.ProductionRunId).HasColumnName("production_run_id");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            // Check constraint for date validation
+            entity.ToTable(t => t.HasCheckConstraint(
+                "ck_production_calendar_events_dates",
+                "end_date >= start_date"));
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_production_calendar_events_company");
+
+            entity.HasOne(d => d.ProductionRun)
+                .WithMany(p => p.CalendarEvents)
+                .HasForeignKey(d => d.ProductionRunId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_production_calendar_events_production_run");
+
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_production_calendar_events_created_by_user");
         });
 
         OnModelCreatingPartial(modelBuilder);
