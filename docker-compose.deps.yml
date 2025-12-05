@@ -35,7 +35,7 @@ services:
     networks:
       - caskr-deps
 
-  # Keycloak Authentication Server
+  # Keycloak Authentication Server (using built-in H2 database for simplicity)
   keycloak:
     image: quay.io/keycloak/keycloak:21.1.1
     container_name: caskr-keycloak-local
@@ -43,17 +43,20 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin123
+      # Use built-in H2 dev database (no PostgreSQL needed for Keycloak)
+      KC_DB: dev-file
     command: start-dev
     ports:
       - "8080:8080"
-    depends_on:
-      caskr-db:
-        condition: service_healthy
+    volumes:
+      # Persist Keycloak H2 data
+      - keycloak_data_deps:/opt/keycloak/data
     networks:
       - caskr-deps
 
 volumes:
   postgres_data_deps:
+  keycloak_data_deps:
 
 networks:
   caskr-deps:
