@@ -2,6 +2,10 @@
 # Includes the .NET SDK, Node.js, and Playwright browsers.
 FROM mcr.microsoft.com/playwright/dotnet:v1.47.0-jammy
 
+# Install Node.js (required for client tests)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
+
 WORKDIR /workspace
 
 # Restore server dependencies (restore specific projects, not solution, to avoid client project dependency)
