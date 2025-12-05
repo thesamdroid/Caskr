@@ -16,6 +16,7 @@ import reportsReducer from './features/reportsSlice'
 import warehousesReducer from './features/warehousesSlice'
 import suppliersReducer from './features/suppliersSlice'
 import purchaseOrdersReducer from './features/purchaseOrdersSlice'
+import capacityReducer from './features/capacitySlice'
 
 export const store = configureStore({
   reducer: {
@@ -35,7 +36,8 @@ export const store = configureStore({
     reports: reportsReducer,
     warehouses: warehousesReducer,
     suppliers: suppliersReducer,
-    purchaseOrders: purchaseOrdersReducer
+    purchaseOrders: purchaseOrdersReducer,
+    capacity: capacityReducer
   }
 })
 

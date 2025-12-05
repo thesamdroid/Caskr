@@ -158,6 +158,15 @@ public partial class CaskrDbContext : DbContext
 
     public virtual DbSet<ProductionCalendarEvent> ProductionCalendarEvents { get; set; } = null!;
 
+    // Capacity Planning entities (PROD-009)
+    public virtual DbSet<CapacityPlan> CapacityPlans { get; set; } = null!;
+
+    public virtual DbSet<CapacityAllocation> CapacityAllocations { get; set; } = null!;
+
+    public virtual DbSet<CapacityConstraint> CapacityConstraints { get; set; } = null!;
+
+    public virtual DbSet<CapacitySnapshot> CapacitySnapshots { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(entity =>
@@ -2667,6 +2676,273 @@ public partial class CaskrDbContext : DbContext
                 .HasForeignKey(d => d.CreatedByUserId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("fk_production_calendar_events_created_by_user");
+        });
+
+        // CapacityPlan configuration (PROD-009)
+        modelBuilder.Entity<CapacityPlan>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("capacity_plans_pkey");
+
+            entity.ToTable("capacity_plans");
+
+            entity.HasIndex(e => e.CompanyId)
+                .HasDatabaseName("idx_capacity_plans_company_id");
+
+            entity.HasIndex(e => new { e.CompanyId, e.PlanPeriodStart, e.PlanPeriodEnd })
+                .HasDatabaseName("idx_capacity_plans_company_period");
+
+            entity.HasIndex(e => e.Status)
+                .HasDatabaseName("idx_capacity_plans_status");
+
+            entity.HasIndex(e => e.PlanType)
+                .HasDatabaseName("idx_capacity_plans_plan_type");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(200)
+                .HasColumnName("name");
+            entity.Property(e => e.Description)
+                .HasMaxLength(1000)
+                .HasColumnName("description");
+            entity.Property(e => e.PlanPeriodStart).HasColumnName("plan_period_start");
+            entity.Property(e => e.PlanPeriodEnd).HasColumnName("plan_period_end");
+            entity.Property(e => e.PlanType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasColumnName("plan_type");
+            entity.Property(e => e.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(CapacityPlanStatus.Draft)
+                .HasColumnName("status");
+            entity.Property(e => e.TargetProofGallons)
+                .HasColumnType("decimal(12,2)")
+                .HasColumnName("target_proof_gallons");
+            entity.Property(e => e.TargetBottles).HasColumnName("target_bottles");
+            entity.Property(e => e.TargetBatches).HasColumnName("target_batches");
+            entity.Property(e => e.Notes)
+                .HasMaxLength(2000)
+                .HasColumnName("notes");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            // Check constraint for date validation
+            entity.ToTable(t => t.HasCheckConstraint(
+                "ck_capacity_plans_dates",
+                "plan_period_end > plan_period_start"));
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_capacity_plans_company");
+
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_capacity_plans_created_by_user");
+        });
+
+        // CapacityAllocation configuration (PROD-009)
+        modelBuilder.Entity<CapacityAllocation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("capacity_allocations_pkey");
+
+            entity.ToTable("capacity_allocations");
+
+            entity.HasIndex(e => e.CapacityPlanId)
+                .HasDatabaseName("idx_capacity_allocations_plan_id");
+
+            entity.HasIndex(e => e.EquipmentId)
+                .HasDatabaseName("idx_capacity_allocations_equipment_id");
+
+            entity.HasIndex(e => new { e.EquipmentId, e.StartDate, e.EndDate })
+                .HasDatabaseName("idx_capacity_allocations_equipment_dates");
+
+            entity.HasIndex(e => e.AllocationType)
+                .HasDatabaseName("idx_capacity_allocations_type");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CapacityPlanId).HasColumnName("capacity_plan_id");
+            entity.Property(e => e.EquipmentId).HasColumnName("equipment_id");
+            entity.Property(e => e.AllocationType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasColumnName("allocation_type");
+            entity.Property(e => e.StartDate).HasColumnName("start_date");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.HoursAllocated)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("hours_allocated");
+            entity.Property(e => e.ProductionType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasColumnName("production_type");
+            entity.Property(e => e.Notes)
+                .HasMaxLength(500)
+                .HasColumnName("notes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            // Check constraints
+            entity.ToTable(t => t.HasCheckConstraint(
+                "ck_capacity_allocations_dates",
+                "end_date > start_date"));
+
+            entity.ToTable(t => t.HasCheckConstraint(
+                "ck_capacity_allocations_hours",
+                "hours_allocated >= 0"));
+
+            entity.HasOne(d => d.CapacityPlan)
+                .WithMany(p => p.Allocations)
+                .HasForeignKey(d => d.CapacityPlanId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_capacity_allocations_plan");
+
+            entity.HasOne(d => d.Equipment)
+                .WithMany()
+                .HasForeignKey(d => d.EquipmentId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_capacity_allocations_equipment");
+        });
+
+        // CapacityConstraint configuration (PROD-009)
+        modelBuilder.Entity<CapacityConstraint>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("capacity_constraints_pkey");
+
+            entity.ToTable("capacity_constraints");
+
+            entity.HasIndex(e => e.CompanyId)
+                .HasDatabaseName("idx_capacity_constraints_company_id");
+
+            entity.HasIndex(e => e.EquipmentId)
+                .HasDatabaseName("idx_capacity_constraints_equipment_id");
+
+            entity.HasIndex(e => e.ConstraintType)
+                .HasDatabaseName("idx_capacity_constraints_type");
+
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("idx_capacity_constraints_is_active");
+
+            entity.HasIndex(e => new { e.EffectiveFrom, e.EffectiveTo })
+                .HasDatabaseName("idx_capacity_constraints_effective_dates");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.EquipmentId).HasColumnName("equipment_id");
+            entity.Property(e => e.ConstraintType)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .HasColumnName("constraint_type");
+            entity.Property(e => e.ConstraintValue)
+                .HasColumnType("decimal(12,2)")
+                .HasColumnName("constraint_value");
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from");
+            entity.Property(e => e.EffectiveTo).HasColumnName("effective_to");
+            entity.Property(e => e.Reason)
+                .HasMaxLength(500)
+                .HasColumnName("reason");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_capacity_constraints_company");
+
+            entity.HasOne(d => d.Equipment)
+                .WithMany()
+                .HasForeignKey(d => d.EquipmentId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_capacity_constraints_equipment");
+
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("fk_capacity_constraints_created_by_user");
+        });
+
+        // CapacitySnapshot configuration (PROD-009)
+        modelBuilder.Entity<CapacitySnapshot>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("capacity_snapshots_pkey");
+
+            entity.ToTable("capacity_snapshots");
+
+            entity.HasIndex(e => e.CompanyId)
+                .HasDatabaseName("idx_capacity_snapshots_company_id");
+
+            entity.HasIndex(e => e.EquipmentId)
+                .HasDatabaseName("idx_capacity_snapshots_equipment_id");
+
+            entity.HasIndex(e => e.SnapshotDate)
+                .HasDatabaseName("idx_capacity_snapshots_date");
+
+            entity.HasIndex(e => new { e.CompanyId, e.SnapshotDate })
+                .HasDatabaseName("idx_capacity_snapshots_company_date");
+
+            entity.HasIndex(e => new { e.EquipmentId, e.SnapshotDate })
+                .HasDatabaseName("idx_capacity_snapshots_equipment_date");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.SnapshotDate).HasColumnName("snapshot_date");
+            entity.Property(e => e.EquipmentId).HasColumnName("equipment_id");
+            entity.Property(e => e.TotalCapacityHours)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("total_capacity_hours");
+            entity.Property(e => e.AllocatedHours)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("allocated_hours");
+            entity.Property(e => e.MaintenanceHours)
+                .HasColumnType("decimal(10,2)")
+                .HasColumnName("maintenance_hours");
+            entity.Property(e => e.UtilizationPercent)
+                .HasColumnType("decimal(5,2)")
+                .HasColumnName("utilization_percent");
+            entity.Property(e => e.PlannedProofGallons)
+                .HasColumnType("decimal(12,2)")
+                .HasColumnName("planned_proof_gallons");
+            entity.Property(e => e.ActualProofGallons)
+                .HasColumnType("decimal(12,2)")
+                .HasColumnName("actual_proof_gallons");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_capacity_snapshots_company");
+
+            entity.HasOne(d => d.Equipment)
+                .WithMany()
+                .HasForeignKey(d => d.EquipmentId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_capacity_snapshots_equipment");
         });
 
         OnModelCreatingPartial(modelBuilder);

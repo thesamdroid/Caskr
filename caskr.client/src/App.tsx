@@ -17,6 +17,7 @@ import TtbGaugeRecordsPage from './pages/TtbGaugeRecordsPage'
 import ReportsPage from './pages/ReportsPage'
 import CustomReportBuilderPage from './pages/CustomReportBuilderPage'
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage'
+import CapacityDashboardPage from './pages/CapacityDashboardPage'
 import PermissionGuard from './components/PermissionGuard'
 import { TTB_COMPLIANCE_PERMISSION, TTB_EDIT_PERMISSION } from './features/authSlice'
 import { PricingPage } from './pages/public/pricing'
@@ -59,6 +60,7 @@ function App() {
           <Route path='purchase-orders' element={<PurchaseOrdersPage />} />
           <Route path='reports' element={<ReportsPage />} />
           <Route path='report-builder' element={<CustomReportBuilderPage />} />
+          <Route path='capacity' element={<CapacityDashboardPage />} />
           <Route path='accounting' element={<AccountingSettingsPage />} />
         <Route path='accounting/sync-history' element={<AccountingSyncHistoryPage />} />
         <Route path='login' element={<LoginPage />} />
