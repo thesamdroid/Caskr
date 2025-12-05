@@ -1,0 +1,59 @@
+version: '3.9'
+
+# Local development - Dependencies only
+# Use this if you can't pull .NET images from MCR
+#
+# Usage:
+#   1. Start dependencies: docker-compose -f docker-compose.deps.yml up -d
+#   2. Run .NET app locally: dotnet run --project Caskr.Server
+#
+# Services available:
+#   - PostgreSQL: localhost:5432 (postgres/localdev123)
+#   - Keycloak:   localhost:8080 (admin/admin123)
+
+services:
+  # PostgreSQL Database
+  caskr-db:
+    image: postgres:17-alpine
+    container_name: caskr-db-local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localdev123
+      POSTGRES_DB: caskr-db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data_deps:/var/lib/postgresql/data
+      - ./Database/initdb.d:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d caskr-db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caskr-deps
+
+  # Keycloak Authentication Server
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.1.1
+    container_name: caskr-keycloak-local
+    restart: unless-stopped
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+    command: start-dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      caskr-db:
+        condition: service_healthy
+    networks:
+      - caskr-deps
+
+volumes:
+  postgres_data_deps:
+
+networks:
+  caskr-deps:
+    driver: bridge
