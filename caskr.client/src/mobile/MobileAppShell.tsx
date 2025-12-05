@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom'
-import { useAppSelector } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
+import { logout } from '../features/authSlice'
 import { BottomNav, defaultNavItems } from './components/BottomNav'
 import { MobileHeader } from './components/MobileHeader'
 import { DrawerMenu, DrawerMenuSection } from './components/DrawerMenu'
@@ -108,6 +109,7 @@ const drawerMenuSections: DrawerMenuSection[] = [
  */
 export function MobileAppShell() {
   const location = useLocation()
+  const dispatch = useAppDispatch()
   const authUser = useAppSelector(state => state.auth.user)
   const safeArea = useSafeArea()
   const { totalHeight: bottomNavHeight } = useBottomNavHeight()
@@ -134,8 +136,8 @@ export function MobileAppShell() {
   } : undefined
 
   const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logout clicked')
+    dispatch(logout())
+    window.dispatchEvent(new CustomEvent('caskr-logout'))
   }
 
   return (

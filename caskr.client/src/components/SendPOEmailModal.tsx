@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAppDispatch } from '../hooks'
+import { useAppDispatch, useAppSelector } from '../hooks'
 import {
   sendPOEmail,
   fetchPurchaseOrders,
@@ -22,7 +22,8 @@ function formatDate(dateString: string): string {
 
 function SendPOEmailModal({ isOpen, onClose, purchaseOrder }: SendPOEmailModalProps) {
   const dispatch = useAppDispatch()
-  const companyId = 1 // TODO: Get from auth context
+  const authUser = useAppSelector(state => state.auth.user)
+  const companyId = authUser?.companyId ?? 1
 
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
