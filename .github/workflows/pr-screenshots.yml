@@ -1,0 +1,152 @@
+name: PR Screenshots
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  capture-screenshots:
+    name: Capture Screenshots
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: caskr.client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: caskr.client
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: caskr.client
+
+      - name: Create screenshots directory
+        run: mkdir -p test-results/screenshots
+        working-directory: caskr.client
+
+      - name: Run screenshot tests
+        run: npx playwright test screenshots.spec.ts --reporter=list
+        working-directory: caskr.client
+        env:
+          CI: true
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr-screenshots
+          path: caskr.client/test-results/screenshots/
+          retention-days: 30
+
+      - name: Generate screenshot summary
+        if: always()
+        id: summary
+        run: |
+          echo "## 📸 PR Screenshots" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Screenshots have been captured for this PR to help with visual review." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Dashboard" >> $GITHUB_STEP_SUMMARY
+          echo "| Desktop | Mobile |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| dashboard-desktop.png | dashboard-mobile.png |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Random Pages (3 pages selected daily)" >> $GITHUB_STEP_SUMMARY
+          echo "| Page | Desktop | Mobile |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # List all page screenshots
+          for file in caskr.client/test-results/screenshots/*-desktop.png; do
+            if [ -f "$file" ]; then
+              basename=$(basename "$file" -desktop.png)
+              if [ "$basename" != "dashboard" ] && [ "$basename" != "error-login" ] && [ "$basename" != "error-dashboard" ]; then
+                echo "| $basename | ${basename}-desktop.png | ${basename}-mobile.png |" >> $GITHUB_STEP_SUMMARY
+              fi
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Error States" >> $GITHUB_STEP_SUMMARY
+          echo "| Error Type | Screenshot |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Login Error | error-login.png |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dashboard Load Error | error-dashboard.png |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 **Download screenshots from the 'pr-screenshots' artifact above.**" >> $GITHUB_STEP_SUMMARY
+
+  comment-on-pr:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: capture-screenshots
+    if: always()
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '## 📸 PR Visual Preview'
+
+      - name: Create or update PR comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## 📸 PR Visual Preview
+
+            Screenshots have been captured to help review visual changes in this PR.
+
+            ### 📥 Download Screenshots
+
+            **[Download from Actions Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**
+
+            Look for the **pr-screenshots** artifact to download all captured images.
+
+            ---
+
+            ### Screenshots Captured
+
+            #### Dashboard
+            - ✅ Desktop layout
+            - ✅ Mobile layout
+
+            #### Random Pages (3 pages, rotated daily)
+            - ✅ Desktop layouts
+            - ✅ Mobile layouts
+
+            #### Error States
+            - ✅ Login error message
+            - ✅ Dashboard load error with retry
+
+            ---
+
+            <details>
+            <summary>ℹ️ About these screenshots</summary>
+
+            These screenshots are automatically captured on every PR using Playwright.
+            - **Dashboard** is always captured in both desktop and mobile layouts
+            - **3 random pages** are selected (changes daily for variety)
+            - **2 error states** show how error messages appear to users
+
+            Screenshots use mocked API data for consistency.
+            </details>
+
+            ---
+            *Workflow run: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*
