@@ -38,9 +38,12 @@ ADD COLUMN IF NOT EXISTS ttb_permit_number VARCHAR(50);
 ALTER TABLE public.company
 ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true NOT NULL;
 
--- Add updated_at timestamp
+-- Add updated_at timestamp with default value
 ALTER TABLE public.company
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE;
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+
+-- Backfill updated_at for existing rows that might have NULL
+UPDATE public.company SET updated_at = created_date WHERE updated_at IS NULL;
 
 -- Create indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_company_is_active ON public.company(is_active);
