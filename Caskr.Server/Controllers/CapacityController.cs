@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using Caskr.server.Models;
 using Caskr.server.Models.Production;
+using Caskr.server.Services;
 using Caskr.server.Services.Production;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -186,11 +187,13 @@ public class PagedResult<T>
 public class CapacityController(
     CaskrDbContext dbContext,
     ICapacityAnalysisService capacityService,
+    IUsersService usersService,
     ILogger<CapacityController> logger)
     : AuthorizedApiControllerBase
 {
     private readonly CaskrDbContext _dbContext = dbContext;
     private readonly ICapacityAnalysisService _capacityService = capacityService;
+    private readonly IUsersService _usersService = usersService;
     private readonly ILogger<CapacityController> _logger = logger;
 
     #region Capacity Overview Endpoints
@@ -986,11 +989,7 @@ public class CapacityController(
 
     private async Task<User?> GetCurrentUserAsync()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
-            return null;
-
-        return await _dbContext.Users.FindAsync(userId);
+        return await GetCurrentUserAsync(_usersService);
     }
 
     private bool IsAuthorizedForCompany(User? user, int companyId)

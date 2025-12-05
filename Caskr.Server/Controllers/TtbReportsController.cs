@@ -590,10 +590,7 @@ public sealed class TtbReportsController(
 
     private async Task<User?> GetCurrentUserAsync(CancellationToken cancellationToken)
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(userIdValue, out var userId)
-            ? await usersService.GetUserByIdAsync(userId)
-            : null;
+        return await GetCurrentUserAsync(usersService);
     }
 
     private static TtbReportDetailResponse MapToDetailResponse(TtbMonthlyReport report)

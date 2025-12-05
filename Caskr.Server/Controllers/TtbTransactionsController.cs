@@ -414,13 +414,7 @@ public sealed class TtbTransactionsController(
 
     private async Task<User?> GetCurrentUserAsync(CancellationToken cancellationToken = default)
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
-        {
-            return null;
-        }
-
-        return await usersService.GetUserByIdAsync(userId);
+        return await GetCurrentUserAsync(usersService);
     }
 }
 

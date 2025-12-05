@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Caskr.server.Models;
 using Caskr.server.Models.SupplyChain;
+using Caskr.server.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -80,11 +81,13 @@ public class SuppliersController : AuthorizedApiControllerBase
 {
     private readonly CaskrDbContext _dbContext;
     private readonly ILogger<SuppliersController> _logger;
+    private readonly IUsersService _usersService;
 
-    public SuppliersController(CaskrDbContext dbContext, ILogger<SuppliersController> logger)
+    public SuppliersController(CaskrDbContext dbContext, ILogger<SuppliersController> logger, IUsersService usersService)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _usersService = usersService;
     }
 
     /// <summary>
@@ -505,12 +508,6 @@ public class SuppliersController : AuthorizedApiControllerBase
 
     private async Task<User?> GetCurrentUserAsync()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
-        {
-            return null;
-        }
-
-        return await _dbContext.Users.FindAsync(userId);
+        return await GetCurrentUserAsync(_usersService);
     }
 }

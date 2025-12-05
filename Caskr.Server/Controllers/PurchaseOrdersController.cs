@@ -129,15 +129,18 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
     private readonly CaskrDbContext _dbContext;
     private readonly ILogger<PurchaseOrdersController> _logger;
     private readonly IEmailService _emailService;
+    private readonly IUsersService _usersService;
 
     public PurchaseOrdersController(
         CaskrDbContext dbContext,
         ILogger<PurchaseOrdersController> logger,
-        IEmailService emailService)
+        IEmailService emailService,
+        IUsersService usersService)
     {
         _dbContext = dbContext;
         _logger = logger;
         _emailService = emailService;
+        _usersService = usersService;
     }
 
     /// <summary>
@@ -868,13 +871,7 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
 
     private async Task<User?> GetCurrentUserAsync()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
-        {
-            return null;
-        }
-
-        return await _dbContext.Users.FindAsync(userId);
+        return await GetCurrentUserAsync(_usersService);
     }
 }
 
@@ -886,11 +883,13 @@ public class InventoryReceiptsController : AuthorizedApiControllerBase
 {
     private readonly CaskrDbContext _dbContext;
     private readonly ILogger<InventoryReceiptsController> _logger;
+    private readonly IUsersService _usersService;
 
-    public InventoryReceiptsController(CaskrDbContext dbContext, ILogger<InventoryReceiptsController> logger)
+    public InventoryReceiptsController(CaskrDbContext dbContext, ILogger<InventoryReceiptsController> logger, IUsersService usersService)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _usersService = usersService;
     }
 
     /// <summary>
@@ -1042,12 +1041,6 @@ public class InventoryReceiptsController : AuthorizedApiControllerBase
 
     private async Task<User?> GetCurrentUserAsync()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
-        {
-            return null;
-        }
-
-        return await _dbContext.Users.FindAsync(userId);
+        return await GetCurrentUserAsync(_usersService);
     }
 }

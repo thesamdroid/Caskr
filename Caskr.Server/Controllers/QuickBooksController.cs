@@ -714,13 +714,7 @@ public class QuickBooksController(
 
     private async Task<User?> GetCurrentUserAsync()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
-        {
-            return null;
-        }
-
-        return await _usersService.GetUserByIdAsync(userId);
+        return await GetCurrentUserAsync(_usersService);
     }
 
     private static bool UserCanAccessCompany(User user, int companyId)
