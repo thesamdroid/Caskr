@@ -154,3 +154,117 @@ public enum CalendarEventType
     /// </summary>
     Other = 4
 }
+
+/// <summary>
+/// Type of capacity planning period.
+/// </summary>
+public enum CapacityPlanType
+{
+    /// <summary>
+    /// Weekly capacity plan.
+    /// </summary>
+    Weekly = 0,
+
+    /// <summary>
+    /// Monthly capacity plan.
+    /// </summary>
+    Monthly = 1,
+
+    /// <summary>
+    /// Quarterly capacity plan.
+    /// </summary>
+    Quarterly = 2,
+
+    /// <summary>
+    /// Annual capacity plan.
+    /// </summary>
+    Annual = 3
+}
+
+/// <summary>
+/// Status of a capacity plan.
+/// </summary>
+public enum CapacityPlanStatus
+{
+    /// <summary>
+    /// Plan is in draft state.
+    /// </summary>
+    Draft = 0,
+
+    /// <summary>
+    /// Plan is active and being used.
+    /// </summary>
+    Active = 1,
+
+    /// <summary>
+    /// Plan has been completed.
+    /// </summary>
+    Completed = 2,
+
+    /// <summary>
+    /// Plan has been archived.
+    /// </summary>
+    Archived = 3
+}
+
+/// <summary>
+/// Type of capacity allocation.
+/// </summary>
+public enum CapacityAllocationType
+{
+    /// <summary>
+    /// Allocation for production activities.
+    /// </summary>
+    Production = 0,
+
+    /// <summary>
+    /// Allocation for maintenance activities.
+    /// </summary>
+    Maintenance = 1,
+
+    /// <summary>
+    /// Buffer time allocation.
+    /// </summary>
+    Buffer = 2,
+
+    /// <summary>
+    /// Reserved time allocation.
+    /// </summary>
+    Reserved = 3
+}
+
+/// <summary>
+/// Type of capacity constraint.
+/// </summary>
+public enum CapacityConstraintType
+{
+    /// <summary>
+    /// Maximum hours per day.
+    /// </summary>
+    MaxHoursPerDay = 0,
+
+    /// <summary>
+    /// Maximum hours per week.
+    /// </summary>
+    MaxHoursPerWeek = 1,
+
+    /// <summary>
+    /// Maximum runs per day.
+    /// </summary>
+    MaxRunsPerDay = 2,
+
+    /// <summary>
+    /// Maximum proof gallons per run.
+    /// </summary>
+    MaxProofGallonsPerRun = 3,
+
+    /// <summary>
+    /// Minimum time between runs.
+    /// </summary>
+    MinTimeBetweenRuns = 4,
+
+    /// <summary>
+    /// Maximum concurrent runs.
+    /// </summary>
+    MaxConcurrentRuns = 5
+}
