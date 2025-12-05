@@ -1,5 +1,5 @@
 FROM postgres:17
 
-# Copy database dump and initialization scripts
-COPY init.db /docker-entrypoint-initdb.d/00-init.sql
+# Copy only the schema and migration scripts (init.db has table ordering issues)
+# Scripts run in alphabetical order: 01-schema-init.sql creates tables first
 COPY initdb.d/ /docker-entrypoint-initdb.d/
