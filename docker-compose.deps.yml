@@ -25,7 +25,8 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data_deps:/var/lib/postgresql/data
-      - ./Database/initdb.d:/docker-entrypoint-initdb.d
+      # Mount only the schema and migration files (not init.db which has ordering issues)
+      - ./Database/initdb.d/01-schema-init.sql:/docker-entrypoint-initdb.d/01-schema-init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d caskr-db"]
       interval: 10s
