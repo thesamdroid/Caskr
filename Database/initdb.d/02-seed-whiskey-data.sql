@@ -154,14 +154,11 @@ SELECT CONCAT('Test User ', gs),
 FROM generate_series(25, 124) AS gs
 ON CONFLICT DO NOTHING;
 
--- Sync product sequence before bulk inserts
-SELECT pg_catalog.setval('"Products_id_seq"', (SELECT COALESCE(MAX(id), 1) FROM public.products));
-
--- Generate additional products
-INSERT INTO public.products (owner_id, notes)
-SELECT ((gs % 124) + 1), CONCAT('Bulk product ', gs)
+-- Generate additional products (products table has no sequence, must provide explicit IDs)
+INSERT INTO public.products (id, owner_id, notes)
+SELECT gs, ((gs % 124) + 1), CONCAT('Bulk product ', gs)
 FROM generate_series(4, 103) AS gs
-ON CONFLICT DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 -- Sync order sequence before bulk inserts
 SELECT pg_catalog.setval('"Orders_id_seq"', (SELECT COALESCE(MAX(id), 1) FROM public.orders));
