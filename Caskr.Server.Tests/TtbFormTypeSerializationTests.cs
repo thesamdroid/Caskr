@@ -30,7 +30,8 @@ public sealed class TtbFormTypeSerializationTests
     [Fact]
     public void FormType_DeserializesNumericValues_ForGenerationRequests()
     {
-        const string payload = "{\"companyId\":3,\"month\":7,\"year\":2024,\"formType\":1}";
+        // Use PascalCase property names to match C# class (System.Text.Json is case-sensitive by default)
+        const string payload = "{\"CompanyId\":3,\"Month\":7,\"Year\":2024,\"FormType\":1}";
 
         var request = JsonSerializer.Deserialize<TtbReportGenerationRequest>(payload);
 

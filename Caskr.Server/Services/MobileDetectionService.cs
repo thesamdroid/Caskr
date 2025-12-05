@@ -462,8 +462,9 @@ public class MobileDetectionService : IMobileDetectionService
     private string DetectMobileDeviceName(string userAgent)
     {
         if (IPhoneRegex.IsMatch(userAgent)) return "iPhone";
-        if (AndroidPhoneRegex.IsMatch(userAgent)) return "Android Phone";
+        // Check Windows Phone before Android, as Windows Phone UAs may contain "Android"
         if (WindowsPhoneRegex.IsMatch(userAgent)) return "Windows Phone";
+        if (AndroidPhoneRegex.IsMatch(userAgent)) return "Android Phone";
         if (userAgent.Contains("BlackBerry", StringComparison.OrdinalIgnoreCase)) return "BlackBerry";
         return "Mobile Device";
     }

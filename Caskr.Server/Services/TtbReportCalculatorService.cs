@@ -72,7 +72,7 @@ public sealed class TtbReportCalculatorService(
         var losses = AggregateTransactions(monthlyTransactions, TtbTransactionType.Loss, applyDirectionalMultipliers: false);
 
         var closingInventory = CalculateClosingInventory(openingInventory, production, transfersIn, transfersOut, losses);
-        await ValidateAgainstClosingSnapshotAsync(companyId, endDate, closingInventory, cancellationToken);
+        var snapshotValidation = await ValidateAgainstClosingSnapshotAsync(companyId, endDate, closingInventory, cancellationToken);
 
         var validation = await ValidateReportDataAsync(
             companyId,
@@ -83,6 +83,16 @@ public sealed class TtbReportCalculatorService(
             losses,
             closingInventory,
             cancellationToken);
+
+        // Merge snapshot validation errors into main validation
+        foreach (var error in snapshotValidation.Errors)
+        {
+            validation.AddError(error);
+        }
+        foreach (var warning in snapshotValidation.Warnings)
+        {
+            validation.AddWarning(warning);
+        }
 
         return new TtbMonthlyReportData
         {
@@ -361,12 +371,13 @@ public sealed class TtbReportCalculatorService(
         return AggregateTransactions(previousTransactions);
     }
 
-    private async Task ValidateAgainstClosingSnapshotAsync(
+    private async Task<ValidationResult> ValidateAgainstClosingSnapshotAsync(
         int companyId,
         DateTime endDate,
         IReadOnlyDictionary<SectionKey, SectionAggregate> calculatedClosing,
         CancellationToken cancellationToken)
     {
+        var validation = new ValidationResult();
         var closingSnapshotDate = endDate.Date;
         var closingSnapshots = await dbContext.TtbInventorySnapshots
             .AsNoTracking()
@@ -379,7 +390,7 @@ public sealed class TtbReportCalculatorService(
                 "No closing inventory snapshot found for company {CompanyId} on {SnapshotDate:yyyy-MM-dd}. Calculated closing totals will be used without reconciliation.",
                 companyId,
                 closingSnapshotDate);
-            return;
+            return validation;
         }
 
         var snapshotAggregate = AggregateSnapshots(closingSnapshots);
@@ -405,8 +416,15 @@ public sealed class TtbReportCalculatorService(
                     calculated.WineGallons,
                     snapshot.ProofGallons,
                     snapshot.WineGallons);
+
+                validation.AddError(
+                    $"Inventory reconciliation failed for {key.ProductType}/{key.SpiritsType}. " +
+                    $"Calculated: {calculated.ProofGallons:F2} PG / {calculated.WineGallons:F2} WG, " +
+                    $"Snapshot: {snapshot.ProofGallons:F2} PG / {snapshot.WineGallons:F2} WG.");
             }
         }
+
+        return validation;
     }
 
     private static Dictionary<SectionKey, SectionAggregate> AggregateSnapshots(IEnumerable<TtbInventorySnapshot> snapshots)
