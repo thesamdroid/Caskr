@@ -35,6 +35,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Initialize database schema
+        run: |
+          # Wait for PostgreSQL to be fully ready
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 2
+          done
+
+          # Run initialization scripts in order
+          echo "Running database initialization scripts..."
+
+          # First run the base schema (init.db as 00-init.sql)
+          if [ -f "Database/init.db" ]; then
+            echo "Running init.db..."
+            PGPASSWORD=testpass123 psql -h localhost -p 5432 -U postgres -d caskr-test-db -f Database/init.db
+          fi
+
+          # Then run all migration scripts in order (sorted alphanumerically)
+          for script in $(ls Database/initdb.d/*.sql | sort); do
+            if [ -f "$script" ]; then
+              echo "Running $script..."
+              PGPASSWORD=testpass123 psql -h localhost -p 5432 -U postgres -d caskr-test-db -f "$script" || true
+            fi
+          done
+
+          echo "Database initialization complete!"
+        env:
+          PGPASSWORD: testpass123
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
