@@ -124,6 +124,7 @@ public class SendPOEmailRequest
 /// <summary>
 /// Controller for purchase order management
 /// </summary>
+[Route("api/purchase-orders")]
 public class PurchaseOrdersController : AuthorizedApiControllerBase
 {
     private readonly CaskrDbContext _dbContext;
