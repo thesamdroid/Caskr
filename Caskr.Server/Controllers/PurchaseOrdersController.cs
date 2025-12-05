@@ -807,7 +807,7 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
             var supplierCell = new Cell()
                 .Add(new Paragraph("TO:").SetBold())
                 .Add(new Paragraph(po.Supplier?.SupplierName ?? ""))
-                .Add(new Paragraph(po.Supplier?.ContactEmail ?? ""))
+                .Add(new Paragraph(po.Supplier?.Email ?? ""))
                 .SetBorder(iText.Layout.Borders.Border.NO_BORDER);
             infoTable.AddCell(supplierCell);
 

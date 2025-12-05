@@ -35,17 +35,17 @@ public sealed class TtbTransactionsController(
     {
         if (companyId <= 0)
         {
-            return BadRequest(CreateProblem("CompanyId must be provided."));
+            return BadRequest(("CompanyId must be provided."));
         }
 
         if (month < 1 || month > 12)
         {
-            return BadRequest(CreateProblem("Month must be between 1 and 12."));
+            return BadRequest(("Month must be between 1 and 12."));
         }
 
         if (year < 2020)
         {
-            return BadRequest(CreateProblem("Year must be 2020 or later."));
+            return BadRequest(("Year must be 2020 or later."));
         }
 
         var user = await GetCurrentUserAsync(cancellationToken);
@@ -99,7 +99,7 @@ public sealed class TtbTransactionsController(
     {
         if (request.CompanyId <= 0)
         {
-            return BadRequest(CreateProblem("CompanyId must be provided."));
+            return BadRequest(("CompanyId must be provided."));
         }
 
         var user = await GetCurrentUserAsync(cancellationToken);
@@ -117,12 +117,12 @@ public sealed class TtbTransactionsController(
         // Validate proof gallons and wine gallons
         if (request.ProofGallons < 0)
         {
-            return BadRequest(CreateProblem("ProofGallons cannot be negative."));
+            return BadRequest(("ProofGallons cannot be negative."));
         }
 
         if (request.WineGallons < 0)
         {
-            return BadRequest(CreateProblem("WineGallons cannot be negative."));
+            return BadRequest(("WineGallons cannot be negative."));
         }
 
         // Check if the month is locked (report submitted or approved)
@@ -131,7 +131,7 @@ public sealed class TtbTransactionsController(
         if (await auditLogger.IsMonthLockedAsync(request.CompanyId, transactionMonth, transactionYear))
         {
             return StatusCode(StatusCodes.Status403Forbidden,
-                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+                ("Cannot modify data for submitted reports. Contact administrator."));
         }
 
         var transaction = new TtbTransaction
@@ -194,7 +194,7 @@ public sealed class TtbTransactionsController(
 
         if (transaction is null)
         {
-            return NotFound(CreateProblem("Transaction not found."));
+            return NotFound(("Transaction not found."));
         }
 
         var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
@@ -243,7 +243,7 @@ public sealed class TtbTransactionsController(
 
         if (transaction is null)
         {
-            return NotFound(CreateProblem("Transaction not found."));
+            return NotFound(("Transaction not found."));
         }
 
         var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
@@ -255,7 +255,7 @@ public sealed class TtbTransactionsController(
         // Only allow editing manual transactions
         if (transaction.SourceEntityType != "Manual")
         {
-            return BadRequest(CreateProblem("Only manual transactions can be edited."));
+            return BadRequest(("Only manual transactions can be edited."));
         }
 
         // Check if the current month or new month is locked
@@ -267,25 +267,25 @@ public sealed class TtbTransactionsController(
         if (await auditLogger.IsMonthLockedAsync(transaction.CompanyId, currentMonth, currentYear))
         {
             return StatusCode(StatusCodes.Status403Forbidden,
-                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+                ("Cannot modify data for submitted reports. Contact administrator."));
         }
 
         if ((newMonth != currentMonth || newYear != currentYear) &&
             await auditLogger.IsMonthLockedAsync(transaction.CompanyId, newMonth, newYear))
         {
             return StatusCode(StatusCodes.Status403Forbidden,
-                CreateProblem("Cannot move transaction to a month with submitted reports. Contact administrator."));
+                ("Cannot move transaction to a month with submitted reports. Contact administrator."));
         }
 
         // Validate proof gallons and wine gallons
         if (request.ProofGallons < 0)
         {
-            return BadRequest(CreateProblem("ProofGallons cannot be negative."));
+            return BadRequest(("ProofGallons cannot be negative."));
         }
 
         if (request.WineGallons < 0)
         {
-            return BadRequest(CreateProblem("WineGallons cannot be negative."));
+            return BadRequest(("WineGallons cannot be negative."));
         }
 
         // Capture old values for audit
@@ -358,7 +358,7 @@ public sealed class TtbTransactionsController(
 
         if (transaction is null)
         {
-            return NotFound(CreateProblem("Transaction not found."));
+            return NotFound(("Transaction not found."));
         }
 
         var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
@@ -370,7 +370,7 @@ public sealed class TtbTransactionsController(
         // Only allow deleting manual transactions
         if (transaction.SourceEntityType != "Manual")
         {
-            return BadRequest(CreateProblem("Only manual transactions can be deleted."));
+            return BadRequest(("Only manual transactions can be deleted."));
         }
 
         // Check if the month is locked
@@ -379,7 +379,7 @@ public sealed class TtbTransactionsController(
         if (await auditLogger.IsMonthLockedAsync(transaction.CompanyId, transactionMonth, transactionYear))
         {
             return StatusCode(StatusCodes.Status403Forbidden,
-                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+                ("Cannot modify data for submitted reports. Contact administrator."));
         }
 
         // Capture for audit before deleting

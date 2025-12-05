@@ -42,7 +42,7 @@ public sealed class TtbGaugeRecordsController(
 
         if (barrel is null)
         {
-            return NotFound(CreateProblem("Barrel not found."));
+            return NotFound(("Barrel not found."));
         }
 
         var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
@@ -84,7 +84,7 @@ public sealed class TtbGaugeRecordsController(
     {
         if (companyId <= 0)
         {
-            return BadRequest(CreateProblem("CompanyId must be provided."));
+            return BadRequest(("CompanyId must be provided."));
         }
 
         var user = await GetCurrentUserAsync(cancellationToken);
@@ -137,7 +137,7 @@ public sealed class TtbGaugeRecordsController(
 
         if (record is null)
         {
-            return NotFound(CreateProblem("Gauge record not found."));
+            return NotFound(("Gauge record not found."));
         }
 
         var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
@@ -187,7 +187,7 @@ public sealed class TtbGaugeRecordsController(
 
         if (barrel is null)
         {
-            return NotFound(CreateProblem("Barrel not found."));
+            return NotFound(("Barrel not found."));
         }
 
         var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
@@ -199,17 +199,17 @@ public sealed class TtbGaugeRecordsController(
         // Validate inputs
         if (request.Proof < 0 || request.Proof > 200)
         {
-            return BadRequest(CreateProblem("Proof must be between 0 and 200."));
+            return BadRequest(("Proof must be between 0 and 200."));
         }
 
         if (request.Temperature < -40 || request.Temperature > 150)
         {
-            return BadRequest(CreateProblem("Temperature must be between -40 and 150 degrees Fahrenheit."));
+            return BadRequest(("Temperature must be between -40 and 150 degrees Fahrenheit."));
         }
 
         if (request.WineGallons <= 0)
         {
-            return BadRequest(CreateProblem("WineGallons must be greater than 0."));
+            return BadRequest(("WineGallons must be greater than 0."));
         }
 
         // Check if the month is locked (report submitted or approved)
@@ -218,7 +218,7 @@ public sealed class TtbGaugeRecordsController(
         if (await auditLogger.IsMonthLockedAsync(barrel.CompanyId, gaugeMonth, gaugeYear))
         {
             return StatusCode(StatusCodes.Status403Forbidden,
-                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+                ("Cannot modify data for submitted reports. Contact administrator."));
         }
 
         var record = await gaugeRecordService.CreateGaugeRecordAsync(
@@ -277,7 +277,7 @@ public sealed class TtbGaugeRecordsController(
 
         if (existingRecord is null)
         {
-            return NotFound(CreateProblem("Gauge record not found."));
+            return NotFound(("Gauge record not found."));
         }
 
         var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
@@ -289,17 +289,17 @@ public sealed class TtbGaugeRecordsController(
         // Validate inputs
         if (request.Proof < 0 || request.Proof > 200)
         {
-            return BadRequest(CreateProblem("Proof must be between 0 and 200."));
+            return BadRequest(("Proof must be between 0 and 200."));
         }
 
         if (request.Temperature < -40 || request.Temperature > 150)
         {
-            return BadRequest(CreateProblem("Temperature must be between -40 and 150 degrees Fahrenheit."));
+            return BadRequest(("Temperature must be between -40 and 150 degrees Fahrenheit."));
         }
 
         if (request.WineGallons <= 0)
         {
-            return BadRequest(CreateProblem("WineGallons must be greater than 0."));
+            return BadRequest(("WineGallons must be greater than 0."));
         }
 
         // Check if the month is locked
@@ -308,7 +308,7 @@ public sealed class TtbGaugeRecordsController(
         if (await auditLogger.IsMonthLockedAsync(existingRecord.Barrel.CompanyId, gaugeMonth, gaugeYear))
         {
             return StatusCode(StatusCodes.Status403Forbidden,
-                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+                ("Cannot modify data for submitted reports. Contact administrator."));
         }
 
         // Capture old values for audit
@@ -376,7 +376,7 @@ public sealed class TtbGaugeRecordsController(
 
         if (record is null)
         {
-            return NotFound(CreateProblem("Gauge record not found."));
+            return NotFound(("Gauge record not found."));
         }
 
         var isAdmin = (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
@@ -391,7 +391,7 @@ public sealed class TtbGaugeRecordsController(
         if (await auditLogger.IsMonthLockedAsync(record.Barrel.CompanyId, gaugeMonth, gaugeYear))
         {
             return StatusCode(StatusCodes.Status403Forbidden,
-                CreateProblem("Cannot modify data for submitted reports. Contact administrator."));
+                ("Cannot modify data for submitted reports. Contact administrator."));
         }
 
         // Capture for audit before deleting
