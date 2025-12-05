@@ -91,7 +91,8 @@ export function PricingPage() {
   // Analytics callback for PromoCodeInput
   const handlePromoAnalyticsEvent = useCallback(
     (event: string, eventData?: Record<string, unknown>) => {
-      track(event, eventData);
+      // Cast to EventProperties for track function
+      track(event, eventData as Record<string, string | number | boolean | null | undefined>);
     },
     [track]
   );

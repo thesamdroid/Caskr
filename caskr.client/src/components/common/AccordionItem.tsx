@@ -3,7 +3,7 @@ import { useAccordionContext } from './Accordion';
 
 export interface AccordionItemProps {
   id: string;
-  title: string;
+  title: string | React.ReactNode;
   content: string | React.ReactNode;
   isFirst?: boolean;
   isLast?: boolean;

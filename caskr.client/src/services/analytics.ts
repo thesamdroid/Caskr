@@ -217,7 +217,7 @@ class BackendProvider implements AnalyticsProvider {
     return !!this.endpoint;
   }
 
-  private async send(type: string, data: EventProperties): Promise<void> {
+  private async send(type: string, data: Record<string, unknown>): Promise<void> {
     try {
       await fetch(this.endpoint, {
         method: 'POST',

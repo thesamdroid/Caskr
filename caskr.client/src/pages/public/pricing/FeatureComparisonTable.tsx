@@ -122,7 +122,7 @@ interface CategoryRowsProps {
   isMobile: boolean;
 }
 
-function CategoryRows({ category, tiers, isCollapsed, onToggle, isMobile }: CategoryRowsProps) {
+function CategoryRows({ category, tiers, isCollapsed, onToggle, isMobile: _isMobile }: CategoryRowsProps) {
   return (
     <>
       {/* Category header row */}
