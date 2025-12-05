@@ -15,10 +15,9 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
 WORKDIR /src
 
-# Copy solution and project files
+# Copy solution and project files (exclude test project - not needed for production)
 COPY Caskr.sln ./
 COPY Caskr.Server/Caskr.server.csproj ./Caskr.Server/
-COPY Caskr.Server.Tests/Caskr.Server.Tests.csproj ./Caskr.Server.Tests/
 COPY caskr.client/caskr.client.esproj ./caskr.client/
 
 # Restore dependencies
