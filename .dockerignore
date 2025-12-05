@@ -24,12 +24,11 @@ docs/
 # Node modules (will be installed in Docker)
 **/node_modules/
 
-# Test files
+# Test files (frontend only - server tests needed for test-runner image)
 **/*.test.js
 **/*.test.ts
 **/*.spec.js
 **/*.spec.ts
-**/Caskr.Server.Tests/
 
 # Environment files
 .env
