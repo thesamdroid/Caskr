@@ -293,7 +293,7 @@ public class ReportsController(
             {
                 Id = sr.Id,
                 ReportTemplateId = sr.ReportTemplateId,
-                ReportTemplateName = sr.ReportTemplate.Name,
+                ReportTemplateName = sr.ReportTemplate != null ? sr.ReportTemplate.Name : "Unknown",
                 Name = sr.Name,
                 Description = sr.Description,
                 FilterValues = sr.FilterValues,
@@ -412,7 +412,7 @@ public class ReportsController(
         {
             Id = savedReport.Id,
             ReportTemplateId = savedReport.ReportTemplateId,
-            ReportTemplateName = savedReport.ReportTemplate.Name,
+            ReportTemplateName = savedReport.ReportTemplate?.Name ?? "Unknown",
             Name = savedReport.Name,
             Description = savedReport.Description,
             FilterValues = savedReport.FilterValues,
