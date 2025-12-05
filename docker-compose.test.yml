@@ -1,0 +1,55 @@
+version: '3.9'
+
+# Test environment for running .NET and frontend tests
+# Usage:
+#   docker compose -f docker-compose.test.yml run --rm test-runner dotnet test
+#   docker compose -f docker-compose.test.yml run --rm test-runner npm --prefix caskr.client test
+
+services:
+  # Test database (isolated from local dev)
+  test-db:
+    build: ./Database
+    image: caskr/database:test
+    container_name: caskr-test-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: testpass123
+      POSTGRES_DB: caskr-test-db
+    ports:
+      - '5433:5432'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d caskr-test-db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - caskr-test
+
+  # Test runner with .NET SDK, Node.js, and Playwright
+  test-runner:
+    build:
+      context: .
+      dockerfile: build/test-runner/Dockerfile
+    image: caskr/test-runner:latest
+    container_name: caskr-test-runner
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ConnectionStrings__CaskrDatabaseConnectionString: "Host=test-db;Port=5432;Database=caskr-test-db;Username=postgres;Password=testpass123"
+      Jwt__Key: "TestingJwtKeyThatIsAtLeast32CharactersLong!"
+      Jwt__Issuer: CaskrTest
+      Jwt__Audience: CaskrTestUser
+      # Disable telemetry
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    depends_on:
+      test-db:
+        condition: service_healthy
+    volumes:
+      # Mount test results for access outside container
+      - ./test-results:/workspace/test-results
+    networks:
+      - caskr-test
+    working_dir: /workspace
+
+networks:
+  caskr-test:
+    driver: bridge
