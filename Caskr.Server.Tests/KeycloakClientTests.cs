@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text;
 using Caskr.server.Models;
 using Caskr.server.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace Caskr.Server.Tests;
 

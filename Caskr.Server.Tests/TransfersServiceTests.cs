@@ -59,7 +59,7 @@ public class TransfersServiceTests
 
         Assert.NotNull(pdf);
         Assert.True(pdf.Length > 0);
-        Assert.Equal('%', pdf[0]);
+        Assert.Equal((byte)'%', pdf[0]);
     }
 
     [Fact]
