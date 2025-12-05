@@ -2490,7 +2490,8 @@ public partial class CaskrDbContext : DbContext
 
             entity.HasOne(d => d.Batch)
                 .WithMany()
-                .HasForeignKey(d => d.BatchId)
+                .HasForeignKey(d => new { d.BatchId, d.CompanyId })
+                .HasPrincipalKey(b => new { b.Id, b.CompanyId })
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("fk_production_runs_batch");
 
