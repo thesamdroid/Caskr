@@ -1,0 +1,1395 @@
+Task ID,Task Name,Type,Story Points,Dependencies,Acceptance Criteria,Detailed AI Prompt
+PROD-001,Create production schedule database schema,Database,5,None,"- ProductionRun table created with all required columns
+- EquipmentBooking table created with conflict tracking
+- ProductionCalendarEvent table created
+- Foreign keys and indexes properly configured
+- Migration runs successfully
+- All existing tests pass
+- New model configuration tests added","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL. The codebase follows clean architecture patterns with services, controllers, and models separated into logical namespaces.
+
+## Task: Create Production Schedule Database Schema
+
+### Context
+Caskr needs production planning capabilities to help distilleries schedule their production runs, manage equipment bookings, and visualize their production calendar. This is the foundational database schema that all other production planning features will build upon.
+
+### Requirements
+
+Create the following Entity Framework Core models in the `Caskr.Server/Models/Production/` directory:
+
+**1. ProductionRun Model**
+- Id (int, primary key)
+- CompanyId (int, foreign key to Companies)
+- Name (string, max 200 chars, required)
+- Description (string, max 1000 chars, nullable)
+- ProductionType (enum: Mashing, Fermentation, Distillation, Barreling, Bottling, Other)
+- Status (enum: Scheduled, InProgress, Completed, Cancelled)
+- ScheduledStartDate (DateTime, required)
+- ScheduledEndDate (DateTime, required)
+- ActualStartDate (DateTime, nullable)
+- ActualEndDate (DateTime, nullable)
+- BatchId (int, nullable foreign key to Batches - links to existing batch when created)
+- Notes (string, max 2000 chars, nullable)
+- CreatedByUserId (string, foreign key to users)
+- CreatedAt, UpdatedAt (DateTime)
+
+**2. Equipment Model**
+- Id (int, primary key)
+- CompanyId (int, foreign key)
+- Name (string, max 100 chars, required)
+- EquipmentType (enum: Still, Fermenter, MashTun, BottlingLine, Labeler, Tank, Other)
+- Capacity (decimal, nullable - e.g., 500 gallons)
+- CapacityUnit (string, max 20 chars - e.g., ""gallons"", ""liters"")
+- Location (string, max 200 chars, nullable)
+- IsActive (bool, default true)
+- MaintenanceNotes (string, max 1000 chars, nullable)
+- CreatedAt, UpdatedAt (DateTime)
+
+**3. EquipmentBooking Model**
+- Id (int, primary key)
+- ProductionRunId (int, foreign key to ProductionRun)
+- EquipmentId (int, foreign key to Equipment)
+- StartTime (DateTime, required)
+- EndTime (DateTime, required)
+- Status (enum: Tentative, Confirmed, Cancelled)
+- Notes (string, max 500 chars, nullable)
+- CreatedAt, UpdatedAt (DateTime)
+- Add unique constraint on (EquipmentId, StartTime, EndTime) to prevent overlapping bookings
+
+**4. ProductionCalendarEvent Model**
+- Id (int, primary key)
+- CompanyId (int, foreign key)
+- Title (string, max 200 chars, required)
+- EventType (enum: ProductionRun, Maintenance, Meeting, Deadline, Other)
+- StartDate (DateTime, required)
+- EndDate (DateTime, required)
+- AllDay (bool, default false)
+- Color (string, max 7 chars, nullable - hex color code)
+- ProductionRunId (int, nullable foreign key - links to production run if applicable)
+- CreatedByUserId (string)
+- CreatedAt, UpdatedAt (DateTime)
+
+### Database Configuration
+
+Add entity configurations in CaskrDbContext.cs following existing patterns:
+- Use snake_case for column names (e.g., production_run_id)
+- Add appropriate indexes for common queries (company_id, scheduled_start_date, status)
+- Configure cascade delete appropriately (Equipment deletion should fail if bookings exist)
+- Add check constraints for date validation (EndDate > StartDate)
+
+### Refactoring Opportunities
+
+1. Look at existing enum patterns in the codebase (check Models/Enums/ or similar) and follow the same conventions
+2. If there's a common BaseEntity or IAuditableEntity pattern, use it for CreatedAt/UpdatedAt
+3. Consider if CompanyId filtering should use a base class or interface like ICompanyScoped
+
+### Testing Requirements
+
+Create a new test file `Caskr.Server.Tests/ProductionModelConfigurationTests.cs` that verifies:
+- All models can be created and saved to the database
+- Foreign key relationships work correctly
+- Unique constraints are enforced (test that overlapping bookings throw)
+- Cascade delete behavior is correct
+- Date validation constraints work
+
+Follow the existing test patterns in `Caskr.Server.Tests/PricingModelConfigurationTests.cs` for structure.
+
+### Build Verification
+
+After implementation:
+1. Run `dotnet build` to ensure no compilation errors
+2. Run `dotnet test` to verify all existing tests still pass
+3. Create and apply EF migration: `dotnet ef migrations add AddProductionPlanningSchema`
+4. Verify migration applies cleanly to a fresh database
+
+### Files to Create/Modify
+- Create: `Caskr.Server/Models/Production/ProductionRun.cs`
+- Create: `Caskr.Server/Models/Production/Equipment.cs`
+- Create: `Caskr.Server/Models/Production/EquipmentBooking.cs`
+- Create: `Caskr.Server/Models/Production/ProductionCalendarEvent.cs`
+- Create: `Caskr.Server/Models/Production/ProductionEnums.cs`
+- Modify: `Caskr.Server/Models/CaskrDbContext.cs` (add DbSets and configurations)
+- Create: `Caskr.Server.Tests/ProductionModelConfigurationTests.cs`"
+PROD-002,Implement production schedule service,Backend,8,PROD-001,"- ProductionScheduleService created with full CRUD
+- Conflict detection implemented and tested
+- Batch linking works correctly
+- All methods have unit tests
+- Service registered in DI container
+- Existing tests pass","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL.
+
+## Task: Implement Production Schedule Service
+
+### Context
+With the production planning database schema in place (PROD-001), we need a service layer to manage production runs, handle equipment booking conflicts, and integrate with the existing batch system. This service will be the core business logic layer for all production planning operations.
+
+### Requirements
+
+Create `Caskr.Server/Services/Production/ProductionScheduleService.cs` with the following capabilities:
+
+**1. Production Run Management**
+```csharp
+public interface IProductionScheduleService
+{
+    // CRUD Operations
+    Task<ProductionRun> CreateProductionRunAsync(CreateProductionRunDto dto, string userId);
+    Task<ProductionRun> UpdateProductionRunAsync(int id, UpdateProductionRunDto dto, string userId);
+    Task<bool> DeleteProductionRunAsync(int id, int companyId);
+    Task<ProductionRun?> GetProductionRunAsync(int id, int companyId);
+    Task<PagedResult<ProductionRun>> GetProductionRunsAsync(ProductionRunQueryDto query);
+
+    // Status Management
+    Task<ProductionRun> StartProductionRunAsync(int id, int companyId, string userId);
+    Task<ProductionRun> CompleteProductionRunAsync(int id, int companyId, string userId);
+    Task<ProductionRun> CancelProductionRunAsync(int id, int companyId, string userId, string? reason);
+
+    // Equipment Booking
+    Task<EquipmentBooking> BookEquipmentAsync(CreateEquipmentBookingDto dto);
+    Task<bool> CancelEquipmentBookingAsync(int bookingId, int companyId);
+    Task<IEnumerable<EquipmentBooking>> GetEquipmentBookingsAsync(int equipmentId, DateTime start, DateTime end);
+
+    // Conflict Detection
+    Task<IEnumerable<ScheduleConflict>> CheckForConflictsAsync(int companyId, DateTime start, DateTime end, int? excludeRunId = null);
+    Task<bool> IsEquipmentAvailableAsync(int equipmentId, DateTime start, DateTime end, int? excludeBookingId = null);
+
+    // Batch Integration
+    Task<ProductionRun> LinkToBatchAsync(int productionRunId, int batchId, int companyId);
+}
+```
+
+**2. DTOs**
+Create in `Caskr.Server/Services/Production/ProductionDtos.cs`:
+- CreateProductionRunDto (Name, Description, ProductionType, ScheduledStartDate, ScheduledEndDate, EquipmentIds[])
+- UpdateProductionRunDto (same fields, all optional)
+- ProductionRunQueryDto (CompanyId, StartDate, EndDate, Status[], ProductionType[], PageNumber, PageSize)
+- CreateEquipmentBookingDto (ProductionRunId, EquipmentId, StartTime, EndTime, Notes)
+- ScheduleConflict (ConflictType, Message, ConflictingRunId, ConflictingEquipmentId, etc.)
+
+**3. Business Rules**
+- Production runs cannot overlap on the same equipment (unless different equipment)
+- Status transitions: Scheduled -> InProgress -> Completed OR Scheduled -> Cancelled OR InProgress -> Cancelled
+- Cannot delete a production run that is InProgress
+- Equipment booking times must fall within the production run's scheduled times
+- When linking to a batch, validate the batch belongs to the same company
+
+**4. Conflict Detection Logic**
+The conflict detection should check:
+- Equipment double-booking (same equipment, overlapping times)
+- Warn about back-to-back runs with no buffer (configurable, default 30 min)
+- Return detailed conflict information for UI display
+
+### Refactoring Opportunities
+
+1. Look at existing service patterns (e.g., `TtbReportWorkflowService.cs`, `QuickBooksInvoiceSyncService.cs`) for:
+   - How services are structured
+   - Logging patterns
+   - Error handling patterns
+   - Transaction management
+
+2. Consider extracting a generic `IScheduleConflictDetector` interface if the conflict logic could be reused
+
+3. Use the existing `PagedResult<T>` pattern if it exists, or create one following existing pagination patterns
+
+### Testing Requirements
+
+Create `Caskr.Server.Tests/Services/ProductionScheduleServiceTests.cs` with tests for:
+
+**CRUD Tests**
+- CreateProductionRunAsync_ValidData_CreatesSuccessfully
+- CreateProductionRunAsync_InvalidDates_ThrowsValidationException
+- UpdateProductionRunAsync_ExistingRun_UpdatesSuccessfully
+- DeleteProductionRunAsync_InProgressRun_ThrowsException
+- GetProductionRunsAsync_WithFilters_ReturnsFilteredResults
+
+**Status Transition Tests**
+- StartProductionRunAsync_ScheduledRun_SetsStatusAndActualStartDate
+- CompleteProductionRunAsync_InProgressRun_SetsStatusAndActualEndDate
+- CancelProductionRunAsync_ScheduledRun_SetsStatusAndReason
+- CompleteProductionRunAsync_ScheduledRun_ThrowsInvalidOperationException
+
+**Conflict Detection Tests**
+- CheckForConflictsAsync_NoConflicts_ReturnsEmpty
+- CheckForConflictsAsync_EquipmentDoubleBooked_ReturnsConflict
+- CheckForConflictsAsync_AdjacentRuns_ReturnsWarning
+- IsEquipmentAvailableAsync_Available_ReturnsTrue
+- IsEquipmentAvailableAsync_Booked_ReturnsFalse
+
+**Batch Integration Tests**
+- LinkToBatchAsync_ValidBatch_LinksSuccessfully
+- LinkToBatchAsync_DifferentCompany_ThrowsException
+
+Use Moq for mocking DbContext and follow patterns in existing service tests like `TtbReportWorkflowServiceTests.cs`.
+
+### Dependency Injection
+
+Register the service in `Program.cs` or the appropriate DI configuration:
+```csharp
+services.AddScoped<IProductionScheduleService, ProductionScheduleService>();
+```
+
+### Build Verification
+
+1. Run `dotnet build` - no compilation errors
+2. Run `dotnet test` - all tests pass including new ones
+3. Verify service can be injected and basic operations work
+
+### Files to Create/Modify
+- Create: `Caskr.Server/Services/Production/IProductionScheduleService.cs`
+- Create: `Caskr.Server/Services/Production/ProductionScheduleService.cs`
+- Create: `Caskr.Server/Services/Production/ProductionDtos.cs`
+- Modify: `Program.cs` or DI configuration to register service
+- Create: `Caskr.Server.Tests/Services/ProductionScheduleServiceTests.cs`"
+PROD-003,Create production calendar API endpoints,API,5,PROD-002,"- All CRUD endpoints implemented
+- Calendar view endpoints working
+- Equipment availability endpoint working
+- All endpoints have integration tests
+- Swagger documentation complete
+- Authorization properly configured","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL.
+
+## Task: Create Production Calendar API Endpoints
+
+### Context
+With the ProductionScheduleService implemented (PROD-002), we need REST API endpoints to expose this functionality to the frontend. The API should support the production calendar UI with efficient queries for calendar views and real-time conflict checking.
+
+### Requirements
+
+Create `Caskr.Server/Controllers/ProductionController.cs` with the following endpoints:
+
+**1. Production Run Endpoints**
+```
+POST   /api/production/runs                    - Create a new production run
+GET    /api/production/runs                    - List production runs (with filtering/pagination)
+GET    /api/production/runs/{id}               - Get a specific production run
+PUT    /api/production/runs/{id}               - Update a production run
+DELETE /api/production/runs/{id}               - Delete a production run
+POST   /api/production/runs/{id}/start         - Start a production run
+POST   /api/production/runs/{id}/complete      - Complete a production run
+POST   /api/production/runs/{id}/cancel        - Cancel a production run
+POST   /api/production/runs/{id}/link-batch    - Link to an existing batch
+```
+
+**2. Calendar View Endpoints**
+```
+GET    /api/production/calendar                - Get calendar events for date range
+       Query params: startDate, endDate, includeRuns=true, includeMaintenance=true
+       Returns: Array of calendar events optimized for calendar rendering
+
+GET    /api/production/calendar/day/{date}     - Get detailed view for a specific day
+GET    /api/production/calendar/week/{date}    - Get week view starting from date
+GET    /api/production/calendar/month/{year}/{month} - Get month view
+```
+
+**3. Equipment Endpoints**
+```
+GET    /api/production/equipment               - List all equipment for company
+POST   /api/production/equipment               - Create new equipment
+PUT    /api/production/equipment/{id}          - Update equipment
+DELETE /api/production/equipment/{id}          - Delete equipment (fails if has bookings)
+
+GET    /api/production/equipment/{id}/availability - Check equipment availability
+       Query params: startDate, endDate
+       Returns: Array of available time slots and existing bookings
+
+POST   /api/production/equipment/{id}/book     - Book equipment for a production run
+DELETE /api/production/equipment/bookings/{id} - Cancel a booking
+```
+
+**4. Conflict Checking Endpoints**
+```
+POST   /api/production/check-conflicts         - Check for scheduling conflicts
+       Body: { startDate, endDate, equipmentIds[], excludeRunId? }
+       Returns: Array of ScheduleConflict objects
+```
+
+### Response DTOs
+
+Create response DTOs in `Caskr.Server/Services/Production/ProductionDtos.cs` (extend existing file):
+
+```csharp
+public record ProductionRunResponse(
+    int Id,
+    string Name,
+    string? Description,
+    string ProductionType,
+    string Status,
+    DateTime ScheduledStartDate,
+    DateTime ScheduledEndDate,
+    DateTime? ActualStartDate,
+    DateTime? ActualEndDate,
+    int? BatchId,
+    string? BatchName,
+    List<EquipmentBookingResponse> EquipmentBookings,
+    string CreatedByUserName,
+    DateTime CreatedAt
+);
+
+public record CalendarEventResponse(
+    int Id,
+    string Title,
+    string EventType,
+    DateTime Start,
+    DateTime End,
+    bool AllDay,
+    string? Color,
+    int? ProductionRunId,
+    string? ProductionType,
+    string? Status
+);
+
+public record EquipmentAvailabilityResponse(
+    int EquipmentId,
+    string EquipmentName,
+    List<TimeSlot> AvailableSlots,
+    List<ExistingBooking> ExistingBookings
+);
+```
+
+### Authorization
+
+- All endpoints require authentication
+- Use existing company-scoping pattern (user can only access their company's data)
+- Follow patterns in existing controllers like `TtbReportsController.cs`
+
+### Refactoring Opportunities
+
+1. Look at existing controller patterns for:
+   - How pagination is handled (check for `PagedResult` or similar)
+   - How validation errors are returned
+   - How company ID is extracted from the authenticated user
+   - Swagger/OpenAPI documentation attributes
+
+2. Consider creating a base `ProductionControllerBase` if there's shared logic
+
+3. Use AutoMapper or manual mapping consistently with the rest of the codebase
+
+### Testing Requirements
+
+Create `Caskr.Server.Tests/Controllers/ProductionControllerTests.cs` with:
+
+**Authorization Tests**
+- AllEndpoints_WithoutAuth_Returns401
+- AllEndpoints_WrongCompany_Returns404OrForbidden
+
+**CRUD Tests**
+- CreateProductionRun_ValidData_Returns201WithLocation
+- CreateProductionRun_InvalidDates_Returns400WithValidationErrors
+- GetProductionRuns_WithFilters_ReturnsFilteredResults
+- UpdateProductionRun_NotFound_Returns404
+- DeleteProductionRun_InProgress_Returns400
+
+**Calendar Tests**
+- GetCalendar_ValidDateRange_ReturnsEvents
+- GetCalendar_InvalidDateRange_Returns400
+- GetMonthView_ReturnsCorrectDateRange
+
+**Equipment Tests**
+- GetEquipmentAvailability_ReturnsAvailableSlots
+- BookEquipment_Conflict_Returns409
+- DeleteEquipment_HasBookings_Returns400
+
+Use `WebApplicationFactory` for integration tests following existing patterns.
+
+### Swagger Documentation
+
+Add XML documentation comments to all endpoints and use attributes:
+```csharp
+[ProducesResponseType(typeof(ProductionRunResponse), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status404NotFound)]
+```
+
+### Build Verification
+
+1. Run `dotnet build` - no compilation errors
+2. Run `dotnet test` - all tests pass
+3. Start the application and verify Swagger UI shows new endpoints
+4. Test a few endpoints manually with Swagger UI
+
+### Files to Create/Modify
+- Create: `Caskr.Server/Controllers/ProductionController.cs`
+- Modify: `Caskr.Server/Services/Production/ProductionDtos.cs` (add response DTOs)
+- Create: `Caskr.Server.Tests/Controllers/ProductionControllerTests.cs`"
+PROD-004,Build production calendar UI component,Frontend,8,PROD-003,"- Calendar component renders correctly
+- Week and month views working
+- Drag-and-drop scheduling works
+- Color coding by production type
+- Mobile responsive
+- Unit tests for components
+- Accessibility compliant","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL. The frontend uses React with TypeScript, Redux Toolkit for state management, and follows the existing component patterns in `caskr.client/src/`.
+
+## Task: Build Production Calendar UI Component
+
+### Context
+With the production planning API endpoints ready (PROD-003), we need a calendar UI component that allows distillery staff to visualize and manage their production schedule. This should integrate with the existing dashboard and provide an intuitive scheduling experience.
+
+### Requirements
+
+**1. Calendar Component Structure**
+Create the following components in `caskr.client/src/components/production/`:
+
+```
+production/
+├── ProductionCalendar.tsx        # Main calendar container
+├── ProductionCalendar.css        # Styles
+├── CalendarHeader.tsx            # Month/week navigation, view toggle
+├── CalendarGrid.tsx              # The actual calendar grid
+├── CalendarEvent.tsx             # Individual event rendering
+├── CalendarDayCell.tsx           # Day cell with events
+├── ProductionRunModal.tsx        # Create/edit production run modal
+├── EventTooltip.tsx              # Hover tooltip for events
+└── index.ts                      # Barrel exports
+```
+
+**2. Calendar Features**
+
+*View Modes:*
+- Month view (default) - shows all days with event indicators
+- Week view - shows 7 days with hourly time slots
+- Day view - detailed single day with 30-minute slots
+
+*Navigation:*
+- Previous/Next buttons for navigating periods
+- Today button to jump to current date
+- Date picker for jumping to specific date
+
+*Event Display:*
+- Color-coded by ProductionType (use consistent colors):
+  - Mashing: #4A90D9 (blue)
+  - Fermentation: #7B68EE (purple)
+  - Distillation: #FF6B6B (red)
+  - Barreling: #8B4513 (brown)
+  - Bottling: #2ECC71 (green)
+  - Other: #95A5A6 (gray)
+- Status indicators (Scheduled: solid, InProgress: pulsing border, Completed: faded)
+- Multi-day events should span across days
+
+*Interactions:*
+- Click on empty slot to create new production run
+- Click on event to view details / edit
+- Drag events to reschedule (with conflict checking)
+- Drag to resize event duration
+- Double-click for quick view modal
+
+**3. State Management**
+
+Create Redux slice in `caskr.client/src/features/productionSlice.ts`:
+
+```typescript
+interface ProductionState {
+  runs: ProductionRun[];
+  equipment: Equipment[];
+  calendarEvents: CalendarEvent[];
+  selectedRun: ProductionRun | null;
+  isLoading: boolean;
+  error: string | null;
+  filters: {
+    productionTypes: ProductionType[];
+    statuses: ProductionStatus[];
+    equipmentIds: number[];
+  };
+  viewMode: 'month' | 'week' | 'day';
+  currentDate: string; // ISO date string
+}
+```
+
+Include async thunks for API calls:
+- fetchCalendarEvents(startDate, endDate)
+- createProductionRun(data)
+- updateProductionRun(id, data)
+- deleteProductionRun(id)
+- checkConflicts(data)
+
+**4. API Integration**
+
+Create API service in `caskr.client/src/api/productionApi.ts`:
+
+```typescript
+export const productionApi = {
+  getCalendarEvents: (start: Date, end: Date) => api.get('/production/calendar', { params: { startDate: start, endDate: end } }),
+  getProductionRun: (id: number) => api.get(`/production/runs/${id}`),
+  createProductionRun: (data: CreateProductionRunDto) => api.post('/production/runs', data),
+  updateProductionRun: (id: number, data: UpdateProductionRunDto) => api.put(`/production/runs/${id}`, data),
+  deleteProductionRun: (id: number) => api.delete(`/production/runs/${id}`),
+  checkConflicts: (data: ConflictCheckDto) => api.post('/production/check-conflicts', data),
+  // ... equipment endpoints
+};
+```
+
+**5. Production Run Modal**
+
+The modal for creating/editing runs should include:
+- Name (required)
+- Description (optional)
+- Production Type dropdown
+- Start Date/Time picker
+- End Date/Time picker
+- Equipment multi-select (with availability indicators)
+- Link to Batch dropdown (optional, shows existing batches)
+- Conflict warnings displayed inline
+- Save/Cancel buttons
+
+### Refactoring Opportunities
+
+1. Look at existing modal patterns in the codebase (search for `Modal` components)
+2. Check for existing date picker components to reuse
+3. Look at how other features handle loading/error states
+4. Check for existing color/theme constants to use
+5. Review existing form patterns for validation
+
+### Testing Requirements
+
+Create tests in `caskr.client/tests/production/`:
+
+**Component Tests (using React Testing Library)**
+```
+productionCalendar.spec.ts
+├── renders month view by default
+├── switches between view modes
+├── navigates to previous/next month
+├── displays events on correct days
+├── opens modal when clicking empty slot
+├── opens event details when clicking event
+├── shows loading state while fetching
+├── shows error state on API failure
+
+productionRunModal.spec.ts
+├── renders all form fields
+├── validates required fields
+├── shows conflict warnings
+├── submits form data correctly
+├── closes on cancel
+├── shows equipment availability
+```
+
+**Integration Tests**
+```
+productionCalendarIntegration.spec.ts
+├── creates production run via modal
+├── updates production run via drag
+├── deletes production run
+├── filters events by type
+├── checks conflicts before saving
+```
+
+### Accessibility Requirements
+
+- All interactive elements keyboard accessible
+- ARIA labels for calendar navigation
+- Screen reader announcements for date changes
+- Focus management in modals
+- Color is not the only indicator (add icons/patterns)
+
+### Mobile Responsiveness
+
+- Month view: Stack events vertically on small screens
+- Week view: Horizontal scroll on mobile
+- Touch-friendly drag handles
+- Bottom sheet modal on mobile instead of centered modal
+
+### Build Verification
+
+1. Run `npm run build` - no compilation errors
+2. Run `npm test` - all tests pass
+3. Run `npm run lint` - no linting errors
+4. Manual testing in browser for all view modes
+5. Test on mobile viewport sizes
+
+### Files to Create
+- `caskr.client/src/components/production/ProductionCalendar.tsx`
+- `caskr.client/src/components/production/ProductionCalendar.css`
+- `caskr.client/src/components/production/CalendarHeader.tsx`
+- `caskr.client/src/components/production/CalendarGrid.tsx`
+- `caskr.client/src/components/production/CalendarEvent.tsx`
+- `caskr.client/src/components/production/CalendarDayCell.tsx`
+- `caskr.client/src/components/production/ProductionRunModal.tsx`
+- `caskr.client/src/components/production/EventTooltip.tsx`
+- `caskr.client/src/components/production/index.ts`
+- `caskr.client/src/features/productionSlice.ts`
+- `caskr.client/src/api/productionApi.ts`
+- `caskr.client/src/types/production.ts`
+- `caskr.client/tests/production/productionCalendar.spec.ts`
+- `caskr.client/tests/production/productionRunModal.spec.ts`"
+PROD-005,Equipment management module,Backend + UI,8,PROD-001,"- Equipment CRUD fully functional
+- Capacity tracking working
+- Maintenance windows supported
+- Equipment list UI complete
+- Equipment detail/edit UI complete
+- Full test coverage
+- Integrates with production runs","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL.
+
+## Task: Equipment Management Module
+
+### Context
+Distilleries need to manage their production equipment (stills, fermenters, bottling lines, etc.) to effectively schedule production runs. This module provides the ability to register equipment, track capacity, and manage maintenance windows. The Equipment model was created in PROD-001; this task implements the full management module.
+
+### Requirements
+
+**1. Backend Service**
+
+Create `Caskr.Server/Services/Production/EquipmentService.cs`:
+
+```csharp
+public interface IEquipmentService
+{
+    // CRUD
+    Task<Equipment> CreateEquipmentAsync(CreateEquipmentDto dto, int companyId);
+    Task<Equipment> UpdateEquipmentAsync(int id, UpdateEquipmentDto dto, int companyId);
+    Task<bool> DeleteEquipmentAsync(int id, int companyId);
+    Task<Equipment?> GetEquipmentAsync(int id, int companyId);
+    Task<PagedResult<Equipment>> GetEquipmentListAsync(EquipmentQueryDto query);
+
+    // Availability
+    Task<EquipmentAvailability> GetAvailabilityAsync(int id, DateTime start, DateTime end);
+    Task<IEnumerable<Equipment>> GetAvailableEquipmentAsync(int companyId, DateTime start, DateTime end, EquipmentType? type = null);
+
+    // Maintenance
+    Task<MaintenanceWindow> ScheduleMaintenanceAsync(CreateMaintenanceDto dto);
+    Task<bool> CancelMaintenanceAsync(int maintenanceId, int companyId);
+    Task<IEnumerable<MaintenanceWindow>> GetUpcomingMaintenanceAsync(int companyId, int? equipmentId = null);
+
+    // Statistics
+    Task<EquipmentUtilization> GetUtilizationAsync(int id, DateTime start, DateTime end);
+}
+```
+
+**2. Maintenance Window Model**
+
+Add to `Caskr.Server/Models/Production/MaintenanceWindow.cs`:
+- Id, EquipmentId (FK), CompanyId (FK)
+- Title (string, max 200)
+- Description (string, max 1000, nullable)
+- StartDate, EndDate (DateTime)
+- MaintenanceType (enum: Scheduled, Emergency, Cleaning, Inspection)
+- Status (enum: Scheduled, InProgress, Completed, Cancelled)
+- CreatedByUserId, CreatedAt, UpdatedAt
+
+**3. DTOs**
+
+```csharp
+public record CreateEquipmentDto(
+    string Name,
+    EquipmentType EquipmentType,
+    decimal? Capacity,
+    string? CapacityUnit,
+    string? Location,
+    string? MaintenanceNotes
+);
+
+public record EquipmentUtilization(
+    int EquipmentId,
+    string EquipmentName,
+    TimeSpan TotalAvailableTime,
+    TimeSpan TotalBookedTime,
+    TimeSpan TotalMaintenanceTime,
+    decimal UtilizationPercentage,
+    int TotalProductionRuns,
+    List<UtilizationByType> ByProductionType
+);
+
+public record EquipmentAvailability(
+    int EquipmentId,
+    List<TimeSlot> AvailableSlots,
+    List<BookingSlot> Bookings,
+    List<MaintenanceSlot> MaintenanceWindows
+);
+```
+
+**4. API Endpoints**
+
+Add to `ProductionController.cs` or create `EquipmentController.cs`:
+
+```
+GET    /api/production/equipment                     - List equipment
+POST   /api/production/equipment                     - Create equipment
+GET    /api/production/equipment/{id}                - Get equipment details
+PUT    /api/production/equipment/{id}                - Update equipment
+DELETE /api/production/equipment/{id}                - Delete (fails if has future bookings)
+
+GET    /api/production/equipment/{id}/availability   - Get availability for date range
+GET    /api/production/equipment/{id}/utilization    - Get utilization statistics
+GET    /api/production/equipment/available           - Find available equipment for time slot
+
+POST   /api/production/equipment/{id}/maintenance    - Schedule maintenance
+GET    /api/production/equipment/{id}/maintenance    - Get maintenance history
+DELETE /api/production/maintenance/{id}              - Cancel maintenance
+```
+
+**5. Frontend Components**
+
+Create in `caskr.client/src/components/production/equipment/`:
+
+```
+equipment/
+├── EquipmentList.tsx            # List view with filters
+├── EquipmentList.css
+├── EquipmentCard.tsx            # Card component for list
+├── EquipmentForm.tsx            # Create/edit form
+├── EquipmentDetail.tsx          # Detail view with stats
+├── MaintenanceScheduler.tsx     # Schedule maintenance UI
+├── UtilizationChart.tsx         # Utilization visualization
+└── index.ts
+```
+
+*EquipmentList Features:*
+- Grid/list view toggle
+- Filter by equipment type
+- Filter by availability status
+- Search by name
+- Sort by name, type, utilization
+
+*EquipmentDetail Features:*
+- Equipment info display
+- Utilization chart (pie or bar)
+- Upcoming bookings list
+- Maintenance history
+- Quick actions (edit, schedule maintenance)
+
+*EquipmentForm Features:*
+- All equipment fields
+- Capacity with unit selector
+- Equipment type dropdown with icons
+- Location text field
+- Maintenance notes textarea
+
+### Refactoring Opportunities
+
+1. Check if there's an existing pattern for master-detail views
+2. Look for reusable Card components
+3. Check for existing chart/visualization libraries in use
+4. Consider shared form field components
+
+### Testing Requirements
+
+**Backend Tests** (`EquipmentServiceTests.cs`):
+- CreateEquipment_ValidData_Success
+- DeleteEquipment_HasFutureBookings_ThrowsException
+- GetAvailability_ReturnsCorrectSlots
+- GetUtilization_CalculatesCorrectly
+- ScheduleMaintenance_OverlapsBooking_ReturnsConflict
+
+**Frontend Tests** (`equipment.spec.ts`):
+- EquipmentList renders equipment cards
+- EquipmentList filters work correctly
+- EquipmentForm validates required fields
+- EquipmentForm submits correctly
+- EquipmentDetail shows utilization chart
+- MaintenanceScheduler shows conflicts
+
+### Build Verification
+
+1. `dotnet build` and `dotnet test` pass
+2. `npm run build` and `npm test` pass
+3. Manual test: Create equipment, view details, schedule maintenance
+4. Verify equipment appears in production run modal equipment selector
+
+### Files to Create/Modify
+- Create: `Caskr.Server/Models/Production/MaintenanceWindow.cs`
+- Create: `Caskr.Server/Services/Production/IEquipmentService.cs`
+- Create: `Caskr.Server/Services/Production/EquipmentService.cs`
+- Modify: `Caskr.Server/Services/Production/ProductionDtos.cs`
+- Modify: `Caskr.Server/Controllers/ProductionController.cs` (or create EquipmentController)
+- Modify: `Caskr.Server/Models/CaskrDbContext.cs` (add MaintenanceWindow)
+- Create: `Caskr.Server.Tests/Services/EquipmentServiceTests.cs`
+- Create: `caskr.client/src/components/production/equipment/*.tsx`
+- Create: `caskr.client/tests/production/equipment.spec.ts`"
+PROD-006,Batch scheduling workflow,Backend,5,PROD-002,"- Production run creates batch automatically
+- Batch status syncs with production run
+- TTB transactions created on completion
+- Notification triggers working
+- Full audit trail
+- Comprehensive tests","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL.
+
+## Task: Batch Scheduling Workflow
+
+### Context
+Production runs need to integrate with Caskr's existing batch management system. When a production run progresses through its lifecycle (Scheduled → InProgress → Completed), corresponding batches should be created/updated, TTB transactions should be logged, and notifications should be sent to relevant users.
+
+### Requirements
+
+**1. Workflow States**
+
+```
+Production Run Lifecycle:
+┌──────────┐     Start      ┌────────────┐    Complete    ┌───────────┐
+│ Scheduled │─────────────>│ InProgress │──────────────>│ Completed │
+└──────────┘               └────────────┘               └───────────┘
+      │                          │
+      │ Cancel                   │ Cancel
+      v                          v
+┌───────────┐              ┌───────────┐
+│ Cancelled │              │ Cancelled │
+└───────────┘              └───────────┘
+
+State Transitions trigger:
+- Scheduled → InProgress: Create batch (if not linked), send notification
+- InProgress → Completed: Update batch, create TTB transaction, send notification
+- Any → Cancelled: Update batch status, send cancellation notification
+```
+
+**2. Batch Integration Service**
+
+Extend `ProductionScheduleService` or create `ProductionBatchIntegrationService.cs`:
+
+```csharp
+public interface IProductionBatchIntegrationService
+{
+    // Called when production run starts
+    Task<Batch> CreateOrLinkBatchAsync(ProductionRun run, string userId);
+
+    // Called when production run completes
+    Task CompleteBatchFromRunAsync(ProductionRun run, CompletionDataDto data, string userId);
+
+    // Called when production run is cancelled
+    Task HandleRunCancellationAsync(ProductionRun run, string reason, string userId);
+
+    // Get batch data for a production run
+    Task<BatchProductionSummary> GetBatchSummaryAsync(int productionRunId);
+}
+
+public record CompletionDataDto(
+    decimal? ActualYieldGallons,
+    decimal? ActualProofGallons,
+    string? CompletionNotes,
+    bool CreateTtbTransaction = true
+);
+
+public record BatchProductionSummary(
+    int? BatchId,
+    string? BatchNumber,
+    string BatchStatus,
+    decimal? ExpectedYield,
+    decimal? ActualYield,
+    List<TtbTransactionSummary> TtbTransactions
+);
+```
+
+**3. TTB Transaction Integration**
+
+When a production run completes (especially for Distillation type), create appropriate TTB transactions:
+
+```csharp
+// In CompleteBatchFromRunAsync
+if (run.ProductionType == ProductionType.Distillation && data.CreateTtbTransaction)
+{
+    await _ttbTransactionLogger.LogProductionAsync(new TtbProductionData
+    {
+        BatchId = batch.Id,
+        ProofGallons = data.ActualProofGallons ?? CalculateProofGallons(data.ActualYieldGallons, batch.Proof),
+        ProductionDate = run.ActualEndDate ?? DateTime.UtcNow,
+        TransactionType = TtbTransactionType.Production,
+        Notes = $""Completed from production run: {run.Name}""
+    });
+}
+```
+
+**4. Notification Triggers**
+
+Integrate with existing notification system (look for `INotificationService` or similar):
+
+```csharp
+// Notifications to send:
+- ProductionRunStarted: To assigned users and managers
+- ProductionRunCompleted: To assigned users, managers, and compliance team
+- ProductionRunCancelled: To assigned users and managers
+- BatchCreatedFromRun: To batch management users
+- TtbTransactionCreated: To compliance team
+```
+
+**5. Audit Trail**
+
+Ensure all state changes are logged in the audit system:
+
+```csharp
+// Log entries should include:
+- EntityType: ""ProductionRun"" or ""Batch""
+- EntityId: The ID of the entity
+- Action: ""StatusChanged"", ""BatchLinked"", ""TtbTransactionCreated""
+- OldValue / NewValue: JSON of changed fields
+- UserId: Who made the change
+- Timestamp: When it happened
+- AdditionalContext: Production run name, batch number, etc.
+```
+
+### Refactoring Opportunities
+
+1. Look at existing batch creation logic in the codebase - reuse or extend it
+2. Check how TTB transactions are currently created (see `TtbTransactionLoggerService`)
+3. Look for existing notification patterns to follow
+4. Check for existing audit logging patterns (see `TtbAuditLoggerService`)
+5. Consider using domain events pattern if the codebase supports it
+
+### Testing Requirements
+
+Create `ProductionBatchIntegrationServiceTests.cs`:
+
+**State Transition Tests**
+- StartRun_NoBatch_CreatesBatchAutomatically
+- StartRun_LinkedBatch_UpdatesBatchStatus
+- CompleteRun_WithYieldData_UpdatesBatchAndCreatesTransaction
+- CompleteRun_DistillationType_CreatesTtbTransaction
+- CompleteRun_BarrelingType_DoesNotCreateTtbTransaction
+- CancelRun_InProgress_UpdatesBatchToCancelled
+
+**TTB Integration Tests**
+- CompleteRun_CreatesTtbTransaction_WithCorrectProofGallons
+- CompleteRun_TtbDisabled_DoesNotCreateTransaction
+- CompleteRun_InvalidProofData_ThrowsValidationException
+
+**Notification Tests**
+- StartRun_SendsNotificationToAssignedUsers
+- CompleteRun_SendsNotificationToComplianceTeam
+- CancelRun_SendsCancellationNotification
+
+**Audit Tests**
+- AllStateChanges_CreateAuditLogEntries
+- AuditLog_ContainsCorrectEntityReferences
+
+### Integration Points
+
+Identify and integrate with existing services:
+- `IBatchService` or batch repository
+- `ITtbTransactionLoggerService`
+- `INotificationService` or `IPushNotificationService`
+- `IAuditLogService` or audit logging mechanism
+
+### Build Verification
+
+1. `dotnet build` - no errors
+2. `dotnet test` - all tests pass
+3. Manual test: Create production run, start it, verify batch created
+4. Manual test: Complete production run, verify TTB transaction created
+5. Verify audit logs contain all state changes
+
+### Files to Create/Modify
+- Create: `Caskr.Server/Services/Production/IProductionBatchIntegrationService.cs`
+- Create: `Caskr.Server/Services/Production/ProductionBatchIntegrationService.cs`
+- Modify: `Caskr.Server/Services/Production/ProductionScheduleService.cs` (call integration service)
+- Modify: `Program.cs` (register new service)
+- Create: `Caskr.Server.Tests/Services/ProductionBatchIntegrationServiceTests.cs`"
+PROD-007,Bottling schedule management,Backend + UI,5,PROD-002,"- Bottling run type fully supported
+- Label/bottle inventory integration
+- Order fulfillment linking works
+- Bottling-specific UI complete
+- Generate bottling reports
+- Full test coverage","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL.
+
+## Task: Bottling Schedule Management
+
+### Context
+Bottling is a critical production phase that requires coordination between barrel selection, bottle/label inventory, and order fulfillment. This task extends the production planning system with bottling-specific features including inventory integration and order linking.
+
+### Requirements
+
+**1. Bottling Run Model Extensions**
+
+Create `Caskr.Server/Models/Production/BottlingRun.cs` (extends or relates to ProductionRun):
+
+```csharp
+public class BottlingRun
+{
+    public int Id { get; set; }
+    public int ProductionRunId { get; set; } // FK to ProductionRun
+    public virtual ProductionRun ProductionRun { get; set; }
+
+    // Bottling-specific fields
+    public int? ProductId { get; set; } // What product is being bottled
+    public virtual Product? Product { get; set; }
+
+    public string BottleSize { get; set; } // e.g., ""750ml"", ""1L""
+    public int PlannedBottleCount { get; set; }
+    public int? ActualBottleCount { get; set; }
+
+    public decimal? PlannedProofGallons { get; set; }
+    public decimal? ActualProofGallons { get; set; }
+
+    // Label tracking
+    public string? LabelLotNumber { get; set; }
+    public int? LabelsUsed { get; set; }
+
+    // Barrel source
+    public virtual ICollection<BottlingRunBarrel> SourceBarrels { get; set; }
+
+    // Order fulfillment
+    public virtual ICollection<BottlingRunOrder> FulfillsOrders { get; set; }
+
+    public string? Notes { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+public class BottlingRunBarrel
+{
+    public int Id { get; set; }
+    public int BottlingRunId { get; set; }
+    public int BarrelId { get; set; }
+    public decimal? GallonsUsed { get; set; }
+    public decimal? ProofGallonsUsed { get; set; }
+}
+
+public class BottlingRunOrder
+{
+    public int Id { get; set; }
+    public int BottlingRunId { get; set; }
+    public int OrderId { get; set; }
+    public int BottlesAllocated { get; set; }
+}
+```
+
+**2. Bottling Service**
+
+Create `Caskr.Server/Services/Production/BottlingService.cs`:
+
+```csharp
+public interface IBottlingService
+{
+    // Bottling Run Management
+    Task<BottlingRun> CreateBottlingRunAsync(CreateBottlingRunDto dto, int companyId, string userId);
+    Task<BottlingRun> UpdateBottlingRunAsync(int id, UpdateBottlingRunDto dto, int companyId);
+    Task<BottlingRun?> GetBottlingRunAsync(int id, int companyId);
+    Task<PagedResult<BottlingRunSummary>> GetBottlingRunsAsync(BottlingQueryDto query);
+
+    // Barrel Selection
+    Task<IEnumerable<BarrelForBottling>> GetAvailableBarrelsAsync(int companyId, int? productId = null);
+    Task AddBarrelsToRunAsync(int bottlingRunId, List<BarrelSelectionDto> barrels);
+    Task RemoveBarrelFromRunAsync(int bottlingRunId, int barrelId);
+
+    // Order Fulfillment
+    Task<IEnumerable<OrderForFulfillment>> GetPendingOrdersAsync(int companyId, int? productId = null);
+    Task AllocateToOrderAsync(int bottlingRunId, int orderId, int bottleCount);
+    Task RemoveOrderAllocationAsync(int bottlingRunId, int orderId);
+
+    // Completion
+    Task<BottlingRun> CompleteBottlingRunAsync(int id, CompleteBottlingDto dto, int companyId, string userId);
+
+    // Inventory Impact
+    Task<InventoryImpactPreview> PreviewInventoryImpactAsync(int bottlingRunId);
+
+    // Reports
+    Task<BottlingReport> GenerateBottlingReportAsync(int bottlingRunId);
+}
+```
+
+**3. DTOs**
+
+```csharp
+public record CreateBottlingRunDto(
+    string Name,
+    int? ProductId,
+    string BottleSize,
+    int PlannedBottleCount,
+    decimal? PlannedProofGallons,
+    DateTime ScheduledStartDate,
+    DateTime ScheduledEndDate,
+    List<int>? EquipmentIds,
+    List<BarrelSelectionDto>? InitialBarrels,
+    List<OrderAllocationDto>? InitialOrders
+);
+
+public record BarrelSelectionDto(int BarrelId, decimal? GallonsToUse);
+public record OrderAllocationDto(int OrderId, int BottleCount);
+
+public record CompleteBottlingDto(
+    int ActualBottleCount,
+    decimal ActualProofGallons,
+    string? LabelLotNumber,
+    int? LabelsUsed,
+    string? CompletionNotes
+);
+
+public record InventoryImpactPreview(
+    List<BarrelImpact> BarrelImpacts,  // What happens to each barrel
+    List<OrderImpact> OrderImpacts,     // What orders get fulfilled
+    decimal TotalProofGallonsUsed,
+    int TotalBottlesProduced
+);
+```
+
+**4. API Endpoints**
+
+```
+POST   /api/production/bottling                      - Create bottling run
+GET    /api/production/bottling                      - List bottling runs
+GET    /api/production/bottling/{id}                 - Get bottling run details
+PUT    /api/production/bottling/{id}                 - Update bottling run
+POST   /api/production/bottling/{id}/complete        - Complete bottling run
+
+GET    /api/production/bottling/available-barrels    - Get barrels available for bottling
+POST   /api/production/bottling/{id}/barrels         - Add barrels to run
+DELETE /api/production/bottling/{id}/barrels/{barrelId} - Remove barrel
+
+GET    /api/production/bottling/pending-orders       - Get orders awaiting fulfillment
+POST   /api/production/bottling/{id}/orders          - Allocate to order
+DELETE /api/production/bottling/{id}/orders/{orderId} - Remove allocation
+
+GET    /api/production/bottling/{id}/preview         - Preview inventory impact
+GET    /api/production/bottling/{id}/report          - Generate bottling report (PDF)
+```
+
+**5. Frontend Components**
+
+Create in `caskr.client/src/components/production/bottling/`:
+
+```
+bottling/
+├── BottlingRunForm.tsx          # Create/edit with barrel & order selection
+├── BottlingRunDetail.tsx        # View with all details
+├── BarrelSelector.tsx           # Multi-select barrel picker
+├── OrderAllocator.tsx           # Allocate bottles to orders
+├── InventoryImpactPreview.tsx   # Show what will happen
+├── BottlingReport.tsx           # Display/print report
+└── index.ts
+```
+
+### Refactoring Opportunities
+
+1. Look at existing barrel selection patterns in the codebase
+2. Check how orders are currently managed and follow patterns
+3. Look for existing inventory tracking to integrate with
+4. Check for PDF generation patterns for the report
+
+### Testing Requirements
+
+**Backend Tests** (`BottlingServiceTests.cs`):
+- CreateBottlingRun_WithBarrelsAndOrders_Success
+- AddBarrels_ExceedsAvailable_ThrowsException
+- AllocateToOrder_ExceedsPlanned_ThrowsException
+- CompleteBottlingRun_UpdatesBarrelInventory
+- CompleteBottlingRun_MarksOrdersFulfilled
+- PreviewInventoryImpact_CalculatesCorrectly
+
+**Frontend Tests** (`bottling.spec.ts`):
+- BottlingRunForm validates bottle count
+- BarrelSelector shows available barrels
+- OrderAllocator shows pending orders
+- InventoryImpactPreview displays impacts
+- CompleteBottlingRun shows confirmation
+
+### Build Verification
+
+1. `dotnet build` and `dotnet test` pass
+2. `npm run build` and `npm test` pass
+3. Manual test: Create bottling run with barrels and orders
+4. Manual test: Complete bottling run, verify inventory updated
+5. Manual test: Verify order shows as fulfilled
+
+### Files to Create/Modify
+- Create: `Caskr.Server/Models/Production/BottlingRun.cs`
+- Create: `Caskr.Server/Models/Production/BottlingRunBarrel.cs`
+- Create: `Caskr.Server/Models/Production/BottlingRunOrder.cs`
+- Create: `Caskr.Server/Services/Production/IBottlingService.cs`
+- Create: `Caskr.Server/Services/Production/BottlingService.cs`
+- Modify: `Caskr.Server/Models/CaskrDbContext.cs`
+- Modify: `Caskr.Server/Controllers/ProductionController.cs`
+- Create: `Caskr.Server.Tests/Services/BottlingServiceTests.cs`
+- Create: `caskr.client/src/components/production/bottling/*.tsx`
+- Create: `caskr.client/tests/production/bottling.spec.ts`"
+PROD-008,Production dashboard,Frontend,5,"PROD-003, PROD-005","- Today's production overview working
+- 7-day upcoming schedule displayed
+- Equipment utilization metrics shown
+- Quick action buttons functional
+- Real-time updates working
+- Mobile responsive
+- Full test coverage","You are working on Caskr, a distillery management system built with ASP.NET Core 8.0, Entity Framework Core 9.0, React 18.3 + TypeScript, and PostgreSQL.
+
+## Task: Production Dashboard
+
+### Context
+Distillery managers need a quick overview of production status, upcoming schedule, and equipment utilization. This dashboard serves as the main entry point for the production planning module, providing at-a-glance information and quick actions.
+
+### Requirements
+
+**1. Dashboard Layout**
+
+Create `caskr.client/src/pages/ProductionDashboard.tsx`:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Production Dashboard                           [+ New Run] [⚙] │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   TODAY'S       │  │   IN PROGRESS   │  │   THIS WEEK     │ │
+│  │   RUNS: 3       │  │   RUNS: 2       │  │   RUNS: 12      │ │
+│  │   ▲ 1 from avg  │  │   On Schedule   │  │   ▼ 2 from avg  │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  TODAY'S SCHEDULE                              [View All →] ││
+│  │  ┌────────────────────────────────────────────────────────┐ ││
+│  │  │ 6am  8am  10am  12pm  2pm  4pm  6pm  8pm              │ ││
+│  │  │ ████ Mash Run #42 ████                                │ ││
+│  │  │      ░░░░░░░░ Fermentation Tank 3 ░░░░░░░░            │ ││
+│  │  │                    ████ Distillation #18 ████         │ ││
+│  │  └────────────────────────────────────────────────────────┘ ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                 │
+│  ┌──────────────────────────┐  ┌───────────────────────────────┐│
+│  │  UPCOMING (7 days)       │  │  EQUIPMENT UTILIZATION        ││
+│  │  ─────────────────────── │  │  ───────────────────────────  ││
+│  │  Mon: 2 runs             │  │  Still #1:     ████████░░ 80% ││
+│  │  Tue: 3 runs             │  │  Still #2:     ██████░░░░ 60% ││
+│  │  Wed: 1 run              │  │  Fermenter 1:  ██████████ 95% ││
+│  │  Thu: 4 runs             │  │  Fermenter 2:  ████░░░░░░ 40% ││
+│  │  Fri: 2 runs             │  │  Bottling:     ██░░░░░░░░ 20% ││
+│  │  Sat: 0 runs             │  │                               ││
+│  │  Sun: 0 runs             │  │  [View Details →]             ││
+│  └──────────────────────────┘  └───────────────────────────────┘│
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  RECENT ACTIVITY                                            ││
+│  │  • Mash Run #42 started (10 min ago)                       ││
+│  │  • Distillation #17 completed (2 hours ago)                ││
+│  │  • Maintenance scheduled for Still #2 (yesterday)          ││
+│  │  • Bottling Run #8 completed - 2,400 bottles (yesterday)   ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**2. Dashboard Components**
+
+Create in `caskr.client/src/components/production/dashboard/`:
+
+```
+dashboard/
+├── ProductionDashboard.tsx       # Main dashboard page
+├── ProductionDashboard.css       # Styles
+├── StatCard.tsx                  # Metric card component
+├── TodayTimeline.tsx             # Horizontal timeline for today
+├── UpcomingSchedule.tsx          # 7-day preview list
+├── EquipmentUtilization.tsx      # Utilization bars
+├── RecentActivity.tsx            # Activity feed
+├── QuickActions.tsx              # Action buttons
+└── index.ts
+```
+
+**3. Dashboard API Endpoint**
+
+Add to backend `ProductionController.cs`:
+
+```
+GET /api/production/dashboard
+Returns:
+{
+  ""today"": {
+    ""runCount"": 3,
+    ""comparedToAverage"": 1,
+    ""runs"": [{ id, name, type, status, startTime, endTime, equipment }]
+  },
+  ""inProgress"": {
+    ""count"": 2,
+    ""onSchedule"": true,
+    ""runs"": [{ id, name, type, progress, estimatedCompletion }]
+  },
+  ""thisWeek"": {
+    ""runCount"": 12,
+    ""comparedToAverage"": -2,
+    ""byDay"": [{ date, count }]
+  },
+  ""equipmentUtilization"": [
+    { ""id"": 1, ""name"": ""Still #1"", ""utilizationPercent"": 80 }
+  ],
+  ""recentActivity"": [
+    { ""type"": ""run_started"", ""message"": ""..."", ""timestamp"": ""..."" }
+  ]
+}
+```
+
+**4. Real-time Updates**
+
+Implement polling or SignalR for live updates:
+- Refresh dashboard data every 30 seconds
+- Highlight changes with subtle animations
+- Show ""Last updated: X seconds ago"" indicator
+
+**5. Quick Actions**
+
+Quick action buttons should:
+- ""+ New Run"" → Opens ProductionRunModal
+- ""View Calendar"" → Navigates to calendar
+- ""Manage Equipment"" → Navigates to equipment list
+- Each in-progress run has ""Complete"" / ""View"" buttons
+
+**6. Mobile Layout**
+
+On mobile:
+- Stack stat cards vertically
+- Collapse timeline to list view
+- Full-width utilization bars
+- Swipeable activity cards
+
+### State Management
+
+Add to `productionSlice.ts`:
+
+```typescript
+interface DashboardState {
+  data: DashboardData | null;
+  isLoading: boolean;
+  error: string | null;
+  lastUpdated: string | null;
+}
+
+// Async thunk
+export const fetchDashboardData = createAsyncThunk(
+  'production/fetchDashboard',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await productionApi.getDashboard();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+```
+
+### Refactoring Opportunities
+
+1. Look at the existing main dashboard for patterns to follow
+2. Check for existing stat card components to reuse
+3. Look for existing activity feed patterns
+4. Check for chart/visualization libraries already in use
+5. Look for existing polling/real-time update patterns
+
+### Testing Requirements
+
+**Component Tests** (`productionDashboard.spec.ts`):
+- Dashboard renders all sections
+- StatCard displays correct values
+- TodayTimeline shows runs in order
+- EquipmentUtilization bars are proportional
+- RecentActivity shows latest items first
+- QuickActions buttons navigate correctly
+
+**Integration Tests**:
+- Dashboard loads data on mount
+- Dashboard refreshes on interval
+- Error state displays correctly
+- Loading skeletons show while fetching
+
+**Accessibility Tests**:
+- All stat cards have proper ARIA labels
+- Timeline is keyboard navigable
+- Activity feed is screen reader friendly
+
+### Build Verification
+
+1. `npm run build` - no errors
+2. `npm test` - all tests pass
+3. `npm run lint` - no linting errors
+4. Manual test: Dashboard loads with real data
+5. Manual test: Quick actions work correctly
+6. Test mobile layout in responsive mode
+
+### Files to Create/Modify
+- Create: `caskr.client/src/pages/ProductionDashboard.tsx`
+- Create: `caskr.client/src/components/production/dashboard/ProductionDashboard.css`
+- Create: `caskr.client/src/components/production/dashboard/StatCard.tsx`
+- Create: `caskr.client/src/components/production/dashboard/TodayTimeline.tsx`
+- Create: `caskr.client/src/components/production/dashboard/UpcomingSchedule.tsx`
+- Create: `caskr.client/src/components/production/dashboard/EquipmentUtilization.tsx`
+- Create: `caskr.client/src/components/production/dashboard/RecentActivity.tsx`
+- Create: `caskr.client/src/components/production/dashboard/QuickActions.tsx`
+- Create: `caskr.client/src/components/production/dashboard/index.ts`
+- Modify: `caskr.client/src/features/productionSlice.ts`
+- Modify: `Caskr.Server/Controllers/ProductionController.cs` (add dashboard endpoint)
+- Create: `caskr.client/tests/production/productionDashboard.spec.ts`
+- Modify: App routing to add /production/dashboard route"
