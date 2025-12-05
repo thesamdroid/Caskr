@@ -122,16 +122,16 @@ public class PushSenderServiceTests
                 Id = 1,
                 UserId = 1,
                 Endpoint = "https://fcm.googleapis.com/fcm/send/1",
-                P256dhKey = "BPTestKey1",
-                AuthKey = "TestAuth1"
+                P256dhKey = "BPTestKey1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                AuthKey = "TestAuth1AAAAAAA"
             },
             new()
             {
                 Id = 2,
                 UserId = 1,
                 Endpoint = "https://fcm.googleapis.com/fcm/send/2",
-                P256dhKey = "BPTestKey2",
-                AuthKey = "TestAuth2"
+                P256dhKey = "BPTestKey2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                AuthKey = "TestAuth2AAAAAAA"
             }
         };
 
@@ -195,8 +195,8 @@ public class PushSenderServiceTests
                         Id = userId,
                         UserId = userId,
                         Endpoint = $"https://fcm.googleapis.com/fcm/send/{userId}",
-                        P256dhKey = $"BPTestKey{userId}",
-                        AuthKey = $"TestAuth{userId}"
+                        P256dhKey = $"BPTestKey{userId}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                        AuthKey = $"TestAuth{userId}AAAAAA"
                     }
                 });
         }
