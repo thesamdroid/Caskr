@@ -51,7 +51,11 @@ public static void BindServices(this IServiceCollection services, IConfiguration
         {
             foreach (Type type in assembly.GetTypes())
             {
-                if (type.GetCustomAttributes(typeof(AutoBind), true).Length > 0 || 
+                // Skip static classes (IsAbstract && IsSealed) and abstract classes
+                if (type.IsAbstract)
+                    continue;
+
+                if (type.GetCustomAttributes(typeof(AutoBind), true).Length > 0 ||
                     (KnownSuffixes.Any(x => type.Name.ToLower().EndsWith(x.ToLower())) && !type.Name.ToLower().StartsWith("i")))
                 {
                     yield return type;

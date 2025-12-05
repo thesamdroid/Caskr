@@ -156,8 +156,8 @@ public sealed class TtbTransactionsControllerTests : IDisposable
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        var problemDetails = Assert.IsType<ProblemDetails>(badRequest.Value);
-        Assert.Contains("Month must be between 1 and 12", problemDetails.Detail);
+        var errorMessage = Assert.IsType<string>(badRequest.Value);
+        Assert.Contains("Month must be between 1 and 12", errorMessage);
     }
 
     [Fact]
@@ -171,8 +171,8 @@ public sealed class TtbTransactionsControllerTests : IDisposable
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        var problemDetails = Assert.IsType<ProblemDetails>(badRequest.Value);
-        Assert.Contains("2020 or later", problemDetails.Detail);
+        var errorMessage = Assert.IsType<string>(badRequest.Value);
+        Assert.Contains("2020 or later", errorMessage);
     }
 
     [Fact]
@@ -248,8 +248,8 @@ public sealed class TtbTransactionsControllerTests : IDisposable
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        var problemDetails = Assert.IsType<ProblemDetails>(badRequest.Value);
-        Assert.Contains("ProofGallons cannot be negative", problemDetails.Detail);
+        var errorMessage = Assert.IsType<string>(badRequest.Value);
+        Assert.Contains("ProofGallons cannot be negative", errorMessage);
     }
 
     [Fact]
@@ -409,8 +409,8 @@ public sealed class TtbTransactionsControllerTests : IDisposable
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        var problemDetails = Assert.IsType<ProblemDetails>(badRequest.Value);
-        Assert.Contains("Only manual transactions can be edited", problemDetails.Detail);
+        var errorMessage = Assert.IsType<string>(badRequest.Value);
+        Assert.Contains("Only manual transactions can be edited", errorMessage);
     }
 
     [Fact]
@@ -473,8 +473,8 @@ public sealed class TtbTransactionsControllerTests : IDisposable
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        var problemDetails = Assert.IsType<ProblemDetails>(badRequest.Value);
-        Assert.Contains("Only manual transactions can be deleted", problemDetails.Detail);
+        var errorMessage = Assert.IsType<string>(badRequest.Value);
+        Assert.Contains("Only manual transactions can be deleted", errorMessage);
     }
 
     [Fact]
@@ -517,8 +517,8 @@ public sealed class TtbTransactionsControllerTests : IDisposable
         // Assert
         var statusCodeResult = Assert.IsType<ObjectResult>(result);
         Assert.Equal(StatusCodes.Status403Forbidden, statusCodeResult.StatusCode);
-        var problemDetails = Assert.IsType<ProblemDetails>(statusCodeResult.Value);
-        Assert.Contains("Cannot modify data for submitted reports", problemDetails.Detail);
+        var errorMessage = Assert.IsType<string>(statusCodeResult.Value);
+        Assert.Contains("Cannot modify data for submitted reports", errorMessage);
     }
 
     [Fact]
@@ -559,8 +559,8 @@ public sealed class TtbTransactionsControllerTests : IDisposable
         // Assert
         var statusCodeResult = Assert.IsType<ObjectResult>(result);
         Assert.Equal(StatusCodes.Status403Forbidden, statusCodeResult.StatusCode);
-        var problemDetails = Assert.IsType<ProblemDetails>(statusCodeResult.Value);
-        Assert.Contains("Cannot modify data for submitted reports", problemDetails.Detail);
+        var errorMessage = Assert.IsType<string>(statusCodeResult.Value);
+        Assert.Contains("Cannot modify data for submitted reports", errorMessage);
     }
 
     [Fact]
@@ -590,8 +590,8 @@ public sealed class TtbTransactionsControllerTests : IDisposable
         // Assert
         var statusCodeResult = Assert.IsType<ObjectResult>(result);
         Assert.Equal(StatusCodes.Status403Forbidden, statusCodeResult.StatusCode);
-        var problemDetails = Assert.IsType<ProblemDetails>(statusCodeResult.Value);
-        Assert.Contains("Cannot modify data for submitted reports", problemDetails.Detail);
+        var errorMessage = Assert.IsType<string>(statusCodeResult.Value);
+        Assert.Contains("Cannot modify data for submitted reports", errorMessage);
     }
 
     private TtbTransactionsController CreateController(int userId)

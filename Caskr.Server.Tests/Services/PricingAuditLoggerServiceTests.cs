@@ -405,6 +405,14 @@ public class PricingAuditLoggerServiceTests : IDisposable
 
     private async Task SeedAuditLogs()
     {
+        // Seed required users first (for the foreign key relationship)
+        var users = new List<User>
+        {
+            new() { Id = 1, Name = "Test User 1", Email = "user1@test.com", UserTypeId = 1, CompanyId = 1 },
+            new() { Id = 2, Name = "Test User 2", Email = "user2@test.com", UserTypeId = 1, CompanyId = 1 }
+        };
+        _context.Users.AddRange(users);
+
         var logs = new List<PricingAuditLog>
         {
             new()

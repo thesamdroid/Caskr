@@ -122,16 +122,16 @@ public class PushSenderServiceTests
                 Id = 1,
                 UserId = 1,
                 Endpoint = "https://fcm.googleapis.com/fcm/send/1",
-                P256dhKey = "BPTestKey1",
-                AuthKey = "TestAuth1"
+                P256dhKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                AuthKey = "AAAAAAAAAAAAAAAAAAAAAA"
             },
             new()
             {
                 Id = 2,
                 UserId = 1,
                 Endpoint = "https://fcm.googleapis.com/fcm/send/2",
-                P256dhKey = "BPTestKey2",
-                AuthKey = "TestAuth2"
+                P256dhKey = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+                AuthKey = "BBBBBBBBBBBBBBBBBBBBBB"
             }
         };
 
@@ -195,8 +195,8 @@ public class PushSenderServiceTests
                         Id = userId,
                         UserId = userId,
                         Endpoint = $"https://fcm.googleapis.com/fcm/send/{userId}",
-                        P256dhKey = $"BPTestKey{userId}",
-                        AuthKey = $"TestAuth{userId}"
+                        P256dhKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                        AuthKey = "AAAAAAAAAAAAAAAAAAAAAA"
                     }
                 });
         }
@@ -297,8 +297,8 @@ public class PushSenderServiceTests
         {
             Id = 42,
             Endpoint = "https://fcm.googleapis.com/fcm/send/test",
-            P256dhKey = "BPTestKeyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            AuthKey = "TestAuthAAAAAAAA"
+            P256dhKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            AuthKey = "AAAAAAAAAAAAAAAAAAAAAA"
         };
 
         var payload = new PushNotificationPayload
@@ -338,8 +338,8 @@ public class PushSenderServiceTests
         {
             Id = 42,
             Endpoint = "https://fcm.googleapis.com/fcm/send/test",
-            P256dhKey = "BPTestKeyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            AuthKey = "TestAuthAAAAAAAA"
+            P256dhKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            AuthKey = "AAAAAAAAAAAAAAAAAAAAAA"
         };
 
         var payload = new PushNotificationPayload
@@ -379,8 +379,8 @@ public class PushSenderServiceTests
         {
             Id = 42,
             Endpoint = "https://fcm.googleapis.com/fcm/send/test",
-            P256dhKey = "BPTestKeyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            AuthKey = "TestAuthAAAAAAAA"
+            P256dhKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            AuthKey = "AAAAAAAAAAAAAAAAAAAAAA"
         };
 
         var payload = new PushNotificationPayload
@@ -420,8 +420,8 @@ public class PushSenderServiceTests
         {
             Id = 42,
             Endpoint = "https://fcm.googleapis.com/fcm/send/test",
-            P256dhKey = "BPTestKeyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            AuthKey = "TestAuthAAAAAAAA"
+            P256dhKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            AuthKey = "AAAAAAAAAAAAAAAAAAAAAA"
         };
 
         var payload = new PushNotificationPayload
@@ -458,8 +458,8 @@ public class PushSenderServiceTests
                 Id = 1,
                 UserId = 1,
                 Endpoint = "https://fcm.googleapis.com/fcm/send/test",
-                P256dhKey = "BPTestKeyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-                AuthKey = "TestAuthAAAAAAAA"
+                P256dhKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                AuthKey = "AAAAAAAAAAAAAAAAAAAAAA"
             }
         };
 
@@ -537,8 +537,8 @@ public class PushSenderServiceTests
         {
             Id = 1,
             Endpoint = "https://fcm.googleapis.com/fcm/send/test",
-            P256dhKey = "BPTestKeyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            AuthKey = "TestAuthAAAAAAAA"
+            P256dhKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            AuthKey = "AAAAAAAAAAAAAAAAAAAAAA"
         };
 
         var payload = new PushNotificationPayload
@@ -590,8 +590,8 @@ public class PushSenderServiceTests
         {
             Id = 1,
             Endpoint = "https://fcm.googleapis.com/fcm/send/test",
-            P256dhKey = "BPTestKeyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            AuthKey = "TestAuthAAAAAAAA"
+            P256dhKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            AuthKey = "AAAAAAAAAAAAAAAAAAAAAA"
         };
 
         var payload = new PushNotificationPayload
