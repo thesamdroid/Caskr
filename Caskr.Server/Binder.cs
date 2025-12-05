@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Npgsql;
 
 namespace Caskr.server
 {
@@ -23,16 +22,8 @@ public static void BindServices(this IServiceCollection services, IConfiguration
             services.AddSingleton(configuration);
             services.AddDataProtection();
 
-            // Configure Npgsql data source with PostgreSQL enum mappings
-            var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
-            dataSourceBuilder.MapEnum<SupplierType>("supplier_type");
-            dataSourceBuilder.MapEnum<PurchaseOrderStatus>("purchase_order_status");
-            dataSourceBuilder.MapEnum<PaymentStatus>("payment_status");
-            dataSourceBuilder.MapEnum<ReceiptItemCondition>("receipt_item_condition");
-            var dataSource = dataSourceBuilder.Build();
-
             services.AddDbContext<CaskrDbContext>(options =>
-                options.UseNpgsql(dataSource));
+                options.UseNpgsql(connectionString));
 
             services.AddHttpClient<IKeycloakClient, KeycloakClient>();
             services.AddSingleton<IQuickBooksOAuthClientFactory, QuickBooksOAuthClientFactory>();

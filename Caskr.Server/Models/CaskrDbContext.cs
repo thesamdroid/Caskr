@@ -2946,6 +2946,27 @@ public partial class CaskrDbContext : DbContext
                 .HasConstraintName("fk_capacity_snapshots_equipment");
         });
 
+        // Configure Supply Chain enum conversions to handle PostgreSQL enum types
+        modelBuilder.Entity<SupplyChain.Supplier>(entity =>
+        {
+            entity.Property(e => e.SupplierType)
+                .HasConversion<string>();
+        });
+
+        modelBuilder.Entity<SupplyChain.PurchaseOrder>(entity =>
+        {
+            entity.Property(e => e.Status)
+                .HasConversion<string>();
+            entity.Property(e => e.PaymentStatus)
+                .HasConversion<string>();
+        });
+
+        modelBuilder.Entity<SupplyChain.InventoryReceiptItem>(entity =>
+        {
+            entity.Property(e => e.Condition)
+                .HasConversion<string>();
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 
