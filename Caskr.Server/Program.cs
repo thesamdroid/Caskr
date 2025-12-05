@@ -9,8 +9,36 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
 using MediatR;
+using Serilog;
+using Serilog.Events;
+using Serilog.Exceptions;
 
-var builder = WebApplication.CreateBuilder(args);
+// Bootstrap logger for startup errors (before configuration is loaded)
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
+    Log.Information("Starting Caskr application");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Configure Serilog from appsettings.json and environment
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithExceptionDetails()
+        .Enrich.WithMachineName()
+        .Enrich.WithEnvironmentName()
+        .Enrich.WithProcessId()
+        .Enrich.WithThreadId()
+        .Enrich.WithCorrelationId()
+        .Enrich.WithProperty("Application", "Caskr")
+        .Enrich.WithProperty("Version", typeof(Program).Assembly.GetName().Version?.ToString() ?? "1.0.0"));
 
 // Add services to the container.
 
@@ -116,6 +144,50 @@ builder.Services.BindServices(builder.Configuration);
 
 var app = builder.Build();
 
+// Correlation ID - must be early in pipeline for distributed tracing
+app.UseCorrelationId();
+
+// Serilog request logging - captures all HTTP requests with timing
+app.UseSerilogRequestLogging(options =>
+{
+    // Customize the message template
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+
+    // Emit debug-level logs for health check endpoints
+    options.GetLevel = (httpContext, elapsed, ex) =>
+    {
+        if (ex != null)
+            return LogEventLevel.Error;
+
+        if (httpContext.Response.StatusCode >= 500)
+            return LogEventLevel.Error;
+
+        if (httpContext.Response.StatusCode >= 400)
+            return LogEventLevel.Warning;
+
+        // Health check endpoints at Debug level to reduce noise
+        if (httpContext.Request.Path.StartsWithSegments("/api/health"))
+            return LogEventLevel.Debug;
+
+        return LogEventLevel.Information;
+    };
+
+    // Enrich with additional request data
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+        diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
+        diagnosticContext.Set("ClientIP", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+
+        if (httpContext.User.Identity?.IsAuthenticated == true)
+        {
+            diagnosticContext.Set("UserId", httpContext.User.FindFirst("sub")?.Value ?? "unknown");
+            diagnosticContext.Set("UserName", httpContext.User.Identity.Name ?? "unknown");
+        }
+    };
+});
+
 // Global exception handling - must be first in pipeline
 app.UseGlobalExceptionHandler();
 
@@ -142,3 +214,13 @@ app.MapControllers();
 app.MapFallbackToFile("/index.html");
 
 app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.Information("Caskr application shutting down");
+    Log.CloseAndFlush();
+}

@@ -42,6 +42,10 @@ RUN apk add --no-cache curl
 
 # Create non-root user for security
 RUN addgroup -g 1000 caskr && adduser -u 1000 -G caskr -s /bin/sh -D caskr
+
+# Create log directory with proper permissions
+RUN mkdir -p /var/log/caskr && chown -R caskr:caskr /var/log/caskr
+
 USER caskr
 
 # Copy published application
