@@ -370,7 +370,7 @@ public sealed class TtbTransactionsControllerTests : IDisposable
         // Verify in database
         dbContext.ChangeTracker.Clear();
         var updatedTransaction = await dbContext.TtbTransactions.FindAsync(transaction.Id);
-        Assert.Equal(updateRequest.ProductType, updatedTransaction.ProductType);
+        Assert.Equal(updateRequest.ProductType, updatedTransaction!.ProductType);
     }
 
     [Fact]

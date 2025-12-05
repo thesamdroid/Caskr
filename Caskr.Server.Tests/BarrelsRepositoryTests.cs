@@ -120,7 +120,7 @@ public class BarrelsRepositoryTests
         var repo = new BarrelsRepository(context);
         var map = await repo.GetRickhouseIdsByNameAsync(1, new[] { "alpha", "beta", "missing" });
 
-        Assert.Equal(2, map.Count);
+        Assert.Equal(2, map!.Count);
         Assert.Equal(1, map["alpha"]);
         Assert.Equal(2, map["beta"]);
     }

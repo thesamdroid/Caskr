@@ -25,6 +25,7 @@ namespace Caskr.server.Repos
         }
         public async Task<UserTypeModel> AddUserTypeAsync(UserTypeModel? userType)
         {
+            ArgumentNullException.ThrowIfNull(userType);
             var createdUserType = await dbContext.UserTypes.AddAsync(userType);
             await dbContext.SaveChangesAsync();
             return createdUserType.Entity!;

@@ -57,7 +57,7 @@ public class TransfersService(
                 .AsNoTracking()
                 .Where(b => b.OrderId == request.OrderId.Value)
                 .Include(b => b.Batch)
-                .ThenInclude(b => b.MashBill)
+                .ThenInclude(b => b!.MashBill)
                 .ToListAsync();
 
             logger.LogInformation("Found {BarrelCount} barrels for OrderId: {OrderId}", barrels.Count, request.OrderId);

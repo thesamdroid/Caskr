@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Caskr.server.Configuration;
 using Caskr.server.Middleware;
 using Caskr.server.Models;
@@ -366,7 +367,7 @@ public class MobileRedirectMiddlewareTests
 
         // Assert
         Assert.True(nextCalled);
-        Assert.True(context.Response.Headers.SetCookie.Any(c => c.Contains("caskr_site_pref=desktop")));
+        Assert.Contains(context.Response.Headers.SetCookie!, c => c!.Contains("caskr_site_pref=desktop"));
     }
 
     [Fact]
@@ -388,7 +389,7 @@ public class MobileRedirectMiddlewareTests
 
         // Assert
         Assert.True(nextCalled);
-        Assert.True(context.Response.Headers.SetCookie.Any(c => c.Contains("caskr_site_pref=mobile")));
+        Assert.Contains(context.Response.Headers.SetCookie!, c => c!.Contains("caskr_site_pref=mobile"));
     }
 
     [Fact]
@@ -627,7 +628,7 @@ internal class MockCookieCollection : IRequestCookieCollection
     public ICollection<string> Keys => _cookies.Keys;
     public bool ContainsKey(string key) => _cookies.ContainsKey(key);
     public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => _cookies.GetEnumerator();
-    public bool TryGetValue(string key, out string? value)
+    public bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
     {
         var result = _cookies.TryGetValue(key, out var v);
         value = v;
