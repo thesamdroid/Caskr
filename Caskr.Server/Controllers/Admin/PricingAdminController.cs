@@ -911,6 +911,12 @@ public class PricingAdminController : AuthorizedApiControllerBase
         return await GetCurrentUserAsync(_usersService);
     }
 
+    private async Task<int> GetCurrentUserIdAsync()
+    {
+        var user = await GetCurrentUserAsync();
+        return user?.Id ?? 0;
+    }
+
     private static PricingTier CloneTier(PricingTier tier) => new()
     {
         Id = tier.Id,
