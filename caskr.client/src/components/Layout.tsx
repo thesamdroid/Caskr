@@ -47,7 +47,7 @@ export default function Layout() {
   // Fetch warehouses on mount
   useEffect(() => {
     if (authUser?.companyId) {
-      dispatch(fetchWarehouses({ companyId: authUser.companyId, includeInactive: false }))
+      dispatch(fetchWarehouses({ includeInactive: false }))
     }
   }, [dispatch, authUser?.companyId])
 

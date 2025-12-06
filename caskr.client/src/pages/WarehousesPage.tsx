@@ -24,16 +24,14 @@ function WarehousesPage() {
   const dispatch = useAppDispatch()
   const warehouses = useAppSelector(state => state.warehouses.items)
   const loading = useAppSelector(state => state.warehouses.loading)
-  const authUser = useAppSelector(state => state.auth.user)
-  const companyId = authUser?.companyId ?? 1
   const [showModal, setShowModal] = useState(false)
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
   const [showInactive, setShowInactive] = useState(false)
   const [confirmDeactivate, setConfirmDeactivate] = useState<Warehouse | null>(null)
 
   useEffect(() => {
-    dispatch(fetchWarehouses({ companyId, includeInactive: showInactive }))
-  }, [dispatch, companyId, showInactive])
+    dispatch(fetchWarehouses({ includeInactive: showInactive }))
+  }, [dispatch, showInactive])
 
   const handleCreateWarehouse = () => {
     setEditingWarehouse(null)
@@ -59,7 +57,7 @@ function WarehousesPage() {
       try {
         await dispatch(deactivateWarehouse(confirmDeactivate.id)).unwrap()
         setConfirmDeactivate(null)
-        dispatch(fetchWarehouses({ companyId, includeInactive: showInactive }))
+        dispatch(fetchWarehouses({ includeInactive: showInactive }))
       } catch (error: unknown) {
         const errorMessage = error && typeof error === 'object' && 'message' in error
           ? (error as { message: string }).message
@@ -72,7 +70,7 @@ function WarehousesPage() {
   const handleActivate = async (warehouse: Warehouse) => {
     try {
       await dispatch(activateWarehouse(warehouse.id)).unwrap()
-      dispatch(fetchWarehouses({ companyId, includeInactive: showInactive }))
+      dispatch(fetchWarehouses({ includeInactive: showInactive }))
     } catch (error: unknown) {
       const errorMessage = error && typeof error === 'object' && 'message' in error
         ? (error as { message: string }).message
@@ -251,7 +249,6 @@ function WarehousesPage() {
         isOpen={showModal}
         onClose={handleCloseModal}
         warehouse={editingWarehouse}
-        companyId={companyId}
       />
 
       {/* Deactivate Confirmation Dialog */}

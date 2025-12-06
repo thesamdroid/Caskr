@@ -13,7 +13,6 @@ interface WarehouseFormModalProps {
   isOpen: boolean
   onClose: () => void
   warehouse: Warehouse | null
-  companyId: number
 }
 
 const WAREHOUSE_TYPES: { value: WarehouseType; label: string }[] = [
@@ -23,7 +22,7 @@ const WAREHOUSE_TYPES: { value: WarehouseType; label: string }[] = [
   { value: 'Outdoor', label: 'Outdoor' }
 ]
 
-function WarehouseFormModal({ isOpen, onClose, warehouse, companyId }: WarehouseFormModalProps) {
+function WarehouseFormModal({ isOpen, onClose, warehouse }: WarehouseFormModalProps) {
   const dispatch = useAppDispatch()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -116,9 +115,9 @@ function WarehouseFormModal({ isOpen, onClose, warehouse, companyId }: Warehouse
       if (warehouse) {
         await dispatch(updateWarehouse({ id: warehouse.id, warehouse: request })).unwrap()
       } else {
-        await dispatch(createWarehouse({ companyId, warehouse: request })).unwrap()
+        await dispatch(createWarehouse(request)).unwrap()
       }
-      dispatch(fetchWarehouses({ companyId, includeInactive: false }))
+      dispatch(fetchWarehouses({ includeInactive: false }))
       onClose()
     } catch (err: unknown) {
       const errorMessage = err && typeof err === 'object' && 'message' in err

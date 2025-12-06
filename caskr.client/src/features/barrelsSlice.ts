@@ -13,24 +13,23 @@ export interface Barrel {
 
 export const fetchBarrels = createAsyncThunk(
   'barrels/fetchBarrels',
-  async (companyId: number) => {
-    const response = await authorizedFetch(`api/barrels/company/${companyId}`)
+  async () => {
+    const response = await authorizedFetch('api/barrels')
     if (!response.ok) throw new Error('Failed to fetch barrels')
     return (await response.json()) as Barrel[]
   }
 )
 
 export interface ForecastParams {
-  companyId: number
   targetDate: string
   ageYears: number
 }
 
 export const forecastBarrels = createAsyncThunk(
   'barrels/forecast',
-  async ({ companyId, targetDate, ageYears }: ForecastParams) => {
+  async ({ targetDate, ageYears }: ForecastParams) => {
     const response = await authorizedFetch(
-      `api/barrels/company/${companyId}/forecast?targetDate=${encodeURIComponent(targetDate)}&ageYears=${ageYears}`
+      `api/barrels/forecast?targetDate=${encodeURIComponent(targetDate)}&ageYears=${ageYears}`
     )
     if (!response.ok) throw new Error('Failed to forecast barrels')
     return (await response.json()) as { barrels: Barrel[]; count: number }
@@ -38,7 +37,6 @@ export const forecastBarrels = createAsyncThunk(
 )
 
 export interface BarrelImportParams {
-  companyId: number
   file: File
   batchId?: number
   mashBillId?: number
@@ -46,7 +44,7 @@ export interface BarrelImportParams {
 
 export const importBarrels = createAsyncThunk(
   'barrels/import',
-  async ({ companyId, file, batchId, mashBillId }: BarrelImportParams, { rejectWithValue }) => {
+  async ({ file, batchId, mashBillId }: BarrelImportParams, { rejectWithValue }) => {
     const formData = new FormData()
     formData.append('file', file)
     if (batchId !== undefined) {
@@ -56,7 +54,7 @@ export const importBarrels = createAsyncThunk(
       formData.append('mashBillId', mashBillId.toString())
     }
 
-    const response = await authorizedFetch(`api/barrels/company/${companyId}/import`, {
+    const response = await authorizedFetch('api/barrels/import', {
       method: 'POST',
       body: formData
     })

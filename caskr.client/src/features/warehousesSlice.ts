@@ -58,9 +58,9 @@ export interface WarehouseCapacitySnapshot {
 // Async Thunks
 export const fetchWarehouses = createAsyncThunk(
   'warehouses/fetchWarehouses',
-  async ({ companyId, includeInactive = false }: { companyId: number; includeInactive?: boolean }) => {
+  async ({ includeInactive = false }: { includeInactive?: boolean } = {}) => {
     const response = await authorizedFetch(
-      `api/warehouses/company/${companyId}?includeInactive=${includeInactive}`
+      `api/warehouses?includeInactive=${includeInactive}`
     )
     if (!response.ok) throw new Error('Failed to fetch warehouses')
     return (await response.json()) as Warehouse[]
@@ -78,8 +78,8 @@ export const fetchWarehouse = createAsyncThunk(
 
 export const createWarehouse = createAsyncThunk(
   'warehouses/createWarehouse',
-  async ({ companyId, warehouse }: { companyId: number; warehouse: WarehouseRequest }, { rejectWithValue }) => {
-    const response = await authorizedFetch(`api/warehouses/company/${companyId}`, {
+  async (warehouse: WarehouseRequest, { rejectWithValue }) => {
+    const response = await authorizedFetch('api/warehouses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(warehouse)

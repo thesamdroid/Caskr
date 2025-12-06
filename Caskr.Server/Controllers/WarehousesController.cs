@@ -77,7 +77,23 @@ public class WarehousesController : AuthorizedApiControllerBase
     }
 
     /// <summary>
-    /// Get all warehouses for a company
+    /// Get all warehouses for the current user's company
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<WarehouseResponse>>> GetWarehousesForCurrentCompany(
+        [FromQuery] bool includeInactive = false)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        return await GetWarehousesInternal(user.CompanyId, includeInactive);
+    }
+
+    /// <summary>
+    /// Get all warehouses for a specific company (SuperAdmin access)
     /// </summary>
     [HttpGet("company/{companyId}")]
     public async Task<ActionResult<IEnumerable<WarehouseResponse>>> GetWarehouses(
@@ -90,6 +106,11 @@ public class WarehousesController : AuthorizedApiControllerBase
             return Forbid();
         }
 
+        return await GetWarehousesInternal(companyId, includeInactive);
+    }
+
+    private async Task<ActionResult<IEnumerable<WarehouseResponse>>> GetWarehousesInternal(int companyId, bool includeInactive)
+    {
         _logger.LogInformation("Fetching warehouses for company {CompanyId}", companyId);
 
         var query = _dbContext.Warehouses
@@ -192,7 +213,22 @@ public class WarehousesController : AuthorizedApiControllerBase
     }
 
     /// <summary>
-    /// Create a new warehouse
+    /// Create a new warehouse for the current user's company
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<WarehouseResponse>> CreateWarehouseForCurrentCompany([FromBody] WarehouseRequest request)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        return await CreateWarehouseInternal(user.CompanyId, user, request);
+    }
+
+    /// <summary>
+    /// Create a new warehouse for a specific company (SuperAdmin access)
     /// </summary>
     [HttpPost("company/{companyId}")]
     public async Task<ActionResult<WarehouseResponse>> CreateWarehouse(int companyId, [FromBody] WarehouseRequest request)
@@ -203,6 +239,11 @@ public class WarehousesController : AuthorizedApiControllerBase
             return Forbid();
         }
 
+        return await CreateWarehouseInternal(companyId, user, request);
+    }
+
+    private async Task<ActionResult<WarehouseResponse>> CreateWarehouseInternal(int companyId, User user, WarehouseRequest request)
+    {
         // Validate request
         if (string.IsNullOrWhiteSpace(request.Name))
         {

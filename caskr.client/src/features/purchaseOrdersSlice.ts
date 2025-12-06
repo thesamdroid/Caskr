@@ -106,25 +106,23 @@ export interface SendPOEmailRequest {
 export const fetchPurchaseOrders = createAsyncThunk(
   'purchaseOrders/fetchPurchaseOrders',
   async ({
-    companyId,
     status,
     supplierId,
     startDate,
     endDate
   }: {
-    companyId: number
     status?: PurchaseOrderStatus
     supplierId?: number
     startDate?: string
     endDate?: string
-  }) => {
+  } = {}) => {
     const params = new URLSearchParams()
     if (status) params.append('status', status)
     if (supplierId) params.append('supplierId', supplierId.toString())
     if (startDate) params.append('startDate', startDate)
     if (endDate) params.append('endDate', endDate)
 
-    const url = `api/purchase-orders/company/${companyId}${params.toString() ? `?${params.toString()}` : ''}`
+    const url = `api/purchase-orders${params.toString() ? `?${params.toString()}` : ''}`
     const response = await authorizedFetch(url)
     if (!response.ok) throw new Error('Failed to fetch purchase orders')
     return (await response.json()) as PurchaseOrder[]
@@ -142,8 +140,8 @@ export const fetchPurchaseOrder = createAsyncThunk(
 
 export const getNextPONumber = createAsyncThunk(
   'purchaseOrders/getNextPONumber',
-  async (companyId: number) => {
-    const response = await authorizedFetch(`api/purchase-orders/company/${companyId}/next-po-number`)
+  async () => {
+    const response = await authorizedFetch('api/purchase-orders/next-po-number')
     if (!response.ok) throw new Error('Failed to get next PO number')
     return (await response.json()) as { poNumber: string }
   }
@@ -151,8 +149,8 @@ export const getNextPONumber = createAsyncThunk(
 
 export const createPurchaseOrder = createAsyncThunk(
   'purchaseOrders/createPurchaseOrder',
-  async ({ companyId, po }: { companyId: number; po: PurchaseOrderRequest }, { rejectWithValue }) => {
-    const response = await authorizedFetch(`api/purchase-orders/company/${companyId}`, {
+  async (po: PurchaseOrderRequest, { rejectWithValue }) => {
+    const response = await authorizedFetch('api/purchase-orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(po)
