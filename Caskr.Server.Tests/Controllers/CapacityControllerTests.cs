@@ -79,6 +79,12 @@ public class CapacityControllerTests : IDisposable
             HttpContext = new DefaultHttpContext { User = principal }
         };
 
+        // Configure the users service mock to return the user
+        _usersServiceMock.Setup(s => s.GetUserByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _usersServiceMock.Setup(s => s.GetUserByEmailAsync(user.Email))
+            .ReturnsAsync(user);
+
         return (company, user);
     }
 

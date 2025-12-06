@@ -11,10 +11,10 @@ namespace Caskr.Server.Tests.Services;
 
 public class PushSenderServiceTests
 {
-    private Mock<IPushNotificationService> _pushNotificationServiceMock = null!;
-    private Mock<IConfiguration> _configurationMock = null!;
-    private Mock<ILogger<PushSenderService>> _loggerMock = null!;
-    // HTTP mocks are initialized here so tests can configure them before CreateService
+    // All mocks initialized at field level so tests can use them before calling CreateService
+    private Mock<IPushNotificationService> _pushNotificationServiceMock = new();
+    private Mock<IConfiguration> _configurationMock = new();
+    private Mock<ILogger<PushSenderService>> _loggerMock = new();
     private Mock<IHttpClientFactory> _httpClientFactoryMock = new();
     private Mock<HttpMessageHandler> _httpHandlerMock = new();
 
@@ -37,12 +37,7 @@ public class PushSenderServiceTests
 
     private PushSenderService CreateService(CaskrDbContext context, HttpClient? httpClient = null)
     {
-        // Create fresh mocks for non-HTTP dependencies (HTTP mocks are preserved for test setup)
-        _pushNotificationServiceMock = new Mock<IPushNotificationService>();
-        _configurationMock = new Mock<IConfiguration>();
-        _loggerMock = new Mock<ILogger<PushSenderService>>();
-
-        // Setup configuration
+        // Setup configuration (add to existing mock, don't replace)
         _configurationMock.Setup(c => c["PushNotifications:VapidSubject"])
             .Returns("mailto:admin@caskr.co");
         _configurationMock.Setup(c => c["PushNotifications:VapidPublicKey"])
