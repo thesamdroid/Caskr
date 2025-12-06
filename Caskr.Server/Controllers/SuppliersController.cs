@@ -264,7 +264,7 @@ public class SuppliersController : AuthorizedApiControllerBase
 
         _logger.LogInformation(
             "Created supplier {SupplierId} '{SupplierName}' for company {CompanyId}",
-            supplier.Id, supplier.SupplierName, companyId);
+            supplier.Id, SanitizeForLog(supplier.SupplierName), companyId);
 
         return CreatedAtAction(nameof(GetSupplier), new { id = supplier.Id }, new SupplierResponse
         {
@@ -283,6 +283,17 @@ public class SuppliersController : AuthorizedApiControllerBase
             CreatedAt = supplier.CreatedAt,
             UpdatedAt = supplier.UpdatedAt
         });
+    }
+
+    /// <summary>
+    /// Removes newlines and carriage returns to prevent log forging.
+    /// </summary>
+    private static string SanitizeForLog(string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+        // Remove \r, \n and trim whitespace
+        return input.Replace("\r", "").Replace("\n", "").Trim();
     }
 
     /// <summary>
