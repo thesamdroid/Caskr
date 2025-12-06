@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import LoadingOverlay from './LoadingOverlay'
 import { useAppSelector, useAppDispatch } from '../hooks'
 import { TTB_COMPLIANCE_PERMISSION, userHasPermission, logout } from '../features/authSlice'
-import { fetchWarehouses, setSelectedWarehouseId } from '../features/warehousesSlice'
+import { fetchWarehouses, setSelectedWarehouseId, resetWarehousesState } from '../features/warehousesSlice'
 
 interface NavigationItem {
   label: string
@@ -49,6 +49,7 @@ export default function Layout() {
 
   const handleLogout = () => {
     dispatch(logout())
+    dispatch(resetWarehousesState())
     navigate('/login')
   }
 
@@ -179,8 +180,8 @@ export default function Layout() {
             <span>CASKr</span>
           </Link>
 
-          {/* Warehouse Selector */}
-          {warehouses.length > 0 && (
+          {/* Warehouse Selector - only show when authenticated */}
+          {isAuthenticated && warehouses.length > 0 && (
             <div className="warehouse-selector">
               <label htmlFor="warehouse-select" className="warehouse-selector-label">
                 Warehouse:
