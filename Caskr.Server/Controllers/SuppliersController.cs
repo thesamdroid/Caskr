@@ -263,8 +263,8 @@ public class SuppliersController : AuthorizedApiControllerBase
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation(
-            "Created supplier {SupplierId} '{SupplierName}' for company {CompanyId}",
-            supplier.Id, SanitizeForLog(supplier.SupplierName), companyId);
+            "Created supplier {SupplierId} '{SupplierName}'",
+            supplier.Id, SanitizeForLog(supplier.SupplierName));
 
         return CreatedAtAction(nameof(GetSupplier), new { id = supplier.Id }, new SupplierResponse
         {
