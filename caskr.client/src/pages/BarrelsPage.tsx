@@ -10,8 +10,9 @@ function BarrelsPage() {
   const forecast = useAppSelector(state => state.barrels.forecast)
   const forecastDate = useAppSelector(state => state.barrels.forecastDate)
   const forecastAgeYears = useAppSelector(state => state.barrels.forecastAgeYears)
+  const authUser = useAppSelector(state => state.auth.user)
   const [showModal, setShowModal] = useState(false)
-  const companyId = 1
+  const companyId = authUser?.companyId ?? 1
 
   // Warehouse filtering
   const selectedWarehouseId = useAppSelector(state => state.warehouses.selectedWarehouseId)
