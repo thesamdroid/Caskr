@@ -1,18 +1,20 @@
 import { useEffect, useState, useRef } from 'react'
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import LoadingOverlay from './LoadingOverlay'
 import { useAppSelector, useAppDispatch } from '../hooks'
-import { TTB_COMPLIANCE_PERMISSION, userHasPermission } from '../features/authSlice'
-import { fetchWarehouses, setSelectedWarehouseId } from '../features/warehousesSlice'
+import { TTB_COMPLIANCE_PERMISSION, userHasPermission, logout } from '../features/authSlice'
+import { fetchWarehouses, setSelectedWarehouseId, resetWarehousesState } from '../features/warehousesSlice'
 
 interface NavigationItem {
   label: string
   path: string
   ariaLabel?: string
   hideWhenAuthenticated?: boolean
+  showWhenAuthenticated?: boolean
   requiresPermission?: string
   matchExact?: boolean
   icon?: JSX.Element
+  isLogout?: boolean
 }
 
 interface NavigationGroup {
@@ -38,11 +40,18 @@ const ClipboardIcon = () => (
 
 export default function Layout() {
   const location = useLocation()
+  const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const authUser = useAppSelector(state => state.auth.user)
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated)
   const warehouses = useAppSelector(state => state.warehouses.items)
   const selectedWarehouseId = useAppSelector(state => state.warehouses.selectedWarehouseId)
+
+  const handleLogout = () => {
+    dispatch(logout())
+    dispatch(resetWarehousesState())
+    navigate('/login')
+  }
 
   // Fetch warehouses on mount
   useEffect(() => {
@@ -73,7 +82,8 @@ export default function Layout() {
   // Standalone navigation items
   const standaloneItems: NavigationItem[] = [
     { label: 'Dashboard', path: '/', matchExact: true },
-    { label: 'Login', path: '/login', hideWhenAuthenticated: true }
+    { label: 'Login', path: '/login', hideWhenAuthenticated: true },
+    { label: 'Log out', path: '#', showWhenAuthenticated: true, isLogout: true }
   ]
 
   // Grouped navigation items
@@ -136,6 +146,9 @@ export default function Layout() {
       if (item.hideWhenAuthenticated && isAuthenticated) {
         return false
       }
+      if (item.showWhenAuthenticated && !isAuthenticated) {
+        return false
+      }
       return true
     })
   }
@@ -167,8 +180,8 @@ export default function Layout() {
             <span>CASKr</span>
           </Link>
 
-          {/* Warehouse Selector */}
-          {warehouses.length > 0 && (
+          {/* Warehouse Selector - only show when authenticated */}
+          {isAuthenticated && warehouses.length > 0 && (
             <div className="warehouse-selector">
               <label htmlFor="warehouse-select" className="warehouse-selector-label">
                 Warehouse:
@@ -241,17 +254,27 @@ export default function Layout() {
                 </li>
               ))}
 
-              {/* Login - standalone */}
-              {visibleStandaloneItems.filter(item => item.label === 'Login').map(item => (
-                <li key={item.path} className="nav-item">
-                  <Link
-                    to={item.path}
-                    className={isActive(item) ? 'active' : ''}
-                    aria-current={isActive(item) ? 'page' : undefined}
-                    aria-label={item.ariaLabel ?? item.label}
-                  >
-                    <span className="nav-label">{item.label}</span>
-                  </Link>
+              {/* Login/Logout - standalone */}
+              {visibleStandaloneItems.filter(item => item.label === 'Login' || item.isLogout).map(item => (
+                <li key={item.label} className="nav-item">
+                  {item.isLogout ? (
+                    <button
+                      onClick={handleLogout}
+                      className="nav-logout-button"
+                      aria-label={item.ariaLabel ?? item.label}
+                    >
+                      <span className="nav-label">{item.label}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      to={item.path}
+                      className={isActive(item) ? 'active' : ''}
+                      aria-current={isActive(item) ? 'page' : undefined}
+                      aria-label={item.ariaLabel ?? item.label}
+                    >
+                      <span className="nav-label">{item.label}</span>
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

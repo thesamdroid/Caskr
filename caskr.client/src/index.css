@@ -542,6 +542,29 @@ label {
   background: var(--gold-glow);
 }
 
+/* Logout Button */
+.nav-logout-button {
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.nav-logout-button:hover {
+  background: var(--bg-elevated);
+  color: var(--text-gold);
+}
+
 /* Dropdown Navigation */
 .nav-dropdown {
   position: relative;
