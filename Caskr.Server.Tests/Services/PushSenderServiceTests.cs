@@ -14,8 +14,9 @@ public class PushSenderServiceTests
     private Mock<IPushNotificationService> _pushNotificationServiceMock = null!;
     private Mock<IConfiguration> _configurationMock = null!;
     private Mock<ILogger<PushSenderService>> _loggerMock = null!;
-    private Mock<IHttpClientFactory> _httpClientFactoryMock = null!;
-    private Mock<HttpMessageHandler> _httpHandlerMock = null!;
+    // HTTP mocks are initialized here so tests can configure them before CreateService
+    private Mock<IHttpClientFactory> _httpClientFactoryMock = new();
+    private Mock<HttpMessageHandler> _httpHandlerMock = new();
 
     private CaskrDbContext CreateDbContext()
     {
@@ -36,7 +37,10 @@ public class PushSenderServiceTests
 
     private PushSenderService CreateService(CaskrDbContext context, HttpClient? httpClient = null)
     {
-        ResetMocks();
+        // Create fresh mocks for non-HTTP dependencies (HTTP mocks are preserved for test setup)
+        _pushNotificationServiceMock = new Mock<IPushNotificationService>();
+        _configurationMock = new Mock<IConfiguration>();
+        _loggerMock = new Mock<ILogger<PushSenderService>>();
 
         // Setup configuration
         _configurationMock.Setup(c => c["PushNotifications:VapidSubject"])
@@ -46,7 +50,7 @@ public class PushSenderServiceTests
         _configurationMock.Setup(c => c["PushNotifications:VapidPrivateKey"])
             .Returns("TestPrivateKey123456789012345678901234567890");
 
-        // Setup HTTP client
+        // Setup HTTP client - use the existing _httpHandlerMock which was configured by the test
         var client = httpClient ?? new HttpClient(_httpHandlerMock.Object);
         _httpClientFactoryMock.Setup(f => f.CreateClient("PushService")).Returns(client);
 
