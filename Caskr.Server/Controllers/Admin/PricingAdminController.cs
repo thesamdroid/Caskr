@@ -906,24 +906,15 @@ public class PricingAdminController : AuthorizedApiControllerBase
         return (UserType)user.UserTypeId is UserType.Admin or UserType.SuperAdmin;
     }
 
-    private async Task<int> GetCurrentUserIdAsync()
-    {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
-        {
-            return 0;
-        }
-        return userId;
-    }
-
     private async Task<User?> GetCurrentUserAsync()
     {
-        var userId = await GetCurrentUserIdAsync();
-        if (userId == 0)
-        {
-            return null;
-        }
-        return await _usersService.GetUserByIdAsync(userId);
+        return await GetCurrentUserAsync(_usersService);
+    }
+
+    private async Task<int> GetCurrentUserIdAsync()
+    {
+        var user = await GetCurrentUserAsync();
+        return user?.Id ?? 0;
     }
 
     private static PricingTier CloneTier(PricingTier tier) => new()

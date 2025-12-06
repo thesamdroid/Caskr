@@ -26,7 +26,7 @@ namespace Caskr.server.Repos
                     Email = u.Email,
                     UserTypeId = u.UserTypeId,
                     CompanyId = u.CompanyId,
-                    CompanyName = u.Company.CompanyName
+                    CompanyName = u.Company != null ? u.Company.CompanyName : string.Empty
                 });
         }
 

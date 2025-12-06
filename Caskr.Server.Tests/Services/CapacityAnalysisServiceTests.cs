@@ -104,10 +104,17 @@ public class CapacityAnalysisServiceTests : IDisposable
     {
         var start = startDate ?? DateTime.UtcNow.Date;
         var end = endDate ?? DateTime.UtcNow.Date.AddDays(7);
+
+        // Fetch the plan and equipment to set navigation properties for InMemory provider
+        var plan = await _context.CapacityPlans.FindAsync(planId);
+        var equipment = await _context.Equipment.FindAsync(equipmentId);
+
         var allocation = new CapacityAllocation
         {
             CapacityPlanId = planId,
+            CapacityPlan = plan!,
             EquipmentId = equipmentId,
+            Equipment = equipment!,
             AllocationType = type,
             StartDate = start,
             EndDate = end,

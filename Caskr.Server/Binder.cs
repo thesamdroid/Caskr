@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Caskr.server.Models;
+using Caskr.server.Models.SupplyChain;
 using Caskr.server.Services;
 using Caskr.Server.Services;
 using Microsoft.AspNetCore.DataProtection;
@@ -17,9 +18,10 @@ namespace Caskr.server
 public static void BindServices(this IServiceCollection services, IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("CaskrDatabaseConnectionString");
-            
+
             services.AddSingleton(configuration);
             services.AddDataProtection();
+
             services.AddDbContext<CaskrDbContext>(options =>
                 options.UseNpgsql(connectionString));
 

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Caskr.server.Models;
+using Caskr.server.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -66,11 +67,13 @@ public class WarehousesController : AuthorizedApiControllerBase
 {
     private readonly CaskrDbContext _dbContext;
     private readonly ILogger<WarehousesController> _logger;
+    private readonly IUsersService _usersService;
 
-    public WarehousesController(CaskrDbContext dbContext, ILogger<WarehousesController> logger)
+    public WarehousesController(CaskrDbContext dbContext, ILogger<WarehousesController> logger, IUsersService usersService)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _usersService = usersService;
     }
 
     /// <summary>
@@ -479,12 +482,6 @@ public class WarehousesController : AuthorizedApiControllerBase
 
     private async Task<User?> GetCurrentUserAsync()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
-        {
-            return null;
-        }
-
-        return await _dbContext.Users.FindAsync(userId);
+        return await GetCurrentUserAsync(_usersService);
     }
 }

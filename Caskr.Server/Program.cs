@@ -61,29 +61,21 @@ builder.Services.AddSingleton<ITtbInventorySnapshotBackfillService>(sp => sp.Get
 builder.Services.AddHostedService(sp => sp.GetRequiredService<TtbInventorySnapshotService>());
 builder.Services.AddHttpClient("WebhookClient");
 builder.Services.AddHostedService<WebhookDeliveryWorker>();
-var rawSigningKey = builder.Configuration["Jwt:Key"];
-if (string.IsNullOrWhiteSpace(rawSigningKey))
-{
-    throw new InvalidOperationException("JWT signing key is not configured.");
-}
-
-var signingKeyBytes = Encoding.UTF8.GetBytes(rawSigningKey);
-if (signingKeyBytes.Length < 32)
-{
-    signingKeyBytes = SHA256.HashData(signingKeyBytes);
-}
+// Configure JWT Bearer for Keycloak tokens
+var keycloakAuthority = builder.Configuration["Keycloak:Authority"] ?? "http://localhost:8080";
+var keycloakRealm = builder.Configuration["Keycloak:Realm"] ?? "master";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Authority = $"{keycloakAuthority}/realms/{keycloakRealm}";
+        options.RequireHttpsMetadata = false; // Allow HTTP for local development
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(signingKeyBytes)
+            ValidateAudience = false, // Keycloak uses 'account' audience by default
+            ValidateLifetime = true,
+            ValidIssuer = $"{keycloakAuthority}/realms/{keycloakRealm}"
         };
     });
 builder.Services.AddAuthorization();

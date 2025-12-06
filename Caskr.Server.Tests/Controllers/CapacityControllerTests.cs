@@ -1,6 +1,7 @@
 using Caskr.server.Controllers;
 using Caskr.server.Models;
 using Caskr.server.Models.Production;
+using Caskr.server.Services;
 using Caskr.server.Services.Production;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,7 @@ public class CapacityControllerTests : IDisposable
 {
     private readonly CaskrDbContext _context;
     private readonly Mock<ICapacityAnalysisService> _serviceMock;
+    private readonly Mock<IUsersService> _usersServiceMock;
     private readonly Mock<ILogger<CapacityController>> _loggerMock;
     private readonly CapacityController _controller;
 
@@ -26,8 +28,9 @@ public class CapacityControllerTests : IDisposable
 
         _context = new CaskrDbContext(options);
         _serviceMock = new Mock<ICapacityAnalysisService>();
+        _usersServiceMock = new Mock<IUsersService>();
         _loggerMock = new Mock<ILogger<CapacityController>>();
-        _controller = new CapacityController(_context, _serviceMock.Object, _loggerMock.Object);
+        _controller = new CapacityController(_context, _serviceMock.Object, _usersServiceMock.Object, _loggerMock.Object);
     }
 
     public void Dispose()
@@ -75,6 +78,12 @@ public class CapacityControllerTests : IDisposable
         {
             HttpContext = new DefaultHttpContext { User = principal }
         };
+
+        // Configure the users service mock to return the user
+        _usersServiceMock.Setup(s => s.GetUserByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _usersServiceMock.Setup(s => s.GetUserByEmailAsync(user.Email))
+            .ReturnsAsync(user);
 
         return (company, user);
     }

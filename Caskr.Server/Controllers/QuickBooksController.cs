@@ -169,7 +169,7 @@ public class QuickBooksController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<QuickBooksStatusResponse>> GetStatus([FromQuery(Name = "company_id")] int companyId)
+    public async Task<ActionResult<QuickBooksStatusResponse>> GetStatus([FromQuery(Name = "companyId")] int companyId)
     {
         var authorizationResult = await AuthorizeCompanyAsync(companyId);
         if (authorizationResult.errorResult is { } error)
@@ -693,17 +693,20 @@ public class QuickBooksController(
 
     private async Task<(User? user, IActionResult? errorResult)> AuthorizeCompanyAsync(int companyId)
     {
-        if (companyId <= 0)
-        {
-            return (null, BadRequest(new QuickBooksErrorResponse("A valid company_id is required.")));
-        }
-
+        // First authenticate the user before any input validation
         var user = await GetCurrentUserAsync();
         if (user is null)
         {
             return (null, Unauthorized());
         }
 
+        // Then validate input
+        if (companyId <= 0)
+        {
+            return (null, BadRequest(new QuickBooksErrorResponse("A valid company_id is required.")));
+        }
+
+        // Finally check authorization
         if (!UserCanAccessCompany(user, companyId))
         {
             return (null, Forbid());
@@ -714,13 +717,7 @@ public class QuickBooksController(
 
     private async Task<User?> GetCurrentUserAsync()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
-        {
-            return null;
-        }
-
-        return await _usersService.GetUserByIdAsync(userId);
+        return await GetCurrentUserAsync(_usersService);
     }
 
     private static bool UserCanAccessCompany(User user, int companyId)

@@ -85,7 +85,8 @@ INSERT INTO public.users (id, name, email, user_type_id, company_id, is_primary_
     (23, 'Xavier King', 'xavier.king.682@example.invalid', 3, 3, false),
     (24, 'Yvonne Scott', 'yvonne.scott.793@example.invalid', 4, 4, false),
     (125, 'Super Admin', 'admin@example.invalid', 1, 1, false),
-    (126, 'Shaw', 'shaw@caskr.co', 1, 1, false);
+    (126, 'Shaw', 'shaw@caskr.co', 1, 1, false)
+ON CONFLICT (id) DO NOTHING;
 
 -- Products
 INSERT INTO public.products (id, owner_id, notes) VALUES
@@ -141,18 +142,26 @@ INSERT INTO public.tasks (order_id, name, completed_date) VALUES
 
 -- Additional bulk test data for comprehensive coverage
 
+-- Sync user sequence before bulk inserts to avoid conflicts with explicit IDs above
+SELECT pg_catalog.setval('"Users_id_seq"', (SELECT COALESCE(MAX(id), 1) FROM public.users));
+
 -- Generate extra users
 INSERT INTO public.users (name, email, user_type_id, company_id)
 SELECT CONCAT('Test User ', gs),
        CONCAT('test.user.', gs, '@example.invalid'),
        (gs % 3) + 3,
        (gs % 4) + 1
-FROM generate_series(25, 124) AS gs;
+FROM generate_series(25, 124) AS gs
+ON CONFLICT DO NOTHING;
 
--- Generate additional products
-INSERT INTO public.products (owner_id, notes)
-SELECT ((gs % 124) + 1), CONCAT('Bulk product ', gs)
-FROM generate_series(4, 103) AS gs;
+-- Generate additional products (products table has no sequence, must provide explicit IDs)
+INSERT INTO public.products (id, owner_id, notes)
+SELECT gs, ((gs % 124) + 1), CONCAT('Bulk product ', gs)
+FROM generate_series(4, 103) AS gs
+ON CONFLICT (id) DO NOTHING;
+
+-- Sync order sequence before bulk inserts
+SELECT pg_catalog.setval('"Orders_id_seq"', (SELECT COALESCE(MAX(id), 1) FROM public.orders));
 
 -- Generate a large number of orders
 INSERT INTO public.orders (name, owner_id, status_id, spirit_type_id, batch_id, quantity, company_id)
