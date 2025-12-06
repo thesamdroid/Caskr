@@ -693,17 +693,20 @@ public class QuickBooksController(
 
     private async Task<(User? user, IActionResult? errorResult)> AuthorizeCompanyAsync(int companyId)
     {
-        if (companyId <= 0)
-        {
-            return (null, BadRequest(new QuickBooksErrorResponse("A valid company_id is required.")));
-        }
-
+        // First authenticate the user before any input validation
         var user = await GetCurrentUserAsync();
         if (user is null)
         {
             return (null, Unauthorized());
         }
 
+        // Then validate input
+        if (companyId <= 0)
+        {
+            return (null, BadRequest(new QuickBooksErrorResponse("A valid company_id is required.")));
+        }
+
+        // Finally check authorization
         if (!UserCanAccessCompany(user, companyId))
         {
             return (null, Forbid());
