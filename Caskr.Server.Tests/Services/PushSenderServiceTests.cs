@@ -11,11 +11,11 @@ namespace Caskr.Server.Tests.Services;
 
 public class PushSenderServiceTests
 {
-    private readonly Mock<IPushNotificationService> _pushNotificationServiceMock = new();
-    private readonly Mock<IConfiguration> _configurationMock = new();
-    private readonly Mock<ILogger<PushSenderService>> _loggerMock = new();
-    private readonly Mock<IHttpClientFactory> _httpClientFactoryMock = new();
-    private readonly Mock<HttpMessageHandler> _httpHandlerMock = new();
+    private Mock<IPushNotificationService> _pushNotificationServiceMock = null!;
+    private Mock<IConfiguration> _configurationMock = null!;
+    private Mock<ILogger<PushSenderService>> _loggerMock = null!;
+    private Mock<IHttpClientFactory> _httpClientFactoryMock = null!;
+    private Mock<HttpMessageHandler> _httpHandlerMock = null!;
 
     private CaskrDbContext CreateDbContext()
     {
@@ -25,8 +25,19 @@ public class PushSenderServiceTests
         return new CaskrDbContext(options);
     }
 
+    private void ResetMocks()
+    {
+        _pushNotificationServiceMock = new Mock<IPushNotificationService>();
+        _configurationMock = new Mock<IConfiguration>();
+        _loggerMock = new Mock<ILogger<PushSenderService>>();
+        _httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        _httpHandlerMock = new Mock<HttpMessageHandler>();
+    }
+
     private PushSenderService CreateService(CaskrDbContext context, HttpClient? httpClient = null)
     {
+        ResetMocks();
+
         // Setup configuration
         _configurationMock.Setup(c => c["PushNotifications:VapidSubject"])
             .Returns("mailto:admin@caskr.co");
@@ -39,13 +50,49 @@ public class PushSenderServiceTests
         var client = httpClient ?? new HttpClient(_httpHandlerMock.Object);
         _httpClientFactoryMock.Setup(f => f.CreateClient("PushService")).Returns(client);
 
-        return new PushSenderService(
+        return new TestablePushSenderService(
             context,
             _pushNotificationServiceMock.Object,
             _configurationMock.Object,
             _loggerMock.Object,
             _httpClientFactoryMock.Object
         );
+    }
+
+    /// <summary>
+    /// Test double that bypasses actual WebPush encryption for unit testing.
+    /// </summary>
+    private class TestablePushSenderService : PushSenderService
+    {
+        public TestablePushSenderService(
+            CaskrDbContext context,
+            IPushNotificationService pushNotificationService,
+            IConfiguration configuration,
+            ILogger<PushSenderService> logger,
+            IHttpClientFactory httpClientFactory)
+            : base(context, pushNotificationService, configuration, logger, httpClientFactory)
+        {
+        }
+
+        /// <summary>
+        /// Returns a simple test payload instead of actual encrypted data.
+        /// </summary>
+        protected override byte[] EncryptPayload(byte[] payload, string p256dhKey, string authKey)
+        {
+            // Return a simple test payload for unit testing
+            return new byte[] { 0x01, 0x02, 0x03, 0x04 };
+        }
+
+        /// <summary>
+        /// Returns simple test headers instead of actual VAPID headers.
+        /// </summary>
+        protected override Dictionary<string, string> CreateVapidHeaders(string endpoint)
+        {
+            return new Dictionary<string, string>
+            {
+                { "Authorization", "vapid t=test-token, k=test-key" }
+            };
+        }
     }
 
     #region SendToUserAsync Tests

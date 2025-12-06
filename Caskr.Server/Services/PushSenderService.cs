@@ -269,7 +269,7 @@ public class PushSenderService : IPushSenderService
     /// <summary>
     /// Encrypt payload using Web Push encryption (aes128gcm)
     /// </summary>
-    private byte[] EncryptPayload(byte[] payload, string p256dhKey, string authKey)
+    protected virtual byte[] EncryptPayload(byte[] payload, string p256dhKey, string authKey)
     {
         // Note: In production, you would use a proper Web Push library like WebPush.Net
         // This is a simplified placeholder that shows the structure
@@ -320,7 +320,7 @@ public class PushSenderService : IPushSenderService
     /// <summary>
     /// Create VAPID authorization headers
     /// </summary>
-    private Dictionary<string, string> CreateVapidHeaders(string endpoint)
+    protected virtual Dictionary<string, string> CreateVapidHeaders(string endpoint)
     {
         // Note: In production, use a proper Web Push library
         // This is a simplified placeholder
