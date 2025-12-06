@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Caskr.server.Models;
 using Caskr.server.Models.SupplyChain;
 using Caskr.server.Services;
@@ -8,7 +7,6 @@ using iText.Layout.Element;
 using iText.Layout.Properties;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Caskr.server.Controllers;
 

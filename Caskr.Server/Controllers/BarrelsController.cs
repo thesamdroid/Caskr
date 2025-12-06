@@ -1,10 +1,8 @@
-using System.Security.Claims;
 using Caskr.server;
 using Caskr.server.Models;
 using Caskr.server.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace Caskr.server.Controllers;
 
