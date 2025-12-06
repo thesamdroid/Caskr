@@ -169,7 +169,7 @@ public class QuickBooksController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(QuickBooksErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<QuickBooksStatusResponse>> GetStatus([FromQuery(Name = "company_id")] int companyId)
+    public async Task<ActionResult<QuickBooksStatusResponse>> GetStatus([FromQuery(Name = "companyId")] int companyId)
     {
         var authorizationResult = await AuthorizeCompanyAsync(companyId);
         if (authorizationResult.errorResult is { } error)
