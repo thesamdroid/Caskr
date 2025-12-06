@@ -72,6 +72,7 @@ export default function Layout() {
     { label: 'Report Builder', path: '/report-builder', ariaLabel: 'Custom Report Builder' },
     { label: 'Accounting', path: '/accounting' },
     { label: 'Sync History', path: '/accounting/sync-history' },
+    { label: 'Pricing', path: '/pricing' },
     { label: 'Login', path: '/login' }
   ]
 
