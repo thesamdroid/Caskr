@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Caskr.server.Models;
 using Caskr.server.Models.SupplyChain;
 using Caskr.server.Services;
@@ -8,7 +7,6 @@ using iText.Layout.Element;
 using iText.Layout.Properties;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Caskr.server.Controllers;
 
@@ -145,7 +143,26 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
     }
 
     /// <summary>
-    /// Get all purchase orders for a company
+    /// Get all purchase orders for the current user's company
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<PurchaseOrderResponse>>> GetPurchaseOrdersForCurrentCompany(
+        [FromQuery] PurchaseOrderStatus? status = null,
+        [FromQuery] int? supplierId = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        return await GetPurchaseOrdersInternal(user.CompanyId, status, supplierId, startDate, endDate);
+    }
+
+    /// <summary>
+    /// Get all purchase orders for a specific company (SuperAdmin access)
     /// </summary>
     [HttpGet("company/{companyId}")]
     public async Task<ActionResult<IEnumerable<PurchaseOrderResponse>>> GetPurchaseOrders(
@@ -161,6 +178,16 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
             return Forbid();
         }
 
+        return await GetPurchaseOrdersInternal(companyId, status, supplierId, startDate, endDate);
+    }
+
+    private async Task<ActionResult<IEnumerable<PurchaseOrderResponse>>> GetPurchaseOrdersInternal(
+        int companyId,
+        PurchaseOrderStatus? status,
+        int? supplierId,
+        DateTime? startDate,
+        DateTime? endDate)
+    {
         _logger.LogInformation("Fetching purchase orders for company {CompanyId}", companyId);
 
         var query = _dbContext.PurchaseOrders
@@ -283,7 +310,22 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
     }
 
     /// <summary>
-    /// Get next PO number for a company
+    /// Get next PO number for the current user's company
+    /// </summary>
+    [HttpGet("next-po-number")]
+    public async Task<ActionResult<object>> GetNextPoNumberForCurrentCompany()
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        return await GetNextPoNumberInternal(user.CompanyId);
+    }
+
+    /// <summary>
+    /// Get next PO number for a specific company (SuperAdmin access)
     /// </summary>
     [HttpGet("company/{companyId}/next-po-number")]
     public async Task<ActionResult<object>> GetNextPoNumber(int companyId)
@@ -294,6 +336,11 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
             return Forbid();
         }
 
+        return await GetNextPoNumberInternal(companyId);
+    }
+
+    private async Task<ActionResult<object>> GetNextPoNumberInternal(int companyId)
+    {
         var year = DateTime.UtcNow.Year;
         var lastPo = await _dbContext.PurchaseOrders
             .Where(po => po.CompanyId == companyId && po.PoNumber.StartsWith($"PO-{year}-"))
@@ -315,7 +362,23 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
     }
 
     /// <summary>
-    /// Create a new purchase order
+    /// Create a new purchase order for the current user's company
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<PurchaseOrderResponse>> CreatePurchaseOrderForCurrentCompany(
+        [FromBody] PurchaseOrderRequest request)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        return await CreatePurchaseOrderInternal(user.CompanyId, user, request);
+    }
+
+    /// <summary>
+    /// Create a new purchase order for a specific company (SuperAdmin access)
     /// </summary>
     [HttpPost("company/{companyId}")]
     public async Task<ActionResult<PurchaseOrderResponse>> CreatePurchaseOrder(
@@ -327,6 +390,15 @@ public class PurchaseOrdersController : AuthorizedApiControllerBase
         {
             return Forbid();
         }
+
+        return await CreatePurchaseOrderInternal(companyId, user, request);
+    }
+
+    private async Task<ActionResult<PurchaseOrderResponse>> CreatePurchaseOrderInternal(
+        int companyId,
+        User user,
+        PurchaseOrderRequest request)
+    {
 
         // Validate supplier exists
         var supplier = await _dbContext.Suppliers.FindAsync(request.SupplierId);

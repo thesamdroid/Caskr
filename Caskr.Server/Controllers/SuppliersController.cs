@@ -1,10 +1,8 @@
-using System.Security.Claims;
 using Caskr.server.Models;
 using Caskr.server.Models.SupplyChain;
 using Caskr.server.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Caskr.server.Controllers;
 
@@ -91,7 +89,23 @@ public class SuppliersController : AuthorizedApiControllerBase
     }
 
     /// <summary>
-    /// Get all suppliers for a company
+    /// Get all suppliers for the current user's company
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<SupplierResponse>>> GetSuppliersForCurrentCompany(
+        [FromQuery] bool includeInactive = false)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        return await GetSuppliersInternal(user.CompanyId, includeInactive);
+    }
+
+    /// <summary>
+    /// Get all suppliers for a specific company (SuperAdmin access)
     /// </summary>
     [HttpGet("company/{companyId}")]
     public async Task<ActionResult<IEnumerable<SupplierResponse>>> GetSuppliers(
@@ -104,6 +118,11 @@ public class SuppliersController : AuthorizedApiControllerBase
             return Forbid();
         }
 
+        return await GetSuppliersInternal(companyId, includeInactive);
+    }
+
+    private async Task<ActionResult<IEnumerable<SupplierResponse>>> GetSuppliersInternal(int companyId, bool includeInactive)
+    {
         _logger.LogInformation("Fetching suppliers for company {CompanyId}", companyId);
 
         var query = _dbContext.Suppliers.Where(s => s.CompanyId == companyId);
@@ -176,7 +195,22 @@ public class SuppliersController : AuthorizedApiControllerBase
     }
 
     /// <summary>
-    /// Create a new supplier
+    /// Create a new supplier for the current user's company
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<SupplierResponse>> CreateSupplierForCurrentCompany([FromBody] SupplierRequest request)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        return await CreateSupplierInternal(user.CompanyId, request);
+    }
+
+    /// <summary>
+    /// Create a new supplier for a specific company (SuperAdmin access)
     /// </summary>
     [HttpPost("company/{companyId}")]
     public async Task<ActionResult<SupplierResponse>> CreateSupplier(int companyId, [FromBody] SupplierRequest request)
@@ -187,6 +221,11 @@ public class SuppliersController : AuthorizedApiControllerBase
             return Forbid();
         }
 
+        return await CreateSupplierInternal(companyId, request);
+    }
+
+    private async Task<ActionResult<SupplierResponse>> CreateSupplierInternal(int companyId, SupplierRequest request)
+    {
         if (string.IsNullOrWhiteSpace(request.SupplierName))
         {
             return BadRequest(new { message = "Supplier name is required" });
@@ -222,8 +261,8 @@ public class SuppliersController : AuthorizedApiControllerBase
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation(
-            "Created supplier {SupplierId} '{SupplierName}' for company {CompanyId}",
-            supplier.Id, supplier.SupplierName, companyId);
+            "Created supplier {SupplierId} '{SupplierName}'",
+            supplier.Id, SanitizeForLog(supplier.SupplierName));
 
         return CreatedAtAction(nameof(GetSupplier), new { id = supplier.Id }, new SupplierResponse
         {
@@ -242,6 +281,17 @@ public class SuppliersController : AuthorizedApiControllerBase
             CreatedAt = supplier.CreatedAt,
             UpdatedAt = supplier.UpdatedAt
         });
+    }
+
+    /// <summary>
+    /// Removes newlines and carriage returns to prevent log forging.
+    /// </summary>
+    private static string SanitizeForLog(string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+        // Remove \r, \n and trim whitespace
+        return input.Replace("\r", "").Replace("\n", "").Trim();
     }
 
     /// <summary>

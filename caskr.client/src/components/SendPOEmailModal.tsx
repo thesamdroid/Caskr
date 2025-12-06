@@ -22,8 +22,6 @@ function formatDate(dateString: string): string {
 
 function SendPOEmailModal({ isOpen, onClose, purchaseOrder }: SendPOEmailModalProps) {
   const dispatch = useAppDispatch()
-  const authUser = useAppSelector(state => state.auth.user)
-  const companyId = authUser?.companyId ?? 1
 
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -89,7 +87,7 @@ CASKr Distillery`
       })).unwrap()
 
       // Refresh the PO list to update status
-      dispatch(fetchPurchaseOrders({ companyId }))
+      dispatch(fetchPurchaseOrders({}))
       onClose()
     } catch (err: unknown) {
       const errorMessage = err && typeof err === 'object' && 'message' in err

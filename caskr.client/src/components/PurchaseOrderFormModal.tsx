@@ -30,7 +30,6 @@ interface PurchaseOrderFormModalProps {
   isOpen: boolean
   onClose: () => void
   purchaseOrder: PurchaseOrder | null
-  companyId: number
 }
 
 function generateId(): string {
@@ -40,8 +39,7 @@ function generateId(): string {
 function PurchaseOrderFormModal({
   isOpen,
   onClose,
-  purchaseOrder,
-  companyId
+  purchaseOrder
 }: PurchaseOrderFormModalProps) {
   const dispatch = useAppDispatch()
   const suppliers = useAppSelector(state => state.suppliers.items)
@@ -64,15 +62,15 @@ function PurchaseOrderFormModal({
 
   // Fetch suppliers on mount
   useEffect(() => {
-    dispatch(fetchSuppliers({ companyId, includeInactive: false }))
-  }, [dispatch, companyId])
+    dispatch(fetchSuppliers({ includeInactive: false }))
+  }, [dispatch])
 
   // Get next PO number for new orders
   useEffect(() => {
     if (isOpen && !purchaseOrder) {
-      dispatch(getNextPONumber(companyId))
+      dispatch(getNextPONumber())
     }
-  }, [dispatch, companyId, isOpen, purchaseOrder])
+  }, [dispatch, isOpen, purchaseOrder])
 
   // Fetch supplier products when supplier changes
   useEffect(() => {
@@ -220,18 +218,15 @@ function PurchaseOrderFormModal({
         })).unwrap()
       } else {
         await dispatch(createPurchaseOrder({
-          companyId,
-          po: {
-            supplierId,
-            orderDate,
-            expectedDeliveryDate: expectedDeliveryDate || undefined,
-            notes: notes || undefined,
-            items
-          }
+          supplierId,
+          orderDate,
+          expectedDeliveryDate: expectedDeliveryDate || undefined,
+          notes: notes || undefined,
+          items
         })).unwrap()
       }
 
-      dispatch(fetchPurchaseOrders({ companyId }))
+      dispatch(fetchPurchaseOrders({}))
       onClose()
     } catch (err: unknown) {
       const errorMessage = err && typeof err === 'object' && 'message' in err

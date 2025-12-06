@@ -11,7 +11,6 @@ function BarrelsPage() {
   const forecastDate = useAppSelector(state => state.barrels.forecastDate)
   const forecastAgeYears = useAppSelector(state => state.barrels.forecastAgeYears)
   const [showModal, setShowModal] = useState(false)
-  const companyId = 1
 
   // Warehouse filtering
   const selectedWarehouseId = useAppSelector(state => state.warehouses.selectedWarehouseId)
@@ -24,8 +23,8 @@ function BarrelsPage() {
   }
 
   useEffect(() => {
-    dispatch(fetchBarrels(companyId))
-  }, [dispatch, companyId])
+    dispatch(fetchBarrels())
+  }, [dispatch])
 
   // Filter barrels by selected warehouse
   const filteredBarrels = useMemo(() => {
@@ -44,7 +43,7 @@ function BarrelsPage() {
   }, [forecast, selectedWarehouseId])
 
   const handleForecast = async (targetDate: string, ageYears: number) => {
-    await dispatch(forecastBarrels({ companyId, targetDate, ageYears })).unwrap()
+    await dispatch(forecastBarrels({ targetDate, ageYears })).unwrap()
     setShowModal(false)
   }
 

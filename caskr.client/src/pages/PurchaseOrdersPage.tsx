@@ -66,8 +66,6 @@ function PurchaseOrdersPage() {
   const purchaseOrders = useAppSelector(state => state.purchaseOrders.items)
   const loading = useAppSelector(state => state.purchaseOrders.loading)
   const suppliers = useAppSelector(state => state.suppliers.items)
-  const authUser = useAppSelector(state => state.auth.user)
-  const companyId = authUser?.companyId ?? 1
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | ''>('')
@@ -85,18 +83,17 @@ function PurchaseOrdersPage() {
   const [confirmCancel, setConfirmCancel] = useState<PurchaseOrder | null>(null)
 
   useEffect(() => {
-    dispatch(fetchSuppliers({ companyId, includeInactive: false }))
-  }, [dispatch, companyId])
+    dispatch(fetchSuppliers({ includeInactive: false }))
+  }, [dispatch])
 
   useEffect(() => {
     dispatch(fetchPurchaseOrders({
-      companyId,
       status: statusFilter || undefined,
       supplierId: supplierFilter || undefined,
       startDate: startDateFilter || undefined,
       endDate: endDateFilter || undefined
     }))
-  }, [dispatch, companyId, statusFilter, supplierFilter, startDateFilter, endDateFilter])
+  }, [dispatch, statusFilter, supplierFilter, startDateFilter, endDateFilter])
 
   const handleCreatePO = () => {
     setEditingPO(null)
@@ -161,7 +158,6 @@ function PurchaseOrdersPage() {
     setReceivingPO(null)
     // Refresh the PO list after receiving
     dispatch(fetchPurchaseOrders({
-      companyId,
       status: statusFilter || undefined,
       supplierId: supplierFilter || undefined,
       startDate: startDateFilter || undefined,
@@ -418,7 +414,6 @@ function PurchaseOrdersPage() {
         isOpen={showCreateModal}
         onClose={handleCloseCreateModal}
         purchaseOrder={editingPO}
-        companyId={companyId}
       />
 
       {/* Detail Modal */}

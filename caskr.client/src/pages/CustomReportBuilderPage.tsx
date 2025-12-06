@@ -270,7 +270,6 @@ const DATA_SOURCES: DataSource[] = [
     displayName: 'Companies',
     description: 'Company and partner information',
     columns: [
-      { name: 'id', displayName: 'Company ID', dataType: 'number', sourceTable: 'companies', isPrimaryKey: true },
       { name: 'name', displayName: 'Company Name', dataType: 'string', sourceTable: 'companies' },
       { name: 'contact_name', displayName: 'Contact Name', dataType: 'string', sourceTable: 'companies' },
       { name: 'email', displayName: 'Email', dataType: 'string', sourceTable: 'companies' },

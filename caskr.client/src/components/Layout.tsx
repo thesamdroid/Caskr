@@ -55,9 +55,10 @@ export default function Layout() {
 
   // Fetch warehouses on mount
   useEffect(() => {
-    const companyId = 1 // TODO: Get from auth context
-    dispatch(fetchWarehouses({ companyId, includeInactive: false }))
-  }, [dispatch])
+    if (authUser?.companyId) {
+      dispatch(fetchWarehouses({ includeInactive: false }))
+    }
+  }, [dispatch, authUser?.companyId])
 
   const handleWarehouseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value

@@ -64,9 +64,9 @@ export interface SupplierProductRequest {
 // Async Thunks
 export const fetchSuppliers = createAsyncThunk(
   'suppliers/fetchSuppliers',
-  async ({ companyId, includeInactive = false }: { companyId: number; includeInactive?: boolean }) => {
+  async ({ includeInactive = false }: { includeInactive?: boolean } = {}) => {
     const response = await authorizedFetch(
-      `api/suppliers/company/${companyId}?includeInactive=${includeInactive}`
+      `api/suppliers?includeInactive=${includeInactive}`
     )
     if (!response.ok) throw new Error('Failed to fetch suppliers')
     return (await response.json()) as Supplier[]
@@ -84,8 +84,8 @@ export const fetchSupplier = createAsyncThunk(
 
 export const createSupplier = createAsyncThunk(
   'suppliers/createSupplier',
-  async ({ companyId, supplier }: { companyId: number; supplier: SupplierRequest }, { rejectWithValue }) => {
-    const response = await authorizedFetch(`api/suppliers/company/${companyId}`, {
+  async (supplier: SupplierRequest, { rejectWithValue }) => {
+    const response = await authorizedFetch('api/suppliers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(supplier)
