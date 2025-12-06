@@ -420,14 +420,14 @@ label {
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-xl);
-  height: 80px;
+  height: 64px;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  font-size: 1.5rem;
+  gap: var(--space-sm);
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--gold-primary);
   text-decoration: none;
@@ -440,8 +440,8 @@ label {
 }
 
 .barrel-icon {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
   border-radius: var(--radius-md);
   position: relative;
@@ -459,8 +459,8 @@ label {
 
 .barrel-icon::before {
   content: '';
-  width: 32px;
-  height: 36px;
+  width: 26px;
+  height: 30px;
   background: linear-gradient(90deg, #8b4513 0%, #a0522d 50%, #8b4513 100%);
   border-radius: var(--radius-sm);
   border: 2px solid var(--bg-primary);
@@ -469,7 +469,7 @@ label {
 .barrel-icon::after {
   content: '';
   position: absolute;
-  width: 36px;
+  width: 30px;
   height: 2px;
   background: var(--bg-primary);
   top: 50%;
@@ -542,6 +542,92 @@ label {
   background: var(--gold-glow);
 }
 
+/* Dropdown Navigation */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.nav-dropdown-trigger:hover {
+  background: var(--bg-elevated);
+  color: var(--text-gold);
+}
+
+.nav-dropdown-trigger.active {
+  color: var(--text-gold);
+}
+
+.dropdown-arrow {
+  width: 12px;
+  height: 12px;
+  transition: transform var(--transition-base);
+}
+
+.nav-dropdown-trigger[aria-expanded="true"] .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 180px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-xs) 0;
+  z-index: calc(var(--z-sticky) + 10);
+  list-style: none;
+  margin-top: var(--space-xs);
+}
+
+.nav-dropdown-menu li {
+  margin: 0;
+}
+
+.nav-dropdown-menu a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.nav-dropdown-menu a:hover {
+  background: var(--bg-elevated);
+  color: var(--text-gold);
+}
+
+.nav-dropdown-menu a.active {
+  color: var(--text-gold);
+  background: var(--gold-glow);
+}
+
+.nav-dropdown-menu .nav-icon-wrapper {
+  width: 1rem;
+  height: 1rem;
+}
+
 /* Mobile Navigation */
 @media (max-width: 768px) {
   .header-content {
@@ -550,12 +636,21 @@ label {
   }
 
   .logo {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 
   .barrel-icon {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .barrel-icon::before {
+    width: 20px;
+    height: 24px;
+  }
+
+  .barrel-icon::after {
+    width: 24px;
   }
 
   .nav-menu {
@@ -563,6 +658,20 @@ label {
   }
 
   .nav-item a {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.875rem;
+  }
+
+  .nav-dropdown-trigger {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.875rem;
+  }
+
+  .nav-dropdown-menu {
+    min-width: 160px;
+  }
+
+  .nav-dropdown-menu a {
     padding: var(--space-sm) var(--space-md);
     font-size: 0.875rem;
   }
