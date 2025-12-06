@@ -285,8 +285,8 @@ public class WarehousesController : AuthorizedApiControllerBase
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation(
-            "Created warehouse {WarehouseId} '{WarehouseName}' for company {CompanyId} by user {UserId}",
-            warehouse.Id, warehouse.Name?.Replace("\r", "").Replace("\n", ""), companyId, user.Id);
+            "Created warehouse {WarehouseId} '{WarehouseName}' by user {UserId}",
+            warehouse.Id, warehouse.Name?.Replace("\r", "").Replace("\n", ""), user.Id);
 
         return CreatedAtAction(nameof(GetWarehouse), new { id = warehouse.Id }, new WarehouseResponse
         {
