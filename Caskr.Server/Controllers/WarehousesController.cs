@@ -286,7 +286,7 @@ public class WarehousesController : AuthorizedApiControllerBase
 
         _logger.LogInformation(
             "Created warehouse {WarehouseId} '{WarehouseName}' for company {CompanyId} by user {UserId}",
-            warehouse.Id, warehouse.Name, companyId, user.Id);
+            warehouse.Id, warehouse.Name?.Replace("\r", "").Replace("\n", ""), companyId, user.Id);
 
         return CreatedAtAction(nameof(GetWarehouse), new { id = warehouse.Id }, new WarehouseResponse
         {

@@ -210,7 +210,8 @@ const warehousesSlice = createSlice({
     },
     clearWarehouseError: state => {
       state.error = null
-    }
+    },
+    resetWarehousesState: () => initialState
   },
   extraReducers: builder => {
     // fetchWarehouses
@@ -271,5 +272,5 @@ const warehousesSlice = createSlice({
   }
 })
 
-export const { setSelectedWarehouseId, clearWarehouseError } = warehousesSlice.actions
+export const { setSelectedWarehouseId, clearWarehouseError, resetWarehousesState } = warehousesSlice.actions
 export default warehousesSlice.reducer
