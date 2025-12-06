@@ -39,7 +39,7 @@ public class BarrelsController(IBarrelsService barrelsService, IUsersService use
             return Unauthorized();
         }
 
-        _logger.LogInformation("Fetching barrels for company {CompanyId}", user.CompanyId);
+        _logger.LogInformation("Fetching barrels for current user's company");
         var barrels = await _barrelsService.GetBarrelsForCompanyAsync(user.CompanyId);
         return Ok(barrels.ToList());
     }
