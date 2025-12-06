@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import LoadingOverlay from './LoadingOverlay'
 import { useAppSelector, useAppDispatch } from '../hooks'
@@ -12,6 +12,12 @@ interface NavigationItem {
   hideWhenAuthenticated?: boolean
   requiresPermission?: string
   matchExact?: boolean
+  icon?: JSX.Element
+}
+
+interface NavigationGroup {
+  label: string
+  items: NavigationItem[]
   icon?: JSX.Element
 }
 
@@ -49,31 +55,66 @@ export default function Layout() {
     dispatch(setSelectedWarehouseId(value === 'all' ? null : parseInt(value, 10)))
   }
 
-  // Navigation order optimized for Great Demo! flow:
-  // 1. TTB Compliance first (the "Wow!" moment - completed reports)
-  // 2. Dashboard (operations overview)
-  // 3. Production features (Orders, Barrels, Products)
-  // 4. Analytics & Settings
-  const navigationItems: NavigationItem[] = [
-    {
-      label: 'Compliance',
-      path: '/ttb-reports',
-      ariaLabel: 'TTB compliance reports - your completed federal reports',
-      requiresPermission: TTB_COMPLIANCE_PERMISSION,
-      icon: <ClipboardIcon />
-    },
+  // State for tracking open dropdown
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const dropdownRef = useRef<HTMLUListElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Standalone navigation items
+  const standaloneItems: NavigationItem[] = [
     { label: 'Dashboard', path: '/', matchExact: true },
-    { label: 'Orders', path: '/orders' },
-    { label: 'Barrels', path: '/barrels' },
-    { label: 'Warehouses', path: '/warehouses' },
-    { label: 'Products', path: '/products' },
-    { label: 'Purchase Orders', path: '/purchase-orders', ariaLabel: 'Manage Purchase Orders' },
-    { label: 'Reports', path: '/reports', ariaLabel: 'View Reports', matchExact: true },
-    { label: 'Report Builder', path: '/report-builder', ariaLabel: 'Custom Report Builder' },
-    { label: 'Accounting', path: '/accounting' },
-    { label: 'Sync History', path: '/accounting/sync-history' },
-    { label: 'Pricing', path: '/pricing' },
-    { label: 'Login', path: '/login' }
+    { label: 'Login', path: '/login', hideWhenAuthenticated: true }
+  ]
+
+  // Grouped navigation items
+  const navigationGroups: NavigationGroup[] = [
+    {
+      label: 'Orders',
+      items: [
+        { label: 'Work Orders', path: '/orders' },
+        { label: 'Purchase Orders', path: '/purchase-orders', ariaLabel: 'Manage Purchase Orders' }
+      ]
+    },
+    {
+      label: 'Inventory',
+      items: [
+        { label: 'Barrels', path: '/barrels' },
+        { label: 'Products', path: '/products' },
+        { label: 'Warehouses', path: '/warehouses' }
+      ]
+    },
+    {
+      label: 'Reports',
+      items: [
+        {
+          label: 'Compliance',
+          path: '/ttb-reports',
+          ariaLabel: 'TTB compliance reports - your completed federal reports',
+          requiresPermission: TTB_COMPLIANCE_PERMISSION,
+          icon: <ClipboardIcon />
+        },
+        { label: 'Reports', path: '/reports', ariaLabel: 'View Reports', matchExact: true },
+        { label: 'Report Builder', path: '/report-builder', ariaLabel: 'Custom Report Builder' }
+      ]
+    },
+    {
+      label: 'Finance',
+      items: [
+        { label: 'Accounting', path: '/accounting', matchExact: true },
+        { label: 'Sync History', path: '/accounting/sync-history' },
+        { label: 'Pricing', path: '/pricing' }
+      ]
+    }
   ]
 
   const isActive = (item: NavigationItem) => {
@@ -83,17 +124,32 @@ export default function Layout() {
     return location.pathname.startsWith(item.path)
   }
 
-  const visibleItems = navigationItems.filter(item => {
-    if (item.requiresPermission && !userHasPermission(authUser, item.requiresPermission)) {
-      return false
-    }
+  const isGroupActive = (group: NavigationGroup) => {
+    return group.items.some(item => isActive(item))
+  }
 
-    if (item.hideWhenAuthenticated && isAuthenticated) {
-      return false
-    }
+  const filterItems = (items: NavigationItem[]) => {
+    return items.filter(item => {
+      if (item.requiresPermission && !userHasPermission(authUser, item.requiresPermission)) {
+        return false
+      }
+      if (item.hideWhenAuthenticated && isAuthenticated) {
+        return false
+      }
+      return true
+    })
+  }
 
-    return true
-  })
+  const visibleStandaloneItems = filterItems(standaloneItems)
+
+  const visibleGroups = navigationGroups.map(group => ({
+    ...group,
+    items: filterItems(group.items)
+  })).filter(group => group.items.length > 0)
+
+  const toggleDropdown = (label: string) => {
+    setOpenDropdown(openDropdown === label ? null : label)
+  }
 
   return (
     <>
@@ -135,8 +191,9 @@ export default function Layout() {
           )}
 
           <nav role="navigation" aria-label="Main navigation">
-            <ul className="nav-menu">
-              {visibleItems.map(item => (
+            <ul className="nav-menu" ref={dropdownRef}>
+              {/* Dashboard - standalone */}
+              {visibleStandaloneItems.filter(item => item.label === 'Dashboard').map(item => (
                 <li key={item.path} className="nav-item">
                   <Link
                     to={item.path}
@@ -144,7 +201,55 @@ export default function Layout() {
                     aria-current={isActive(item) ? 'page' : undefined}
                     aria-label={item.ariaLabel ?? item.label}
                   >
-                    {item.icon && <span className="nav-icon-wrapper">{item.icon}</span>}
+                    <span className="nav-label">{item.label}</span>
+                  </Link>
+                </li>
+              ))}
+
+              {/* Grouped navigation with dropdowns */}
+              {visibleGroups.map(group => (
+                <li key={group.label} className="nav-item nav-dropdown">
+                  <button
+                    className={`nav-dropdown-trigger ${isGroupActive(group) ? 'active' : ''}`}
+                    onClick={() => toggleDropdown(group.label)}
+                    aria-expanded={openDropdown === group.label}
+                    aria-haspopup="true"
+                  >
+                    <span className="nav-label">{group.label}</span>
+                    <svg className="dropdown-arrow" viewBox="0 0 12 12" aria-hidden="true">
+                      <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                  {openDropdown === group.label && (
+                    <ul className="nav-dropdown-menu">
+                      {group.items.map(item => (
+                        <li key={item.path}>
+                          <Link
+                            to={item.path}
+                            className={isActive(item) ? 'active' : ''}
+                            aria-current={isActive(item) ? 'page' : undefined}
+                            aria-label={item.ariaLabel ?? item.label}
+                            onClick={() => setOpenDropdown(null)}
+                          >
+                            {item.icon && <span className="nav-icon-wrapper">{item.icon}</span>}
+                            <span>{item.label}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+
+              {/* Login - standalone */}
+              {visibleStandaloneItems.filter(item => item.label === 'Login').map(item => (
+                <li key={item.path} className="nav-item">
+                  <Link
+                    to={item.path}
+                    className={isActive(item) ? 'active' : ''}
+                    aria-current={isActive(item) ? 'page' : undefined}
+                    aria-label={item.ariaLabel ?? item.label}
+                  >
                     <span className="nav-label">{item.label}</span>
                   </Link>
                 </li>
