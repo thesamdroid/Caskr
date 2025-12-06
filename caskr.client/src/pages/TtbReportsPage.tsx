@@ -114,17 +114,33 @@ function TtbReportsPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to generate report')
+        // Extract detailed error message from ProblemDetails response
+        let errorMessage = 'Failed to generate report'
+        try {
+          const contentType = response.headers.get('content-type')
+          if (contentType?.includes('application/json') || contentType?.includes('application/problem+json')) {
+            const errorData = await response.json()
+            errorMessage = errorData.detail || errorData.title || errorData.message || errorMessage
+          }
+        } catch {
+          // If we can't parse the error response, use status text
+          errorMessage = response.statusText || errorMessage
+        }
+        throw new Error(errorMessage)
       }
 
       const blob = await response.blob()
+      if (blob.size === 0) {
+        throw new Error('Generated report was empty. Please check the data for the selected period.')
+      }
       downloadBlob(blob, buildFileName(formType, month, year))
       setActionSuccess(`${describeFormType(formType)} generated. Download started for the new draft.`)
       setIsGenerateModalOpen(false)
       dispatch(fetchTtbReports({ companyId, year: yearFilter, status: statusFilter, formType: formTypeFilter }))
     } catch (error) {
-      console.error('[TtbReportsPage] Error generating TTB report', { month, year, error })
-      setActionError('Unable to generate this TTB report. Please review the reporting period and try again.')
+      console.error('[TtbReportsPage] Error generating TTB report', { month, year, formType, error })
+      const message = error instanceof Error ? error.message : 'Unable to generate this TTB report. Please review the reporting period and try again.'
+      setActionError(message)
     } finally {
       setIsGenerating(false)
     }

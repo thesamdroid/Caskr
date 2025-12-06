@@ -278,6 +278,27 @@ public sealed class TtbReportsController(
                 ? await ttbPdfGenerator.GenerateForm5110_40Async(storageReportData!, cancellationToken)
                 : await ttbPdfGenerator.GenerateForm5110_28Async(reportData, cancellationToken);
         }
+        catch (FileNotFoundException ex)
+        {
+            logger.LogError(
+                ex,
+                "TTB form template not found for company {CompanyId} month {Month} year {Year}",
+                request.CompanyId,
+                request.Month,
+                request.Year);
+            return StatusCode(StatusCodes.Status500InternalServerError, CreateProblem("TTB form template not found. Please contact support."));
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogError(
+                ex,
+                "Invalid operation during TTB report generation for company {CompanyId} month {Month} year {Year}: {Message}",
+                request.CompanyId,
+                request.Month,
+                request.Year,
+                ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, CreateProblem($"Failed to generate TTB report: {ex.Message}"));
+        }
         catch (Exception ex)
         {
             logger.LogError(
@@ -286,7 +307,7 @@ public sealed class TtbReportsController(
                 request.CompanyId,
                 request.Month,
                 request.Year);
-            return StatusCode(StatusCodes.Status500InternalServerError, CreateProblem("Failed to generate TTB report PDF."));
+            return StatusCode(StatusCodes.Status500InternalServerError, CreateProblem("Failed to generate TTB report PDF. Please try again or contact support if the problem persists."));
         }
 
         if (pdfResult.Content.Length == 0)

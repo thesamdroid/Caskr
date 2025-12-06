@@ -89,6 +89,17 @@ jobs:
           Jwt__Audience: CaskrTestUser
           ASPNETCORE_ENVIRONMENT: Testing
 
+      - name: Verify document generation (TTB reports)
+        run: |
+          echo "Running TTB document generation smoke tests..."
+          dotnet test --no-build --configuration Release --filter "FullyQualifiedName~TtbPdfGeneratorServiceTests" --verbosity normal
+        env:
+          ConnectionStrings__CaskrDatabaseConnectionString: "Host=localhost;Port=5432;Database=caskr-test-db;Username=postgres;Password=testpass123"
+          Jwt__Key: "TestingJwtKeyThatIsAtLeast32CharactersLong!"
+          Jwt__Issuer: CaskrTest
+          Jwt__Audience: CaskrTestUser
+          ASPNETCORE_ENVIRONMENT: Testing
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
